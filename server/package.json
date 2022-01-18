@@ -1,0 +1,20 @@
+{
+	"name": "perlnavigator-server",
+	"description": "Perl language server",
+	"version": "0.0.1",
+	"author": "bscan",
+	"license": "MIT",
+	"engines": {
+		"node": "*"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/bscan"
+	},
+	"dependencies": {
+		"vscode-languageserver": "^7.0.0",
+		"vscode-languageserver-textdocument": "^1.0.1",
+		"vscode-uri": "^1.0.1"
+	},
+	"scripts": {}
+}

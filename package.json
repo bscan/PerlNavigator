@@ -1,0 +1,147 @@
+{
+	"name": "perlnavigator",
+	"description": "Perl language server",
+	"author": "bscan",
+	"license": "MIT",
+	"version": "0.0.1",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/bscan"
+	},
+	"publisher": "bscan",
+	"categories": [],
+	"keywords": [
+		"multi-root ready"
+	],
+	"engines": {
+		"vscode": "^1.43.0"
+	},
+	"activationEvents": [
+		"onLanguage:perl"
+	],
+	"main": "./client/out/extension",
+	"contributes": {
+		"configuration": {
+			"type": "object",
+			"title": "Perl Navigator configuration",
+			"properties": {
+				"perlnavigator.perlPath": {
+					"scope": "resource",
+					"type": "string",
+					"default": "perl",
+					"description": "Path to the perl executable"
+				},
+				"perlnavigator.enableAllWarnings": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": false,
+					"description": "Enable all warnings using -w command switch, even for files that don't use warnings"
+				},
+				"perlnavigator.perlcriticPath": {
+					"scope": "resource",
+					"type": "string",
+					"default": "perlcritic",
+					"description": "Path to the perl critic executable"
+				},
+				"perlnavigator.perlcriticProfile": {
+					"scope": "resource",
+					"type": "string",
+					"default": "",
+					"description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc"
+				},
+				"perlnavigator.severity5": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"error",
+						"warning",
+						"info",
+						"hint",
+						"none"
+					],
+					"default": "warning",
+					"description": "Editor Diagnostic severity level for Critic severity 5"
+				},
+				"perlnavigator.severity4": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"error",
+						"warning",
+						"info",
+						"hint",
+						"none"
+					],
+					"default": "hint",
+					"description": "Editor Diagnostic severity level for Critic severity 4"
+				},
+				"perlnavigator.severity3": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"error",
+						"warning",
+						"info",
+						"hint",
+						"none"
+					],
+					"default": "hint",
+					"description": "Editor Diagnostic severity level for Critic severity 3"
+				},
+				"perlnavigator.severity2": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"error",
+						"warning",
+						"info",
+						"hint",
+						"none"
+					],
+					"default": "hint",
+					"description": "Editor Diagnostic severity level for Critic severity 2"
+				},
+				"perlnavigator.severity1": {
+					"scope": "resource",
+					"type": "string",
+					"enum": [
+						"error",
+						"warning",
+						"info",
+						"hint",
+						"none"
+					],
+					"default": "hint",
+					"description": "Editor Diagnostic severity level for Critic severity 1"
+				},
+				"perlnavigator.trace.server": {
+					"scope": "window",
+					"type": "string",
+					"enum": [
+						"off",
+						"messages",
+						"verbose"
+					],
+					"default": "verbose",
+					"description": "Traces the communication between VS Code and the language server."
+				}
+			}
+		}
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run compile",
+		"compile": "tsc -b",
+		"watch": "tsc -b -w",
+		"postinstall": "cd client && npm install && cd ../server && npm install && cd ..",
+		"test": "sh ./scripts/e2e.sh"
+	},
+	"devDependencies": {
+		"@types/mocha": "^8.2.2",
+		"@types/node": "^12.12.0",
+		"@typescript-eslint/eslint-plugin": "^4.23.0",
+		"@typescript-eslint/parser": "^4.23.0",
+		"eslint": "^7.26.0",
+		"mocha": "^8.3.2",
+		"typescript": "^4.2.3"
+	}
+}

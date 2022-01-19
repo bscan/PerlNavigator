@@ -8,16 +8,16 @@ import {
     InitializeParams,
     DidChangeConfigurationNotification,
     TextDocumentSyncKind,
-    InitializeResult
+    InitializeResult,
 } from 'vscode-languageserver/node';
 
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
+
 import Uri from 'vscode-uri';
-import { exec } from 'child_process';
-import { getPerlDiagnostics, getCriticDiagnostics } from "./diagnostics";
+import { perlcompile, perlcritic } from "./diagnostics";
 import { NavigatorSettings } from "./types";
 
 // Create a connection for the server, using Node's IPC as a transport.
@@ -89,12 +89,16 @@ const defaultSettings: NavigatorSettings = {
     severity3: "hint",
     severity2: "hint",
     severity1: "hint",
+    includePaths: [],
 };
 
 let globalSettings: NavigatorSettings = defaultSettings;
 
 // Cache the settings of all open documents
 const documentSettings: Map<string, Thenable<NavigatorSettings>> = new Map();
+
+// Store recent critic diags to prevent blinking of diagnostics
+const documentDiags: Map<string, Diagnostic[]> = new Map();
 
 connection.onDidChangeConfiguration(change => {
     if (hasConfigurationCapability) {
@@ -127,6 +131,8 @@ function getDocumentSettings(resource: string): Thenable<NavigatorSettings> {
 // Only keep settings for open documents
 documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
+    documentDiags.delete(e.document.uri);
+    connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
 // The document has been opened.
@@ -142,37 +148,30 @@ documents.onDidSave(change => {
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const settings = await getDocumentSettings(textDocument.uri);
     const filePath = Uri.parse(textDocument.uri).fsPath;
-    const commandSwitch = (settings.enableAllWarnings ? " -cw " : " -c ");
+    
+    const start = Date.now();
 
-    let criticSwitch = " --verbose" + ' "%s~|~%l~|~%c~|~%m~|~%p~||~%n" ';
-    if (settings.perlcriticProfile) {
-        criticSwitch += " --profile " + settings.perlcriticProfile;
-    }
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
+    const pCompile = perlcompile(filePath, workspaceFolders, settings); // Start compilation
+    const pCritic = perlcritic(filePath, workspaceFolders, settings); // Start perlcritic
 
-    let perlDiags: Diagnostic[] = [];
-    const compCmd = settings.perlPath + commandSwitch + '"' + filePath + '"';
-    connection.console.log("\t\tRunning perl compilation check with: " + compCmd);
-    exec(compCmd, process.env,
-        (_error, _stdout, stderr) => {
-            if (stderr) {
-                connection.console.log("Compilation stderr: " + stderr);
-                perlDiags = perlDiags.concat(getPerlDiagnostics(stderr));
-            }
+    let diagPerl = await pCompile;
+    connection.console.log("Compilation Time: " + (Date.now() - start)/1000 + " seconds");
+    let allDiags = documentDiags.get(textDocument.uri);
+    let mixOldAndNew = diagPerl;
+    if(allDiags) {
+        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic
+        mixOldAndNew = diagPerl.concat(allDiags);
+    }     
+    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: mixOldAndNew });
 
-            const criticCmd = settings.perlcriticPath + ' "' + filePath + '"' + criticSwitch; 
-            connection.console.log("Now running perlcritic with: " + criticCmd);
-            exec(criticCmd,  process.env,
-                (_error, stdout, stderr) => {
-                    connection.console.log("Critic stderr: " + stderr);
+    const diagCritic = await pCritic;
+    documentDiags.set(textDocument.uri, diagCritic);
+    const allNewDiags = diagPerl.concat(diagCritic);
+    connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
+    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: allNewDiags });
 
-                    if (stdout) {
-                        perlDiags = perlDiags.concat(getCriticDiagnostics(stdout, settings));
-                    }
-                    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: perlDiags });
-                }
-            );
-        }
-    );
+    return;
 }
 
 

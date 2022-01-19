@@ -12,4 +12,5 @@ export interface NavigatorSettings {
     severity3: string;
     severity2: string;
     severity1: string;
+    includePaths: string[];
 }

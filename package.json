@@ -29,7 +29,7 @@
 					"scope": "resource",
 					"type": "string",
 					"default": "perl",
-					"description": "Path to the perl executable"
+					"description": "Full path to the perl executable (no aliases, .bat files or ~/)"
 				},
 				"perlnavigator.enableAllWarnings": {
 					"scope": "resource",
@@ -47,7 +47,7 @@
 					"scope": "resource",
 					"type": "string",
 					"default": "",
-					"description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc"
+					"description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc. (no aliases, .bat files or ~/)"
 				},
 				"perlnavigator.severity5": {
 					"scope": "resource",

@@ -9,12 +9,17 @@ import {
     DidChangeConfigurationNotification,
     TextDocumentSyncKind,
     InitializeResult,
+    DidChangeWatchedFilesNotification,
+	DidChangeWatchedFilesRegistrationOptions,
+    WatchKind
 } from 'vscode-languageserver/node';
 
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
-
+import {
+	PublishDiagnosticsParams
+} from 'vscode-languageserver-protocol';
 
 import Uri from 'vscode-uri';
 import { perlcompile, perlcritic } from "./diagnostics";
@@ -30,6 +35,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let hasDiagnosticRelatedInformationCapability = false;
+let hasDidChangeWatchedFilesCapability = false;
 
 connection.onInitialize((params: InitializeParams) => {
     const capabilities = params.capabilities;
@@ -47,6 +53,10 @@ connection.onInitialize((params: InitializeParams) => {
         capabilities.textDocument.publishDiagnostics &&
         capabilities.textDocument.publishDiagnostics.relatedInformation
     );
+
+    hasDidChangeWatchedFilesCapability = !!(
+		capabilities.workspace && !! capabilities.workspace.didChangeWatchedFiles?.dynamicRegistration
+	);
 
     const result: InitializeResult = {
         capabilities: {
@@ -73,6 +83,12 @@ connection.onInitialized(() => {
             connection.console.log('Workspace folder change event received.');
         });
     }
+
+    // if(hasDidChangeWatchedFilesCapability) {	
+    // You'll need manually to add and remove all watched files. Is there an example of someone doing this? Seems like it would be common....
+	// 	const option : DidChangeWatchedFilesRegistrationOptions = {watchers: [{globPattern: '**/*.pl', kind: WatchKind.Change} ]};
+	// 	connection.client.register(DidChangeWatchedFilesNotification.type, option);
+	// }
 });
 
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
@@ -145,6 +161,18 @@ documents.onDidSave(change => {
 });
 
 
+// TODO: Currently, we aren't monitoring files that change under our feet (e.g from git pull)
+// connection.onDidChangeWatchedFiles(change => {
+//     // Monitored files have change in VSCode
+//     change.changes.forEach(element => {
+//         // Need to check for folders, etc.
+//         let changedDoc: TextDocument = {uri: element.uri};
+//         validatePerlDocument(changedDoc);
+//     });
+//     connection.console.log('We received an file change event');
+// });
+
+
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const settings = await getDocumentSettings(textDocument.uri);
     const filePath = Uri.parse(textDocument.uri).fsPath;
@@ -163,22 +191,28 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic
         mixOldAndNew = diagPerl.concat(allDiags);
     }     
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: mixOldAndNew });
+    sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
 
     const diagCritic = await pCritic;
     documentDiags.set(textDocument.uri, diagCritic);
     const allNewDiags = diagPerl.concat(diagCritic);
     connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
-    connection.sendDiagnostics({ uri: textDocument.uri, diagnostics: allNewDiags });
+    sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
 
     return;
 }
 
+function sendDiags(params: PublishDiagnosticsParams): void{
+    // Before sending new diagnostics, check if the file is still open. 
+    if(documentSettings.has(params.uri)){
+        connection.sendDiagnostics(params);
+    } else {
+        connection.console.log("Another test message");
+        console.log("The file has already closed. Skipping diagnostics");
+    }
+}
 
-connection.onDidChangeWatchedFiles(_change => {
-            // Monitored files have change in VSCode
-            connection.console.log('We received an file change event');
-        });
+
 
 // Make the text document manager listen on the connection
 // for open, change and close text document events

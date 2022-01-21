@@ -4,7 +4,7 @@
 
 export interface NavigatorSettings {
     perlPath: string;
-    enableAllWarnings: boolean;
+    enableWarnings: boolean;
     perlcriticPath: string;
     perlcriticProfile: string;
     severity5: string;

@@ -1,9 +1,11 @@
 {
 	"name": "perlnavigator",
-	"description": "Perl language server",
+	"displayName": "Perl Navigator",
+	"description": "Language Server for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.0.1",
+	"version": "0.0.2",
+	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/bscan"
@@ -31,11 +33,11 @@
 					"default": "perl",
 					"description": "Full path to the perl executable (no aliases, .bat files or ~/)"
 				},
-				"perlnavigator.enableAllWarnings": {
+				"perlnavigator.enableWarnings": {
 					"scope": "resource",
 					"type": "boolean",
-					"default": false,
-					"description": "Enable all warnings using -w command switch, even for files that don't use warnings"
+					"default": true,
+					"description": "Enable warnings using -Mwarnings command switch"
 				},
 				"perlnavigator.perlcriticPath": {
 					"scope": "resource",
@@ -72,7 +74,7 @@
 						"hint",
 						"none"
 					],
-					"default": "hint",
+					"default": "info",
 					"description": "Editor Diagnostic severity level for Critic severity 4"
 				},
 				"perlnavigator.severity3": {

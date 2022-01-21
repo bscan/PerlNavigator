@@ -1,10 +1,10 @@
-package ClassInspector; # Bscan Note: Only this single line modified to validate that we're using the local version and allow the real one to be navigated.
+package lib_bs22::Class::Inspector; # BScan note: Rename to avoid clashes and warnings
 
 use 5.006;
 # We don't want to use strict refs anywhere in this module, since we do a
 # lot of things in here that aren't strict refs friendly.
 use strict qw{vars subs};
-use warnings;
+no warnings; # BScan note: Avoiding sub redefined and similar issues
 use File::Spec ();
 
 # ABSTRACT: Get information about a class and its structure

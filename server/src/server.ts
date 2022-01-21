@@ -97,11 +97,11 @@ connection.onInitialized(() => {
 // The "real" default settings are in the top-level package.json
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
-    enableAllWarnings: false,
+    enableWarnings: true,
     perlcriticPath: "perlcritic",
     perlcriticProfile: "",
     severity5: "warning",
-    severity4: "hint",
+    severity4: "info",
     severity3: "hint",
     severity2: "hint",
     severity1: "hint",

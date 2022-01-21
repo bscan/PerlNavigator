@@ -28,7 +28,7 @@ package pltags;
 
 # Complain about undeclared variables
 use strict;
-
+no warnings;
 use Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT_OK = qw(build_pltags);

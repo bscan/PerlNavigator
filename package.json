@@ -1,10 +1,10 @@
 {
 	"name": "perlnavigator",
 	"displayName": "Perl Navigator",
-	"description": "Language Server for Perl",
+	"description": "Syntax checking, code navigation, and linting",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.0.2",
+	"version": "0.0.3",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",

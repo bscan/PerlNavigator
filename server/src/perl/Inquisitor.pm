@@ -51,8 +51,7 @@ sub maybe_print_sub_info {
         $meta->isa('B::CV') or return 0;
 
         my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
-        my $line = $meta->START->isa('B::COP') ? $meta->START->line : $UNKNOWN;
-
+        my $line = $meta->START->isa('B::COP') ? $meta->START->line - 1: $UNKNOWN;
         my $mod;
         if ($bIdentify) {
             $mod = Sub::Identify::stash_name($codeRef);
@@ -97,7 +96,6 @@ sub dump_vars_to_main {
 
     foreach my $thing (keys %$package) {
         next if $thing =~ /^_</;           # Remove all filenames
-        next if $thing =~ /_g12$/;         # End internal variables and functions with this random sequence
         next if $thing =~ /([\0-\x1F])/;   # Perl built-ins come with non-printable control characters
 
         my $sFullPath = $package . $thing;
@@ -137,7 +135,7 @@ sub dump_subs_from_modules {
                 $sCount += $iRes;
             }
             # Just in case we find too much stuff. The limits are currently intentionally low
-            last INSPECTOR if $sCount >  5000; 
+            last INSPECTOR if $sCount >  3000; # TODO: increase this limit
             next INSPECTOR if $pkgCount >  50;
         }
     }

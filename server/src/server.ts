@@ -9,9 +9,7 @@ import {
     DidChangeConfigurationNotification,
     TextDocumentSyncKind,
     InitializeResult,
-    DidChangeWatchedFilesNotification,
-	DidChangeWatchedFilesRegistrationOptions,
-    WatchKind
+    Location,
 } from 'vscode-languageserver/node';
 
 import {
@@ -23,7 +21,9 @@ import {
 
 import Uri from 'vscode-uri';
 import { perlcompile, perlcritic } from "./diagnostics";
-import { NavigatorSettings } from "./types";
+import { buildNav, getDefinition } from "./navigation";
+
+import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
 
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -61,6 +61,19 @@ connection.onInitialize((params: InitializeParams) => {
     const result: InitializeResult = {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
+
+            // textDocumentSync: {
+			// 	openClose: true,
+			// 	change: TextDocumentSyncKind.Full
+			// },
+            // completionProvider: {
+			// 	resolveProvider: true,
+			// 	triggerCharacters: [ '$' ]
+			// },
+
+			definitionProvider: true, // goto definition
+            // documentSymbolProvider: true, // Outline view and breadcrumbs
+            // hoverProvider: true,   // Do this too.
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -89,11 +102,21 @@ connection.onInitialized(() => {
 	// 	const option : DidChangeWatchedFilesRegistrationOptions = {watchers: [{globPattern: '**/*.pl', kind: WatchKind.Change} ]};
 	// 	connection.client.register(DidChangeWatchedFilesNotification.type, option);
 	// }
+
+    connection.onDefinition(params => {
+        let document = documents.get(params.textDocument.uri);
+        let perlDoc = navSymbols.get(params.textDocument.uri);
+        if(!document) return;
+        if(!perlDoc) return;
+        let locOut: Location | undefined = getDefinition(params, perlDoc, document);
+        return locOut;
+    });
+
 });
 
+
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
-// Please note that this is not the case when using this server with the client provided in this example
-// but could happen with other clients.
+// Does not happen with the vscode client could happen with other clients.
 // The "real" default settings are in the top-level package.json
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
@@ -115,6 +138,10 @@ const documentSettings: Map<string, Thenable<NavigatorSettings>> = new Map();
 
 // Store recent critic diags to prevent blinking of diagnostics
 const documentDiags: Map<string, Diagnostic[]> = new Map();
+
+// Store all navigation symbols in all open documents. TODO: Change this to a lru-cache.
+const navSymbols: Map<string, PerlDocument> = new Map();
+
 
 connection.onDidChangeConfiguration(change => {
     if (hasConfigurationCapability) {
@@ -148,6 +175,7 @@ function getDocumentSettings(resource: string): Thenable<NavigatorSettings> {
 documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
     documentDiags.delete(e.document.uri);
+    navSymbols.delete(e.document.uri);
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
@@ -183,19 +211,23 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const pCompile = perlcompile(filePath, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(filePath, workspaceFolders, settings); // Start perlcritic
 
-    let diagPerl = await pCompile;
+    let perlOut = await pCompile;
     connection.console.log("Compilation Time: " + (Date.now() - start)/1000 + " seconds");
-    let allDiags = documentDiags.get(textDocument.uri);
-    let mixOldAndNew = diagPerl;
-    if(allDiags) {
+    let oldCriticDiags = documentDiags.get(textDocument.uri);
+    let mixOldAndNew = perlOut.diags;
+    if(oldCriticDiags) {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic
-        mixOldAndNew = diagPerl.concat(allDiags);
+        mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }     
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
 
+    const pNav = await buildNav(perlOut.rawTags);
+    navSymbols.set(textDocument.uri, pNav);
+    connection.console.log("Symbols parse Time: " + (Date.now() - start)/1000 + " seconds");
+
     const diagCritic = await pCritic;
     documentDiags.set(textDocument.uri, diagCritic);
-    const allNewDiags = diagPerl.concat(diagCritic);
+    const allNewDiags = perlOut.diags.concat(diagCritic);
     connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
     sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
 

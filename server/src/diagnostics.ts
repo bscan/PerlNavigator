@@ -2,7 +2,7 @@ import {
     Diagnostic,
     DiagnosticSeverity,
 } from 'vscode-languageserver/node';
-import { NavigatorSettings } from "./types";
+import { NavigatorSettings, DiagnosedDoc } from "./types";
 import {
 	WorkspaceFolder
 } from 'vscode-languageserver-protocol';
@@ -13,7 +13,7 @@ import { promisify } from 'util';
 
 const async_execFile = promisify(execFile);
 
-export async function perlcompile(filePath: string, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
+export async function perlcompile(filePath: string, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<DiagnosedDoc> {
     let perlParams: string[] = ["-c"];
     if(settings.enableWarnings) perlParams.push("-Mwarnings");
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
@@ -32,6 +32,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
         stdout = out.stdout;
         severity = DiagnosticSeverity.Warning;
     } catch(error: any) {
+        // TODO: Check if we overflowed the buffer.
         if("stderr" in error && "stdout" in error){
             output = error.stderr;
             stdout = error.stdout;
@@ -39,7 +40,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
         } else {
             console.log("Perlcompile failed with unknown error")
             console.log(error);
-            return diagnostics;
+            return {diags: diagnostics, rawTags: ""};
         }
     }
     console.log(stdout);
@@ -47,7 +48,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
     output.split("\n").forEach(violation => {
         maybeAddCompDiag(violation, severity, diagnostics, filePath);
     });
-    return diagnostics;
+    return {diags: diagnostics, rawTags: stdout};
 }
 
 function getInquisitor(): string[]{

@@ -27,6 +27,7 @@ CHECK {
         dump_subs_from_modules($modules);
 
         my $packages = run_pltags();
+        print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
             # This is finding packages in the file we're inspecting, and then dumping them into the files namespace for easy navigation

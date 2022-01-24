@@ -184,6 +184,15 @@ sub build_pltags {
         elsif ($stmt =~/^use\s+constant\s+(\w+)\b/) {
             MakeTag($1, "s", $file, $line_number, $package_name, \@tags);
         }
+
+        elsif ($stmt=~/^has\s+["']?(\w+)\b/) { # Moo/Moose variables
+            MakeTag($1, "v", $file, $line_number, $package_name, \@tags);
+        }
+
+        elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 
+            MakeTag($1, "s", $file, $line_number, $package_name, \@tags);
+        }
+
     }
     close($file_handle);
 

@@ -125,14 +125,8 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     let locationsFound: Location[] = [];
     
     foundElems.forEach(elem => {
-        let elemResolved: PerlElem | undefined;
-        if(!elem.file){
-            if(!elem.module) return;
-            elemResolved = perlDoc.elems.get(elem.module);
-            if(!elemResolved || !elemResolved.file) return;
-        } else{
-            elemResolved = elem;
-        }
+        const elemResolved: PerlElem | undefined = resolveElem(perlDoc, elem, symbol);
+        if(!elemResolved) return;
         const lineNum = elemResolved.line < 1 ? 0 : elemResolved.line-1;
 
         // TODO: make this whole thing async
@@ -156,12 +150,15 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     let found = perlDoc.elems.get(symbol);
     if(found) return [found];
 
-    const qualified_symbol = symbol.replace("->", "::"); // Module->method() can be found via Module::method
-    found = perlDoc.elems.get(qualified_symbol);
+    const qualifiedSymbol = symbol.replace("->", "::"); // Module->method() can be found via Module::method
+    found = perlDoc.elems.get(qualifiedSymbol);
     if(found) return [found];
 
-    if(symbol.includes('->')){
-        const method = symbol.split('->').pop();
+    if(qualifiedSymbol.includes('::')){
+    // Seems like we should only hunt for -> funcs not ::, but I'm not sure it can hurt. We're already unable to find it.
+    // One example where ithelps is SamePackageSubs
+    // if(symbol.includes('->')){
+        const method = qualifiedSymbol.split('::').pop();
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);
@@ -179,4 +176,37 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     }
 
     return [];
+}
+
+function resolveElem (perlDoc: PerlDocument, elem: PerlElem, symbol: string): PerlElem | undefined {
+    
+    if(elem.file && !badFile(elem.file)){
+        // Have file and is good.
+        return elem;
+    } else{
+        // Try looking it up by module instead of file.
+        // Happens with XS subs and Moo subs
+        if(elem.module){
+            const elemResolved = perlDoc.elems.get(elem.module);
+            if(elemResolved && elemResolved.file && !badFile(elem.file)){
+                return elemResolved;
+            }
+        }
+
+        // Finding the module with the stored mod didn't work. Let's try navigating to the package itself instead of Foo::Bar->method().
+        // Many Moose methods end up here.
+        // Not very helpful, since the user can simply click on the module manually if they want
+        // const base_module = symbol.match(/^([\w:]+)->\w+$/);
+        // if(base_module){
+        //     const elemResolved = perlDoc.elems.get(base_module);
+        //     if(elemResolved && elemResolved.file && !badFile(elem.file)){
+        //         return elemResolved;
+        //     }
+        // }
+    }
+    return;
+}
+
+function badFile (file: string){
+    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm)$/.test(file);
 }

@@ -1,15 +1,23 @@
 use strict;
 use warnings;
-use Data::Dumper;                   # Module details. Dumper is auto-exported
-use Cwd qw(abs_path fast_abs_path); # abs_path is an XS function exported on request. fast_abs_path is pure perl.
 use FindBin qw($Bin);
 use File::Spec;
 use lib "$Bin";
-use Dir::NamedPackage qw(exported_sub);
-use MyObject;
-use MyObject2;
-use NonPackage;
 use experimental 'signatures';
+
+# These are system test modules
+use Data::Dumper;                    # Module details. Dumper is auto-exported
+use Cwd qw(fast_abs_path);           # fast_abs_path is pure perl.
+use MIME::Base64 qw(encode_base64);  # encode_base64 is XS, so the best we can do is find the .pm
+
+# Workspace modules
+use Dir::NamedPackage qw(exported_sub imported_constant $our_variable);
+use MyClass;
+use MyOtherClass;
+use NonPackage;
+use MooClass;
+use MooseClass;
+
 
 # TODO: Add simple Exporter module
 
@@ -46,18 +54,22 @@ foreach my $lexLoopDuplicate (1..3){
     print $lexLoopDuplicate;
 }
 
+print imported_constant . "\n";
+
+print $our_variable . "\n";
+
 sub same_script_sub {
     my $foo6 = shift;
     print "$foo6\n";
 }
 
 sub sub_with_sig($subParam1, @subParam2){
-    print $subParam1;
-    print @subParam2;
+    print "in sub_with_sig($subParam1, @subParam2)\n"
 }
 
 print "\n------ Subs --------\n";
 same_script_sub("FooSix");
+SameFilePackage::same_file_package_sub();
 sub_with_sig(2,3,4);
 duplicate_sub_name();
 nonpackage_sub();
@@ -67,14 +79,52 @@ Dir::NamedPackage::duplicate_sub_name();
 
 print Dumper(\%my_hash);
 print fast_abs_path($0) . "\n";
-print abs_path($0) . "\n";
+print encode_base64($0) . "\n";
 
 
-print "\n ------ Methods ------\n";
+print "\n ------ Methods and Attributes ------\n";
 
-my $testObj = MyObject->new();
+my $testObj = MyClass->new();
 $testObj->myobj_method();
 
-my $testObj2 = MyObject2->new();
+my $testObj2 = MyOtherClass->new();
 $testObj2->duplicate_method_name();
 
+my $mooObj = MooClass->new();
+$mooObj->moo_sub();
+print $mooObj->moo_attrib . "\n";
+
+my $mooObj2 = InlineMooClass->new();
+$mooObj2->inline_moo_sub();
+print $mooObj->inline_attrib . "\n";
+
+
+my $mooseObj = MooseClass->new();
+$mooseObj->moose_sub();
+
+
+print "Done\n";
+
+package SameFilePackage;
+
+sub same_file_package_sub {
+    print "In same_file_package_sub\n";
+}
+
+
+package InlineMooClass;
+use Moo;
+use strictures 2;
+use namespace::clean;
+ 
+sub inline_moo_sub {
+  my $self = shift;
+  print "In inline_moo_sub " . $self->moo_attrib . "\n";
+}
+ 
+
+has inline_attrib => (
+  is => 'ro',
+  default => 'Another moo attribute'
+);
+ 

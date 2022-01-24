@@ -5,7 +5,9 @@ use warnings;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(exported_sub);
+our @EXPORT_OK = qw(exported_sub imported_constant $our_variable);
+
+use constant imported_constant => "I'm an imported constant";
 
 our $our_variable = "The World is ours";
 

@@ -1,4 +1,4 @@
-package MyObject2;
+package MyOtherClass;
 use strict;
 use warnings;
 

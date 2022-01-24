@@ -26,7 +26,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
     let severity: DiagnosticSeverity;
     const diagnostics: Diagnostic[] = [];
     try {
-        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 20000, maxBuffer: 10 * 1024 * 1024});
+        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 10 * 1024 * 1024});
 
         output = out.stderr;
         stdout = out.stdout;
@@ -114,7 +114,7 @@ export async function perlcritic(filePath: string, workspaceFolders: WorkspaceFo
     const diagnostics: Diagnostic[] = [];
     console.log("In perl critic at least");
     try {
-        const { stdout, stderr } = await async_execFile(settings.perlcriticPath, criticParams, {timeout: 30000});
+        const { stdout, stderr } = await async_execFile(settings.perlcriticPath, criticParams, {timeout: 20000});
         console.log("Perlcritic found no issues" + stdout + stderr);
     } catch(error: any) {
         if("stdout" in error){

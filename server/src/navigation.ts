@@ -7,7 +7,7 @@ import {
 } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem } from "./types";
 import Uri from 'vscode-uri';
-
+import { realpathSync } from 'fs';
 
 export async function buildNav(stdout: string): Promise<PerlDocument> {
 
@@ -34,6 +34,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     }
     if (!items[0] || items[0]=='_') return; // Need a look-up key
 
+    const name    = items[0];
     const type    = (!items[1] || items[1] == '_') ? "": items[1]; 
     const file    = (!items[2] || items[2] == '_') ? "": items[2]; 
     const module  = (!items[3] || items[3] == '_') ? "": items[3]; 
@@ -49,38 +50,56 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         value: value,
     };
 
-    perlDoc.elems.set(items[0], newElem);
+    perlDoc.elems.set(name, newElem);
 
     return;
 }
 
 
 function getSymbol(text: string, position: number) {
-    // Common word separators. The ones not included are : and > to look for modules and methods
-    // Also excludes $, @, % as well to differentiate between variables and modules
-    // For now I won't differentiate between $foo{1} being %foo vs $foo
-
+    // Gets symbol from text at position. 
     // Ignore :: going left, but stop at :: when going to the right. (e.g Foo::bar::baz should be clickable on each spot)
-    // Todo: rewrite this allowed chars instead of banned ones. Would be smaller.
-    const leftSep  = (c: string) => /[`~!#\^&\*\(\)\-=\+\[{\]}\\\|\;'\",\.<\/\?\s]/.exec(c);
-    const rightSep = (c: string) => /[`~!#\^&\*\(\)\-=\+\[{\]}\\\|\;'\",\.<\/\?\s:\@\$\%\>]/.exec(c);
+    // Todo: Only allow -> once.
+    const leftAllow  = (c: string) => /[\w\:\>\-]/.exec(c);
+    const rightAllow = (c: string) => /[\w]/.exec(c);
 
     let left = position - 1;
     let right = position;
 
-    while (left >= 0 && !leftSep(text[left])) {
+    console.log()
+    while (left >= 0 && leftAllow(text[left])) {
         left -= 1;
     }
     left = Math.max(0, left + 1);
-
-    while (right < text.length && !rightSep(text[right])) {
+    while (right < text.length && rightAllow(text[right])) {
         right += 1;
     }
     right = Math.max(left, right);
-    return text.substring(left, right);
+
+    let symbol = text.substring(left, right);
+    const lChar  = left > 0 ? text[left-1] : "";
+    const llChar = left > 1 ? text[left-2] : "";
+    const rChar  = right < text.length  ? text[right] : "";
+    console.log("ll: " + llChar + "  l:" + lChar + "  r:" + rChar);
+
+    if(lChar === '$'){
+        if(rChar === '['){
+            symbol = '@' + symbol; // $foo[1] -> @foo
+        }else if(rChar === '{'){    
+            symbol = '%' + symbol; // $foo{1} -> %foo
+        }else{
+            symbol = '$' + symbol; // $foo, $foo->[1], $foo->{1} -> $foo
+        }
+    }else if(lChar === '@' || lChar === '%'){ 
+        symbol = lChar + symbol;   // @foo, %foo -> @foo, %foo
+    }else if(lChar === '{' && rChar === '}' && ["$", "%", "@"].includes(llChar)){
+        symbol = llChar + symbol;  // ${foo} -> $foo
+    }
+
+    return symbol;
 }
 
-export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument): Location | undefined {
+export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument): Location[] | undefined {
     console.log("Received an ondefinition request!");
     let position = params.position
 
@@ -90,38 +109,74 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     console.log("Inspecting " + text);
 
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
-    const word = getSymbol(text, index);
+    const symbol = getSymbol(text, index);
 
-    console.log("Looking for: " + word + "?");
-    if(!word) return;
+    console.log("Looking for: " + symbol + "?");
+    if(!symbol) return;
 
-    const found = perlDoc.elems.get(word);
+    const foundElems = lookupSymbol(perlDoc, symbol);
 
-    if( found ){
-        console.log("Hooray, the value exists");
-        console.log(found.line);
-    } else {
-        // Many reasons that we didn't find the symbol
-        // TODO: Add support for -> vs :: methods, and $ vs @ vs %
-        // Why do we store the module name at all?     
+    if(foundElems.length == 0){
         // Dynamically assigned *my_sub = ?? See Cwd.pm and DataFrame for examples   
-        console.log("Could not find word.");
+        console.log("Could not find word: " + symbol);
         return;
     }
 
-    if(!found.file) return;
+    let locationsFound: Location[] = [];
+    
+    foundElems.forEach(elem => {
+        let elemResolved: PerlElem | undefined;
+        if(!elem.file){
+            if(!elem.module) return;
+            elemResolved = perlDoc.elems.get(elem.module);
+            if(!elemResolved || !elemResolved.file) return;
+        } else{
+            elemResolved = elem;
+        }
+        const lineNum = elemResolved.line < 1 ? 0 : elemResolved.line-1;
 
-    const lineNum = found.line < 1 ? 0 : found.line-1;
+        // TODO: make this whole thing async
+        let uri =  Uri.file(realpathSync(elemResolved.file)).toString();
+        console.log("Sending to " + uri);
+        const newLoc: Location = {
+            uri: uri,
+            range: { 
+                start: { line: lineNum, character: 0 },
+                end: { line: lineNum, character: 500}
+                }
+        }
+        locationsFound.push(newLoc);
+    });    
+    return locationsFound;
+}
 
-    let uri =  Uri.file(found.file).toString();
-    console.log("Sending to " + uri);
-    const myLoc: Location = {
-        uri: uri,
-        range: { 
-            start: { line: lineNum, character: 0 },
-            end: { line: lineNum, character: 500}
-            }
+function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
+    if(!symbol) return [];
+
+    let found = perlDoc.elems.get(symbol);
+    if(found) return [found];
+
+    const qualified_symbol = symbol.replace("->", "::"); // Module->method() can be found via Module::method
+    found = perlDoc.elems.get(qualified_symbol);
+    if(found) return [found];
+
+    if(symbol.includes('->')){
+        const method = symbol.split('->').pop();
+        if(method){
+            // Perhaps the method is within our current scope, or explictly imported. 
+            found = perlDoc.elems.get(method);
+            if(found) return [found];
+            // Haven't found the method yet, let's check if anything could be a possible match since you don't know the object type
+            let foundElems: PerlElem[] = [];
+            perlDoc.elems.forEach((element: PerlElem, elemName: string) => {
+                const elemMethod = elemName.split('::').pop();
+                if(elemMethod == method){
+                    foundElems.push(element);
+                } 
+            });
+            if(foundElems.length > 0) return foundElems;
+        }
     }
 
-    return myLoc;
+    return [];
 }

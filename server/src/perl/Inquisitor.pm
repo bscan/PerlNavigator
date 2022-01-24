@@ -147,7 +147,7 @@ sub filter_modules {
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
-    # TODO: Figure out how to keep File::Spec and File::Basename when user has explicitly imported them.
+
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
                       "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Identify","warnings","strict","utf8","File::Spec","constant","XSLoader");
 
@@ -167,7 +167,7 @@ sub dump_loaded_mods {
         my $display_mod = $module;
         $display_mod =~ s/[\/\\]/::/g;
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
-        next if $display_mod =~ /lib_bs22::|^(Inquisitor|B|Cwd|Sub::Identify)$/;
+        next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
         my $path = $INC{$module};
         push @modules, $display_mod if lib_bs22::Class::Inspector->loaded($display_mod);
         print_tag("$display_mod", "mod", $path, $display_mod, 0, "_");

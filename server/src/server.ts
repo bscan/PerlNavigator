@@ -108,7 +108,7 @@ connection.onInitialized(() => {
         let perlDoc = navSymbols.get(params.textDocument.uri);
         if(!document) return;
         if(!perlDoc) return;
-        let locOut: Location | undefined = getDefinition(params, perlDoc, document);
+        let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document);
         return locOut;
     });
 

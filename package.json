@@ -4,7 +4,7 @@
 	"description": "Syntax checking, code navigation, and linting",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.0.3",
+	"version": "0.0.4",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",

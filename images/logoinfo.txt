@@ -1,0 +1,14 @@
+Logo copyright somewhat ambiguous, but I believe it's a modified version of O'Reilly's camel, which O'Reilly freely licenses for non-commerical usage. 
+
+Special thanks to O'Reilly: https://www.oreilly.com/library/view/programming-perl-3rd/0596000278/ 
+
+The state of Perl logos is a complicated topic. Python, Go, Ruby, Rust and PHP all have logos with permissive licenses to encourage the usage and brand-recognition of their respective languages.
+Although The Perl Foundation (TPF) maintains an onion logo, they specifically use it as a TPF logo and do not allow it to be used for general Perl related projects.
+
+I grabbed the shadow camel from the 2nd link below and recolored it to work well against a dark background.
+This is essentially the same logo that vscode uses to indicate Perl file types, so the association will be strong among vscode users. 
+Seems to work well against both the default dark background of the extension viewer, and the default white background of the extension marketplace webpage. 
+To fill out the full 128x128, the camel got a bit wider, but the higher resolution skinny camel is included for completeness.
+
+https://neilb.org/2020/12/04/perl-and-camels.html
+https://dev.to/thibaultduponchelle/the-perl-complex-topic-of-logos-3161 

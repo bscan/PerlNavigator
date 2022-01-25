@@ -26,7 +26,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
     let severity: DiagnosticSeverity;
     const diagnostics: Diagnostic[] = [];
     try {
-        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 10 * 1024 * 1024});
+        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
 
         output = out.stderr;
         stdout = out.stdout;
@@ -43,7 +43,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
             return {diags: diagnostics, rawTags: ""};
         }
     }
-    console.log(stdout);
+    // console.log(stdout);
 
     output.split("\n").forEach(violation => {
         maybeAddCompDiag(violation, severity, diagnostics, filePath);
@@ -91,7 +91,7 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
         // The error/warnings must be in an imported library. TODO: Place error on the import statement. For now, line 0 works
         lineNum = 0;
     }
-    violation = violation.replace("\r", ""); // Clean up for Windows
+    violation = violation.replace(/\r/g, ""); // Clean up for Windows
 
     diagnostics.push({
         severity: severity,
@@ -112,15 +112,13 @@ export async function perlcritic(filePath: string, workspaceFolders: WorkspaceFo
     console.log("Now starting perlcritic with: " + criticParams.join(" "));
 
     const diagnostics: Diagnostic[] = [];
-    console.log("In perl critic at least");
     try {
-        const { stdout, stderr } = await async_execFile(settings.perlcriticPath, criticParams, {timeout: 20000});
-        console.log("Perlcritic found no issues" + stdout + stderr);
+        const { stdout, stderr } = await async_execFile(settings.perlcriticPath, criticParams, {timeout: 25000});
     } catch(error: any) {
         if("stdout" in error){
-            if ("stderr" in error && error.stderr) console.log("perl critic diags: " + error.stderr);
+            // if ("stderr" in error && error.stderr) console.log("perl critic diags: " + error.stderr);
             const output: string = error.stdout;
-            console.log(output);
+            // console.log(output);
             output.split("\n").forEach(violation => {
                 maybeAddCriticDiag(violation, diagnostics, settings);
             });
@@ -156,7 +154,7 @@ function getCriticProfile (workspaceFolders: WorkspaceFolder[] | null, settings:
 function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settings: NavigatorSettings): void {
 
     // Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy ~||~ Newline
-    const tokens = violation.replace("~||~", "").replace("\r", "").split("~|~");
+    const tokens = violation.replace("~||~", "").replace(/\r/g, "").split("~|~");
     if(tokens.length != 5){
         return;
     }

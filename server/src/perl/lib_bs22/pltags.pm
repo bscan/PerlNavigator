@@ -136,7 +136,7 @@ sub build_pltags {
         }
 
         # Lexical match variables if(my ($foo, $bar) ~= )
-        elsif ( $stmt =~ /^(?:\}\s*elsif|if|unless|while|until)\s*\(\s*my\b(.*)$/) {
+        elsif ( $stmt =~ /^(?:\}\s*elsif|if|unless|while|until|for)\s*\(\s*my\b(.*)$/) {
             # Remove any assignment piece
             $stmt =~ s/\s*=.*//;
             my @vars = ($stmt =~ /([\$\@\%][\w]+)\b/g);

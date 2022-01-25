@@ -7,6 +7,10 @@ sub new {
     return bless {}, $class;
 }
 
+sub unique_method_name {
+    print "In unique_method_name\n";
+}
+
 sub duplicate_method_name {
     print "In MyObject2 with duplicate_name\n";
 }

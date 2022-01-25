@@ -11,9 +11,7 @@ import { realpathSync } from 'fs';
 
 export async function buildNav(stdout: string): Promise<PerlDocument> {
 
-    // Strip off anything printed from before our perl CHECK block. TODO: is this slow? 
-    stdout = stdout.replace(/.*6993a1bd-f3bf-4006-9993-b53e45527147\n/s, "");
-    stdout = stdout.replace(/\r/sg, ""); // Windows 
+    stdout = stdout.replace(/\r/g, ""); // Windows 
 
     let perlDoc: PerlDocument = { elems: new Map() };
 
@@ -66,7 +64,6 @@ function getSymbol(text: string, position: number) {
     let left = position - 1;
     let right = position;
 
-    console.log()
     while (left >= 0 && leftAllow(text[left])) {
         left -= 1;
     }
@@ -80,7 +77,6 @@ function getSymbol(text: string, position: number) {
     const lChar  = left > 0 ? text[left-1] : "";
     const llChar = left > 1 ? text[left-2] : "";
     const rChar  = right < text.length  ? text[right] : "";
-    console.log("ll: " + llChar + "  l:" + lChar + "  r:" + rChar);
 
     if(lChar === '$'){
         if(rChar === '['){
@@ -100,24 +96,20 @@ function getSymbol(text: string, position: number) {
 }
 
 export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument): Location[] | undefined {
-    console.log("Received an ondefinition request!");
     let position = params.position
-
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
     const text = txtDoc.getText({ start, end });
-    console.log("Inspecting " + text);
 
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
     const symbol = getSymbol(text, index);
 
-    console.log("Looking for: " + symbol + "?");
     if(!symbol) return;
+    console.log("Looking for: " + symbol);
 
     const foundElems = lookupSymbol(perlDoc, symbol);
 
     if(foundElems.length == 0){
-        // Dynamically assigned *my_sub = ?? See Cwd.pm and DataFrame for examples   
         console.log("Could not find word: " + symbol);
         return;
     }
@@ -150,7 +142,18 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     let found = perlDoc.elems.get(symbol);
     if(found) return [found];
 
-    const qualifiedSymbol = symbol.replace("->", "::"); // Module->method() can be found via Module::method
+    // Add what we mean when someone wants ->new().
+    let synonyms = ['_init', 'BUILD'];
+    for (const synonym of synonyms){
+        const initSymbol = symbol.replace(/->new$/, "::" + synonym); 
+        console.log(`Hunting for ${initSymbol}`);
+
+        found = perlDoc.elems.get(initSymbol);
+        if(found) return [found];
+    }
+
+
+    const qualifiedSymbol = symbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
     found = perlDoc.elems.get(qualifiedSymbol);
     if(found) return [found];
 
@@ -159,6 +162,7 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     // One example where ithelps is SamePackageSubs
     // if(symbol.includes('->')){
         const method = qualifiedSymbol.split('::').pop();
+        console.log(`qualifiedSymbol ${qualifiedSymbol}   and method ${method}`);
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);

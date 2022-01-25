@@ -7,6 +7,10 @@ has 'moose_attrib' => (
     default => 'Moost attr'
 );
  
+sub BUILD {
+    print "In moose build\n";
+}
+
 sub moose_sub {
     my $self = shift;
     print "In my moose sub\n";

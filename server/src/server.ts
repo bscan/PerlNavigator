@@ -24,7 +24,7 @@ import { perlcompile, perlcritic } from "./diagnostics";
 import { buildNav, getDefinition } from "./navigation";
 
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
-
+var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
@@ -107,7 +107,7 @@ connection.onInitialized(() => {
         let document = documents.get(params.textDocument.uri);
         let perlDoc = navSymbols.get(params.textDocument.uri);
         if(!document) return;
-        if(!perlDoc) return;
+        if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
         let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document);
         return locOut;
     });
@@ -140,7 +140,10 @@ const documentSettings: Map<string, Thenable<NavigatorSettings>> = new Map();
 const documentDiags: Map<string, Diagnostic[]> = new Map();
 
 // Store all navigation symbols in all open documents. TODO: Change this to a lru-cache.
-const navSymbols: Map<string, PerlDocument> = new Map();
+// My ballpark estimate is that 250k symbols will be about 25MB. Huge map, but a reasonable limit. 
+const navSymbols = new LRU({max: 250000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
+//     dispose: function (key, n) { n.close() }
+
 
 
 connection.onDidChangeConfiguration(change => {
@@ -152,8 +155,8 @@ connection.onDidChangeConfiguration(change => {
             (change.settings.perlnavigator || defaultSettings)
         );
     }
-    // Revalidate all open text documents
-    documents.all().forEach(validatePerlDocument);
+    // Pretty rare occurence, and can slow things down. Revalidate all open text documents
+    // documents.all().forEach(validatePerlDocument);
 });
 
 function getDocumentSettings(resource: string): Thenable<NavigatorSettings> {
@@ -175,7 +178,7 @@ function getDocumentSettings(resource: string): Thenable<NavigatorSettings> {
 documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
     documentDiags.delete(e.document.uri);
-    navSymbols.delete(e.document.uri);
+    navSymbols.del(e.document.uri);
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 
@@ -223,8 +226,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     const pNav = await buildNav(perlOut.rawTags);
     navSymbols.set(textDocument.uri, pNav);
-    connection.console.log("Symbols parse Time: " + (Date.now() - start)/1000 + " seconds");
-
+    connection.console.log("Symbols parse Time: " + (Date.now() - start)/1000 + " seconds. Found " + pNav.elems.size + " symbols.");
     const diagCritic = await pCritic;
     documentDiags.set(textDocument.uri, diagCritic);
     const allNewDiags = perlOut.diags.concat(diagCritic);
@@ -239,8 +241,7 @@ function sendDiags(params: PublishDiagnosticsParams): void{
     if(documentSettings.has(params.uri)){
         connection.sendDiagnostics(params);
     } else {
-        connection.console.log("Another test message");
-        console.log("The file has already closed. Skipping diagnostics");
+        console.log(`The ${params.uri} has already closed. Skipping diagnostics`);
     }
 }
 

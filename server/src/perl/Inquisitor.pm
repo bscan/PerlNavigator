@@ -2,20 +2,20 @@ package Inquisitor;
 
 # be careful around importing anything since we don't want to pollute the users namespace
 use strict;
-#use warnings; # TODO: Remove this after development, but remember that some people might use -cw anyway
-no warnings; # TODO: Reinstate this
+no warnings; 
 
-my $bIdentify;
+my $bIdentify; # Is Sub::Util available
+my @preloaded; # Check what's loaded before we pollute the namespace
+
 
 CHECK {
     eval {
-        print "\n6993a1bd-f3bf-4006-9993-b53e45527147\n";
-
+        populate_preloaded();
         require B;
         require lib_bs22::Class::Inspector;
 
-        # Check if Sub::Identify exists. Used for finding package names of C code (e.g. List::Util)
-        eval { require Sub::Identify; undef($!); $bIdentify = 1; }; 
+        # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
+        eval { require Sub::Util; $bIdentify = 1; }; 
 
         my $modules = dump_loaded_mods();
 
@@ -53,12 +53,13 @@ sub maybe_print_sub_info {
 
         my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
         my $line = $meta->START->isa('B::COP') ? $meta->START->line - 1: $UNKNOWN;
-        my $mod;
+        my $mod = $UNKNOWN;
         if ($bIdentify) {
-            $mod = Sub::Identify::stash_name($codeRef);
-            $mod = defined($mod) ? $mod : $UNKNOWN;    # The // would be cool, but didn't exist until 5.10  
+            my $subname = Sub::Util::subname($codeRef);
+            $mod = $1 if($subname =~ m/^(.+)::.*?$/);
         } else {
-            $mod = $meta->GV->isa('B::SPECIAL') ? $meta->GV->STASH->NAME : $UNKNOWN;
+            # Pure Perl version is not as good. Only needed for Perl < 5.22
+            $mod = $meta->GV->STASH->NAME if $meta->GV->isa('B::SPECIAL');
         }
         return 0 if $file =~ /([\0-\x1F])/ or $mod =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
@@ -76,6 +77,7 @@ sub print_tag {
     my ($symbol, $type, $file, $mod, $line, $value) = @_;
     #TODO: strip tabs and newlines from all of these? especially value
     return if $value =~ /[\0-\x1F]/;
+    $file = '' if $file =~ /^\(eval/;
     print "$symbol\t$type\t$file\t$mod\t$line\t$value\n";
 }
 
@@ -116,29 +118,51 @@ sub dump_vars_to_main {
     }
 }
 
+sub populate_preloaded {
+    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd)){
+        # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
+        my $file = $mod . ".pm";
+        $file =~ s/::/\//g;
+        push (@preloaded, $mod) if $INC{$file};
+    }
+}
+
 sub dump_subs_from_modules {
     my $modules = shift;
-    my $sCount = 0;
+    my $totalCount = 0;
+    my %baseCount;
+    my $baseRegex = qr/^(\w+::\w+)/;
+
+    # Just in case we find too much stuff. Arbitrary limit of 100 elements per module, 200 fully loaded modules.
+    # results in 10 fully loaded files in the server before we start dropping them on the ground because of the lru-cache
+    # Test with these limits and then bump them up if things are working well 
+    my $modLimit  = 100;
+    my $nameSpaceLimit = 4000; # Applied to Foo::Bar 
+    my $totalLimit = 20000; 
     INSPECTOR: foreach my $mod (@$modules){
         my $pkgCount = 0;
+        next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
         my $methods = lib_bs22::Class::Inspector->methods( $mod );
         #my $methods = lib_bs22::ClassInspector->functions( $mod ); # Less memory, but less accurate?
-        @$methods = sort { $b cmp $a } @$methods; # Reverse sorting puts private subs _ at the end which are less important and might get cut by the limit. 
+
+        # Sort because we have a memory limit and want to cut the less important things. 
+        @$methods = sort { ($a =~ /^[A-Z][A-Z_]+$/) cmp ($b =~ /[A-Z][A-Z_]+$/) # Anything all UPPERCASE is at the end
+                    || ($a =~ /^_/) cmp ($b =~ /^_/)  # Private methods are 2nd to last
+                    || $a cmp $b } @$methods; # Normal stuff up front. Order doesn't really matter, but sort anyway for readability 
 
         foreach my $name (@$methods){
-            # TODO: Consider sorting methods to get public methods before private ones (due to limiting)
             next if $name =~ /^(F_|O_|L_)/; # The unhelpful C compiled things
-            next if $name =~ /[A-Z_]+$/;    # Remove uppercase things as generally less important. TODO: Update sorting to keep uppercase things at the end of the list.
             if (my $codeRef = $mod->can($name)) {
                 # TODO: Differentiate functions vs methods. Methods come from here, but so do functions. Perl mixes the two definitions anyway.
                 my $iRes = maybe_print_sub_info("${mod}::${name}", '', $codeRef);
                 $pkgCount += $iRes;
-                $sCount += $iRes;
+                $totalCount += $iRes;
             }
-            # Just in case we find too much stuff. The limits are currently intentionally low
-            last INSPECTOR if $sCount >  3000; # TODO: increase this limit
-            next INSPECTOR if $pkgCount >  50;
+
+            last INSPECTOR if $totalCount >  $totalLimit; 
+            next INSPECTOR if $pkgCount >  $modLimit;
         }
+        $baseCount{$1} += $pkgCount if ($mod =~ $baseRegex);
     }
     return;
 }
@@ -148,16 +172,14 @@ sub filter_modules {
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
-
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
-                      "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Identify","warnings","strict","utf8","File::Spec","constant","XSLoader");
+                      "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Util","warnings","strict","utf8","File::Spec","List::Util", "constant","XSLoader");
 
-    # Exporter:: should remove Heavy and Tiny
-    my $filter_regex = qr/^(File::Spec::|warnings::register|::lib_bs22::|Exporter::)/;
-
+    # Exporter:: should remove Heavy and Tiny,  Moose::Meta is removed just because it drops more than 1500 things and I don't care about any of them
+    my $filter_regex = qr/^(File::Spec::|warnings::register|::lib_bs22::|Exporter::|Moose::Meta::|Class::MOP::)/; # TODO: Allow keeping some of these
     my %filter = map { $_ => 1 } @to_remove;
+    foreach (@preloaded) { $filter{$_} = 0 }; 
     my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex} @$modules;
-
     return \@filtered;
 }
 

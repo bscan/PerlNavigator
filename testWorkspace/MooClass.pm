@@ -1,13 +1,16 @@
 package MooClass;
 use Moo;
-use strictures 2;
-use namespace::clean;
+#use strictures 2;
+#use namespace::clean;
  
 sub moo_sub {
-  my $self = shift;
-  print "In my moo sub with " . $self->moo_attrib . "\n";
+    my $self = shift;
+    print "In my moo sub with " . $self->moo_attrib . "\n";
 }
  
+sub BUILD {
+    print "In my MOO Build sub\n";
+}
 
 has moo_attrib => (
   is => 'ro',

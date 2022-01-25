@@ -4,6 +4,7 @@ use warnings;
 
 sub new {
     my $class = shift;
+    print "In MyClass->new()\n";
     return bless {}, $class;
 }
 

@@ -13,6 +13,7 @@ use MIME::Base64 qw(encode_base64);  # encode_base64 is XS, so the best we can d
 # Workspace modules
 use Dir::NamedPackage qw(exported_sub imported_constant $our_variable);
 use MyClass;
+use MySubClass;
 use MyOtherClass;
 use NonPackage;
 use MooClass;
@@ -87,23 +88,27 @@ print "\n ------ Methods and Attributes ------\n";
 my $testObj = MyClass->new();
 $testObj->myobj_method();
 
+my $subObj = MySubClass->new();
+$subObj->myobj_method();
+
 my $testObj2 = MyOtherClass->new();
+$testObj2->unique_method_name();
 $testObj2->duplicate_method_name();
 
 my $mooObj = MooClass->new();
 $mooObj->moo_sub();
 print $mooObj->moo_attrib . "\n";
 
-my $mooObj2 = InlineMooClass->new();
-$mooObj2->inline_moo_sub();
-print $mooObj->inline_attrib . "\n";
-
-
 my $mooseObj = MooseClass->new();
 $mooseObj->moose_sub();
 
+for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
+    print "$cStyleLoopVar";
+}
 
-print "Done\n";
+
+
+print "\nDone\n";
 
 package SameFilePackage;
 
@@ -111,20 +116,4 @@ sub same_file_package_sub {
     print "In same_file_package_sub\n";
 }
 
-
-package InlineMooClass;
-use Moo;
-use strictures 2;
-use namespace::clean;
- 
-sub inline_moo_sub {
-  my $self = shift;
-  print "In inline_moo_sub " . $self->moo_attrib . "\n";
-}
- 
-
-has inline_attrib => (
-  is => 'ro',
-  default => 'Another moo attribute'
-);
  

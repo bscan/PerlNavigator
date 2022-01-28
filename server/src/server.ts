@@ -10,13 +10,16 @@ import {
     TextDocumentSyncKind,
     InitializeResult,
     Location,
+    CompletionItem,
+	CompletionItemKind,
+	TextDocumentPositionParams,
 } from 'vscode-languageserver/node';
 
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 import {
-	PublishDiagnosticsParams
+    PublishDiagnosticsParams
 } from 'vscode-languageserver-protocol';
 
 import Uri from 'vscode-uri';
@@ -24,6 +27,7 @@ import { perlcompile, perlcritic } from "./diagnostics";
 import { buildNav, getDefinition } from "./navigation";
 
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
+import { getCompletions } from './completion';
 var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -55,23 +59,23 @@ connection.onInitialize((params: InitializeParams) => {
     );
 
     hasDidChangeWatchedFilesCapability = !!(
-		capabilities.workspace && !! capabilities.workspace.didChangeWatchedFiles?.dynamicRegistration
-	);
+        capabilities.workspace && !! capabilities.workspace.didChangeWatchedFiles?.dynamicRegistration
+    );
 
     const result: InitializeResult = {
         capabilities: {
             textDocumentSync: TextDocumentSyncKind.Incremental,
 
             // textDocumentSync: {
-			// 	openClose: true,
-			// 	change: TextDocumentSyncKind.Full
-			// },
-            // completionProvider: {
-			// 	resolveProvider: true,
-			// 	triggerCharacters: [ '$' ]
-			// },
+            //     openClose: true,
+            //     change: TextDocumentSyncKind.Full
+            // },
+            completionProvider: {
+                resolveProvider: false,
+                triggerCharacters: ['$','@','%','-', '>',':']
+            },
 
-			definitionProvider: true, // goto definition
+            definitionProvider: true, // goto definition
             // documentSymbolProvider: true, // Outline view and breadcrumbs
             // hoverProvider: true,   // Do this too.
         }
@@ -97,11 +101,11 @@ connection.onInitialized(() => {
         });
     }
 
-    // if(hasDidChangeWatchedFilesCapability) {	
+    // if(hasDidChangeWatchedFilesCapability) {    
     // You'll need manually to add and remove all watched files. Is there an example of someone doing this? Seems like it would be common....
-	// 	const option : DidChangeWatchedFilesRegistrationOptions = {watchers: [{globPattern: '**/*.pl', kind: WatchKind.Change} ]};
-	// 	connection.client.register(DidChangeWatchedFilesNotification.type, option);
-	// }
+    //     const option : DidChangeWatchedFilesRegistrationOptions = {watchers: [{globPattern: '**/*.pl', kind: WatchKind.Change} ]};
+    //     connection.client.register(DidChangeWatchedFilesNotification.type, option);
+    // }
 
     connection.onDefinition(params => {
         let document = documents.get(params.textDocument.uri);
@@ -245,6 +249,32 @@ function sendDiags(params: PublishDiagnosticsParams): void{
     }
 }
 
+
+// This handler provides the initial list of the completion items.
+connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
+    let document = documents.get(params.textDocument.uri);
+    let perlDoc = navSymbols.get(params.textDocument.uri);
+    if(!document) return [];
+    if(!perlDoc) return []; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    let compOut: CompletionItem[] = getCompletions(params, perlDoc, document);
+    return compOut;
+});
+	
+
+// This handler resolves additional information for the item selected in
+// // the completion list.
+// connection.onCompletionResolve(
+// 	(item: CompletionItem): CompletionItem => {
+// 		if (item.data === 1) {
+// 			item.detail = 'TypeScript details';
+// 			item.documentation = 'TypeScript documentation';
+// 		} else if (item.data === 2) {
+// 			item.detail = 'JavaScript details';
+// 			item.documentation = 'JavaScript documentation';
+// 		}
+// 		return item;
+// 	}
+// );
 
 
 // Make the text document manager listen on the connection

@@ -1,7 +1,6 @@
 package MooClass;
 use Moo;
-#use strictures 2;
-#use namespace::clean;
+use Data::Dumper qw(Dumper);
  
 sub moo_sub {
     my $self = shift;

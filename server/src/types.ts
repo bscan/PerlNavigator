@@ -39,3 +39,10 @@ export interface DiagnosedDoc {
     diags: Diagnostic[],
     rawTags: string,
 }
+
+
+export interface CompletionPrefix {
+    symbol: string,
+    charStart: number,
+    charEnd: number,
+}

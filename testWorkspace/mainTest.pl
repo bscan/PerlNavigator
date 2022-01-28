@@ -60,8 +60,8 @@ print imported_constant . "\n";
 print $our_variable . "\n";
 
 sub same_script_sub {
-    my $foo6 = shift;
-    print "$foo6\n";
+    my $functionVar = shift;
+    print "$functionVar\n";
 }
 
 sub sub_with_sig($subParam1, @subParam2){
@@ -105,7 +105,6 @@ $mooseObj->moose_sub();
 for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
     print "$cStyleLoopVar";
 }
-
 
 
 print "\nDone\n";

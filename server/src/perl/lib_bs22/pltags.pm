@@ -102,10 +102,15 @@ sub build_pltags {
 
         # Nothing left? Never mind.
         next unless ($stmt);
-
+        # Declaring an object. Let's store the type
+        if ($stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*([\w\:]+)\-\>new\s*(?:\(|;)/ or
+            $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\(|;)/) {
+            MakeTag($1, $2, $file, $line_number, $package_name, \@tags);
+            $var_continues = 0; # We skipped ahead of the line here.
+        }
         # This is a variable declaration if one was started on the previous
         # line, or if this line starts with my or local
-        if (   $var_continues
+        elsif (   $var_continues
             or ($stmt =~ /^(?:my|our|local|state)\b/)) {
             # The declaration continues if the line does not end with ;
             $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
@@ -166,7 +171,7 @@ sub build_pltags {
             $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
             
             # Match the after the sub declaration and before the start of the actual sub. 
-            if($stmt =~ /sub\s+[\w:]+([^{]*)/){
+            if($stmt =~ /^sub\s+[\w:]+([^{]*)/){
                 my @vars = ($1 =~ /([\$\@\%][\w:]+)\b/g);
                 foreach my $var (@vars) {
                     MakeTag($var, "v", $file, $line_number, $package_name, \@tags);
@@ -191,6 +196,10 @@ sub build_pltags {
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 
             MakeTag($1, "s", $file, $line_number, $package_name, \@tags);
+        } 
+        
+        elsif ($stmt=~/^use\s+([\w:]+)\b/) { # Keep track of explicit imports for filtering
+            MakeTag("use $1", "u", $file, $line_number, $package_name, \@tags);
         }
 
     }

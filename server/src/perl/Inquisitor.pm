@@ -12,7 +12,7 @@ CHECK {
     eval {
         populate_preloaded();
         require B;
-        require lib_bs22::Class::Inspector;
+        require lib_bs22::Inspectorito;
 
         # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
         eval { require Sub::Util; $bIdentify = 1; }; 
@@ -65,7 +65,7 @@ sub maybe_print_sub_info {
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
         if ($file ne $0) { # pltags will find everything in $0
-            print_tag($sDisplayName || $sFullPath, "s", $file, $mod, $line, '_') ;
+            print_tag($sDisplayName || $sFullPath, "t", $file, $mod, $line, '_') ;
             return 1;
         }
     }
@@ -85,7 +85,7 @@ sub run_pltags {
     require lib_bs22::pltags;
     require File::Spec;
     my $orig_file = File::Spec->rel2abs($0);
-    print "\n--------------Now Building pltags for $orig_file ---------------------\n";
+    print "\n--------------Now Building the new pltags for $orig_file ---------------------\n";
     my ($tags, $packages) = pltags::build_pltags($orig_file); # $0 should be the script getting compiled, not this module
     foreach my $newTag (@$tags){
         print $newTag . "\n";
@@ -106,14 +106,14 @@ sub dump_vars_to_main {
 
         if (defined ${$sFullPath}) {
             my $value = ${$sFullPath};
-            print_tag("\$$thing", "scalar", '_', '_', '', $value);
+            print_tag("\$$thing", "v", '_', '_', '', $value);
         } elsif (@{$sFullPath}) {
             my $value = join(',', map({ defined($_) ? $_ : "" } @{$sFullPath}));
-            print_tag("\@$thing", "array", '_', '_', '', $value);
+            print_tag("\@$thing", "v", '_', '_', '', $value);
         } elsif (%{$sFullPath} ) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them. Reconsider printing values if you find a good use-case.
-            print_tag("%$thing", "hash", '_', '_', '', '_');
+            print_tag("%$thing", "v", '_', '_', '', '_');
         }
     }
 }
@@ -142,7 +142,7 @@ sub dump_subs_from_modules {
     INSPECTOR: foreach my $mod (@$modules){
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
-        my $methods = lib_bs22::Class::Inspector->methods( $mod );
+        my $methods = lib_bs22::Inspectorito->local_methods( $mod );
         #my $methods = lib_bs22::ClassInspector->functions( $mod ); # Less memory, but less accurate?
 
         # Sort because we have a memory limit and want to cut the less important things. 
@@ -192,8 +192,8 @@ sub dump_loaded_mods {
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
         my $path = $INC{$module};
-        push @modules, $display_mod if lib_bs22::Class::Inspector->loaded($display_mod);
-        print_tag("$display_mod", "mod", $path, $display_mod, 0, "_");
+        push @modules, $display_mod if lib_bs22::Inspectorito->loaded($display_mod);
+        print_tag("$display_mod", "m", $path, $display_mod, 0, "_");
     }
     return \@modules;
 }

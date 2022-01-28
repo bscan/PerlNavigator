@@ -4,7 +4,7 @@
 	"description": "Syntax checking, code navigation, and linting",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -130,7 +130,7 @@
 						"messages",
 						"verbose"
 					],
-					"default": "verbose",
+					"default": "messages",
 					"description": "Traces the communication between VS Code and the language server."
 				}
 			}

@@ -4,15 +4,18 @@ Extension for Perl that includes syntax checking, perlcritic, and code navigatio
 Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and parsing.  
 
 Works on Windows, MacOS, and Linux. The vscode extension includes everything needed to work, no additional installation should be necessary.
-Has support for multi-root workspaces, single file editing, and multiple open windows.
+Works on old versions of Perl, tested all the way to Perl 5.8. Has support for multi-root workspaces, single file editing, and multiple open windows.
 
 
 ## Currently Implemented Features:
 * Syntax Checking
 * Perl Critic static code analysis/suggestions
+* Smart context-aware autocompletion
 * Code Navigation ("Go To Definition")
-* Supports "Go To Definition" anywhere, including to any installed Perl modules or compile-time dependencies.
+* Supports "Go To Definition" anywhere, including to any installed Perl modules or compile-time dependencies
 * Works well with single files and large multi-folder workspaces
+* Support for Classes including Moo/Moose style classes
+
 
 ## Installation
 Install the VSCode extension and it should just work. All required dependencies are bundled with the extension. 

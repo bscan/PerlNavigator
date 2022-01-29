@@ -1,10 +1,10 @@
 {
 	"name": "perlnavigator",
 	"displayName": "Perl Navigator",
-	"description": "Syntax checking, code navigation, and linting",
+	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.0.7",
+	"version": "0.0.8",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",

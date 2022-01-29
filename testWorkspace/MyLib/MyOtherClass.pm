@@ -1,4 +1,4 @@
-package MyOtherClass;
+package MyLib::MyOtherClass;
 use strict;
 use warnings;
 

@@ -11,13 +11,14 @@ use Cwd qw(fast_abs_path);           # fast_abs_path is pure perl.
 use MIME::Base64 qw(encode_base64);  # encode_base64 is XS, so the best we can do is find the .pm
 
 # Workspace modules
-use Dir::NamedPackage qw(exported_sub imported_constant $our_variable);
-use MyClass;
+use MyLib::NamedPackage qw(exported_sub imported_constant $our_variable);
+use MyLib::MyClass;
+use MyLib::MyOtherClass;
+use MyLib::NonPackage;
+use MyLib::MooseClass;
+use MyLib::MooClass;
+use MyLib::DBI;
 use MySubClass;
-use MyOtherClass;
-use NonPackage;
-use MooClass;
-use MooseClass;
 
 
 # TODO: Add simple Exporter module
@@ -75,8 +76,9 @@ sub_with_sig(2,3,4);
 duplicate_sub_name();
 nonpackage_sub();
 exported_sub();
-Dir::NamedPackage::non_exported_sub();
-Dir::NamedPackage::duplicate_sub_name();
+MyLib::NamedPackage::non_exported_sub();
+MyLib::NamedPackage::duplicate_sub_name();
+MyLib::SubPackage::subpackage_mod();
 
 print Dumper(\%my_hash);
 print fast_abs_path($0) . "\n";
@@ -85,29 +87,37 @@ print encode_base64($0) . "\n";
 
 print "\n ------ Methods and Attributes ------\n";
 
-my $testObj = MyClass->new();
-$testObj->myobj_method();
+my $testObj = MyLib::MyClass->new();
+$testObj->overridden_method();
 
 my $subObj = MySubClass->new();
-$subObj->myobj_method();
+$subObj->overridden_method();
+$subObj->inherited_method();
 
-my $testObj2 = MyOtherClass->new();
-$testObj2->unique_method_name();
-$testObj2->duplicate_method_name();
+my $otherObj = MyLib::MyOtherClass->new();
+$otherObj->unique_method_name();
+$otherObj->duplicate_method_name();
 
-my $mooObj = MooClass->new();
+my $unknownObj = $otherObj;
+$unknownObj->duplicate_method_name();
+
+my $mooObj = MyLib::MooClass->new();
 $mooObj->moo_sub();
 print $mooObj->moo_attrib . "\n";
 
-my $mooseObj = MooseClass->new();
+my $mooseObj = MyLib::MooseClass->new();
 $mooseObj->moose_sub();
+
+my $nonObject = MyLib::MooseClass->new()->moose_sub();
 
 for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
     print "$cStyleLoopVar";
 }
 
 
-print "\nDone\n";
+my $dbh2 = MyLib::DBI->connect();
+
+print "\nDone with test script\n";
 
 package SameFilePackage;
 

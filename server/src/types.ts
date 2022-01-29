@@ -31,8 +31,22 @@ export interface PerlElem {
     value: string;
 };
 
+// Used for mapping variable names to object types
+export interface PerlType {
+    type: string;
+};
+
+// Used for keeping track of what has been imported
+export interface PerlImport {
+    mod: string;
+};
+
+
 export interface PerlDocument {
     elems: Map<string, PerlElem>;
+    vartypes: Map<string, PerlType>;
+    imported: Map<string, boolean>;
+    imports: Map<string, PerlImport>;
 }
 
 export interface DiagnosedDoc {

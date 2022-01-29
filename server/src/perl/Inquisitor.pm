@@ -7,31 +7,39 @@ no warnings;
 my $bIdentify; # Is Sub::Util available
 my @preloaded; # Check what's loaded before we pollute the namespace
 
-
 CHECK {
     eval {
         populate_preloaded();
         require B;
         require lib_bs22::Inspectorito;
+        require Devel::Symdump; # Local copy, but it's old and unlikely to have version conflicts
 
         # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
         eval { require Sub::Util; $bIdentify = 1; }; 
 
         my $modules = dump_loaded_mods();
 
-        dump_vars_to_main("main::");
+        dump_vars_to_main("main");
 
+        my $seen = {};
+        my $allowance = 30000;
         # This following one has the largest impact on memory and finds less interesting stuff. Low limits though, which probably helps
-        $modules = filter_modules($modules);
+        $modules = filter_modpacks($modules);
+        $allowance = dump_subs_from_modpacks($modules, $seen, $allowance);
 
-        dump_subs_from_modules($modules);
+        print "Done with priority modules. Moving to remaining packages with an allowance of $allowance\n";
+        my $allPackages = get_all_packages();
+        $allPackages = filter_modpacks($allPackages); 
+        dump_subs_from_modpacks($allPackages, $seen, $allowance);
 
         my $packages = run_pltags();
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
+            print "Inspecting package $package\n";
             # This is finding packages in the file we're inspecting, and then dumping them into the files namespace for easy navigation
-            dump_vars_to_main("${package}::") if $package;
+            dump_vars_to_main($package) if $package;
+            dump_inherited_to_main($package) if $package;
         }
         1; # For the eval
     } or do {
@@ -42,8 +50,9 @@ CHECK {
 
 
 sub maybe_print_sub_info {
-    my ($sFullPath, $sDisplayName, $codeRef) = @_;
-    my $UNKNOWN = "_";
+    my ($sFullPath, $sDisplayName, $codeRef, $sSkipPackage, $subType) = @_;
+    $subType = 't' if !$subType;
+    my $UNKNOWN = "";
 
     if (defined &$sFullPath or $codeRef) {
         $codeRef ||= \&$sFullPath;
@@ -64,9 +73,11 @@ sub maybe_print_sub_info {
         return 0 if $file =~ /([\0-\x1F])/ or $mod =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
-        if ($file ne $0) { # pltags will find everything in $0
-            print_tag($sDisplayName || $sFullPath, "t", $file, $mod, $line, '_') ;
+        if (($file and $file ne $0) or ($mod and $mod ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
+            print_tag($sDisplayName || $sFullPath, $subType, $file, $mod, $line, '') ;
             return 1;
+        } else {
+            print "Skip printing $sDisplayName / $sFullPath from $mod\n";
         }
     }
     return 0;
@@ -96,30 +107,43 @@ sub run_pltags {
 sub dump_vars_to_main {
     my ($package) = @_;
     no strict 'refs'; ## no critic
+    my $fullPackage = "${package}::";
 
-    foreach my $thing (keys %$package) {
+    foreach my $thing (keys %$fullPackage) {
         next if $thing =~ /^_</;           # Remove all filenames
         next if $thing =~ /([\0-\x1F])/;   # Perl built-ins come with non-printable control characters
 
-        my $sFullPath = $package . $thing;
-        maybe_print_sub_info($sFullPath, $thing); 
+        my $sFullPath = $fullPackage . $thing;
+        maybe_print_sub_info($sFullPath, $thing, '', $package); 
 
         if (defined ${$sFullPath}) {
             my $value = ${$sFullPath};
-            print_tag("\$$thing", "v", '_', '_', '', $value);
+            print_tag("\$$thing", "v", '', '', '', $value);
         } elsif (@{$sFullPath}) {
             my $value = join(',', map({ defined($_) ? $_ : "" } @{$sFullPath}));
-            print_tag("\@$thing", "v", '_', '_', '', $value);
+            print_tag("\@$thing", "v", '', '', '', $value);
         } elsif (%{$sFullPath} ) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them. Reconsider printing values if you find a good use-case.
-            print_tag("%$thing", "v", '_', '_', '', '_');
+            print_tag("%$thing", "v", '', '', '', '');
+        }
+    }
+}
+
+sub dump_inherited_to_main {
+    my ($package) = @_;
+
+    my $methods = lib_bs22::Inspectorito->local_methods( $package );
+    foreach my $name (@$methods){
+        next if $name =~ /^(F_|O_|L_)/; # The unhelpful C compiled things
+        if (my $codeRef = $package->can($name)) {
+            my $iRes = maybe_print_sub_info("${package}::${name}", $name, $codeRef, $package, 'i');
         }
     }
 }
 
 sub populate_preloaded {
-    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd)){
+    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd Scalar::Util)){
         # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
         my $file = $mod . ".pm";
         $file =~ s/::/\//g;
@@ -127,8 +151,8 @@ sub populate_preloaded {
     }
 }
 
-sub dump_subs_from_modules {
-    my $modules = shift;
+sub dump_subs_from_modpacks {
+    my ($modpacks, $seen, $allowance) = @_;
     my $totalCount = 0;
     my %baseCount;
     my $baseRegex = qr/^(\w+::\w+)/;
@@ -138,8 +162,9 @@ sub dump_subs_from_modules {
     # Test with these limits and then bump them up if things are working well 
     my $modLimit  = 100;
     my $nameSpaceLimit = 4000; # Applied to Foo::Bar 
-    my $totalLimit = 20000; 
-    INSPECTOR: foreach my $mod (@$modules){
+    my $totalLimit = $allowance; 
+    INSPECTOR: foreach my $mod (@$modpacks){
+        next if $seen->{$mod}++;
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
         my $methods = lib_bs22::Inspectorito->local_methods( $mod );
@@ -164,22 +189,29 @@ sub dump_subs_from_modules {
         }
         $baseCount{$1} += $pkgCount if ($mod =~ $baseRegex);
     }
-    return;
+
+    $allowance -= $totalCount;
+    return $allowance;
 }
 
-sub filter_modules {
-    my ($modules) = @_;
+sub filter_modpacks {
+    my ($modpacks) = @_;
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
-                      "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Util","warnings","strict","utf8","File::Spec","List::Util", "constant","XSLoader");
+                      "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Util","warnings","strict","utf8","File::Spec","List::Util", "constant","XSLoader",
+                      "base", "Config", "overloading", "Devel::Symdump", "vars", "Scalar::Util");
+
+    my %filter = map { $_ => 1 } @to_remove;
 
     # Exporter:: should remove Heavy and Tiny,  Moose::Meta is removed just because it drops more than 1500 things and I don't care about any of them
-    my $filter_regex = qr/^(File::Spec::|warnings::register|::lib_bs22::|Exporter::|Moose::Meta::|Class::MOP::)/; # TODO: Allow keeping some of these
-    my %filter = map { $_ => 1 } @to_remove;
+    my $filter_regex = qr/^(File::Spec::|warnings::register|lib_bs22::|Exporter::|Moose::Meta::|Class::MOP::|B::|Config::)/; # TODO: Allow keeping some of these
+    my $private = qr/::_\w+/;
+
     foreach (@preloaded) { $filter{$_} = 0 }; 
-    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex} @$modules;
+    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$modpacks;
+    print "\n\nKeeping the following @filtered\n\n";
     return \@filtered;
 }
 
@@ -193,9 +225,15 @@ sub dump_loaded_mods {
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
         my $path = $INC{$module};
         push @modules, $display_mod if lib_bs22::Inspectorito->loaded($display_mod);
-        print_tag("$display_mod", "m", $path, $display_mod, 0, "_");
+        print_tag("$display_mod", "m", $path, $display_mod, 0, "");
     }
     return \@modules;
+}
+
+sub get_all_packages {
+    my $obj = Devel::Symdump->rnew();
+    my @allPackages = $obj->packages;
+    return \@allPackages;
 }
 
 

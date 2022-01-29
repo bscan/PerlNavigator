@@ -32,7 +32,7 @@ sub MakeTag {
     if ($tag) {
  
         # Create a tag line
-        my $tagline = "$tag\t$type\t$file\t_\t$line_number\t_";
+        my $tagline = "$tag\t$type\t$file\t\t$line_number\t";
 
         # Push it on the stack
         push(@$tagsRef, $tagline);
@@ -102,10 +102,15 @@ sub build_pltags {
 
         # Nothing left? Never mind.
         next unless ($stmt);
+
+        # TODO, allow specifying list of constructor names as config
+        my $constructors = qr/(?:new|connect)/;
         # Declaring an object. Let's store the type
-        if ($stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*([\w\:]+)\-\>new\s*(?:\(|;)/ or
-            $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\(|;)/) {
-            MakeTag($1, $2, $file, $line_number, $package_name, \@tags);
+        if ($stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*([\w\:]+)\-\>$constructors\s*(?:\((?!.*\->)|;)/ or
+            $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\((?!.*\->)|;)/) {
+            my ($varName, $objName) = ($1, $2);
+            $objName .= "::db" if ($objName =~ /\bDBI$/);
+            MakeTag($varName, $objName, $file, $line_number, $package_name, \@tags);
             $var_continues = 0; # We skipped ahead of the line here.
         }
         # This is a variable declaration if one was started on the previous
@@ -190,8 +195,8 @@ sub build_pltags {
             MakeTag($1, "s", $file, $line_number, $package_name, \@tags);
         }
 
-        elsif ($stmt=~/^has\s+["']?(\w+)\b/) { # Moo/Moose variables
-            MakeTag($1, "v", $file, $line_number, $package_name, \@tags);
+        elsif ($stmt=~/^has\s+["']?(\w+)\b/) { # Moo/Moose variables. Look like variables, but act like methods
+            MakeTag($1, "s", $file, $line_number, $package_name, \@tags);
         }
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 
@@ -199,7 +204,7 @@ sub build_pltags {
         } 
         
         elsif ($stmt=~/^use\s+([\w:]+)\b/) { # Keep track of explicit imports for filtering
-            MakeTag("use $1", "u", $file, $line_number, $package_name, \@tags);
+            MakeTag("$1", "u", $file, $line_number, $package_name, \@tags);
         }
 
     }

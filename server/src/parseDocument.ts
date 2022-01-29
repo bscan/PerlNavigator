@@ -1,0 +1,67 @@
+
+import { PerlDocument, PerlElem, PerlType, PerlImport } from "./types";
+
+
+export async function buildNav(stdout: string): Promise<PerlDocument> {
+
+    stdout = stdout.replace(/\r/g, ""); // Windows 
+
+    let perlDoc: PerlDocument = {
+            elems: new Map(),
+            vartypes: new Map(),
+            imported: new Map(),
+            imports: new Map(),
+        };
+
+    stdout.split("\n").forEach(perl_elem => {
+        parseElem(perl_elem, perlDoc);
+    });
+    
+    return perlDoc;
+}
+
+
+function parseElem(perlTag: string, perlDoc: PerlDocument): void {
+
+    var items = perlTag.split('\t');
+
+    if(items.length != 6){
+        return;
+    }
+    if (!items[0] || items[0]=='_') return; // Need a look-up key
+
+    const name    = items[0];
+    const type    = items[1] || ""; 
+    const file    = items[2] || ""; 
+    const module  = items[3] || ""; 
+    const lineNum = items[4] ? +items[4] : 0; 
+    const value   = items[5] || ""; 
+
+    if (type.length > 1){
+        const newType: PerlType = {
+            type: type,
+        }
+        perlDoc.vartypes.set(name, newType);
+    } 
+
+    if (type == 'u'){
+        // Explictly loaded module. Helpful for focusing autocomplete results
+        perlDoc.imported.set(name, true);
+        if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
+        return; // Don't store it as an element
+    } 
+
+
+    // Add anyway
+    const newElem: PerlElem = {
+        type: type,
+        file: file,
+        module: module,
+        line: lineNum,
+        value: value,
+    };
+
+    perlDoc.elems.set(name, newElem);
+
+    return;
+}

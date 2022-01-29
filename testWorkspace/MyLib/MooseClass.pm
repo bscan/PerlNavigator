@@ -1,4 +1,4 @@
-package MooseClass;
+package MyLib::MooseClass;
 # Simple example taken from the Moose synopsis. 
 use Moose; # automatically turns on strict and warnings
  

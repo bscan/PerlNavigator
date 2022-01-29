@@ -1,4 +1,4 @@
-package Dir::NamedPackage;
+package MyLib::NamedPackage;
 
 use strict;
 use warnings;
@@ -22,5 +22,13 @@ sub non_exported_sub {
 sub duplicate_sub_name {
     print "In nonpackage duplicate_sub_name\n";
 }
+
+
+package MyLib::SubPackage;
+
+sub subpackage_mod {
+    print "in subpackage_mod\n";
+}
+
 
 1;

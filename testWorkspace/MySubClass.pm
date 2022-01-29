@@ -1,14 +1,21 @@
 package MySubClass;
 use strict;
 use warnings;
-use base qw(MyClass);
-
+use MyLib::MyClass;
+use base qw(MyLib::MyClass);
+use Data::Dumper qw(Dumper);
 
 sub new {
     my $class = shift;
     print "In MySubClass->new()\n";
     my $self = $class->SUPER::new();
     return bless {}, $class;
+}
+
+
+sub overridden_method {
+    my $self = shift;
+    print "In orverridden_method from MySubClass\n";
 }
 
 

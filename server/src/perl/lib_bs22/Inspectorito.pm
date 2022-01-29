@@ -10,7 +10,7 @@ use strict qw{vars subs};
 use warnings;
 use File::Spec ();
 use base qw(lib_bs22::Class::Inspector);
-use vars qw{$VERSION $RE_IDENTIFIER $RE_CLASS $UNIX};
+use vars qw{$VERSION $RE_IDENTIFIER $RE_CLASS $UNIX $BIDENTIFY};
 
 BEGIN {
     $VERSION = '1.28';
@@ -30,6 +30,8 @@ BEGIN {
     eval {
         require Sub::Util;
         Sub::Util->import('subname');
+        $BIDENTIFY = 1;
+        1;
     }
 }
 
@@ -69,15 +71,17 @@ sub local_methods {
             keys %{"${namespace}::"};
         
         foreach my $func ( @functions ) {
-            if (my $codeRef = $namespace->can($func)) {
-                my $source = subname( $codeRef );
-                # print "Found $func in $namespace with source $source\n";
-                next unless "${namespace}::$func" eq $source;
-            } else {
-                # What are these things?
-                print "WARNING: Skipping $func";
-                next;
-            } 
+            if($BIDENTIFY){ # Perl versions older than 5.22 will have a polluted, but still accurate namespace on autocomplete.
+                if (my $codeRef = $namespace->can($func)) {
+                    my $source = subname( $codeRef );
+                    # print "Found $func in $namespace with source $source\n";
+                    next unless "${namespace}::$func" eq $source;
+                } else {
+                    # What are these things?
+                    # print "WARNING: Skipping $func\n";
+                    next;
+                } 
+            }
             $methods{$func} = $namespace;
         }
     }

@@ -24,7 +24,8 @@ import {
 
 import Uri from 'vscode-uri';
 import { perlcompile, perlcritic } from "./diagnostics";
-import { buildNav, getDefinition } from "./navigation";
+import { getDefinition } from "./navigation";
+import { buildNav } from "./parseDocument";
 
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
 import { getCompletions } from './completion';

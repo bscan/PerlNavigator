@@ -9,49 +9,7 @@ import { PerlDocument, PerlElem } from "./types";
 import Uri from 'vscode-uri';
 import { realpathSync } from 'fs';
 
-export async function buildNav(stdout: string): Promise<PerlDocument> {
 
-    stdout = stdout.replace(/\r/g, ""); // Windows 
-
-    let perlDoc: PerlDocument = { elems: new Map() };
-
-    stdout.split("\n").forEach(perl_elem => {
-        parseElem(perl_elem, perlDoc);
-    });
-    
-    return perlDoc;
-}
-
-
-function parseElem(perlTag: string, perlDoc: PerlDocument): void {
-
-    var items = perlTag.split('\t');
-
-    if(items.length != 6){
-        return;
-    }
-    if (!items[0] || items[0]=='_') return; // Need a look-up key
-
-    const name    = items[0];
-    const type    = (!items[1] || items[1] == '_') ? "": items[1]; 
-    const file    = (!items[2] || items[2] == '_') ? "": items[2]; 
-    const module  = (!items[3] || items[3] == '_') ? "": items[3]; 
-    const lineNum = (!items[4] || items[4] == '_') ? 0: +items[4]; 
-    const value   = (!items[5] || items[5] == '_') ? "": items[5]; 
-
-
-    const newElem: PerlElem = {
-        type: type,
-        file: file,
-        module: module,
-        line: lineNum,
-        value: value,
-    };
-
-    perlDoc.elems.set(name, newElem);
-
-    return;
-}
 
 
 function getSymbol(text: string, position: number) {
@@ -142,27 +100,33 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     let found = perlDoc.elems.get(symbol);
     if(found) return [found];
 
+    let qSymbol = symbol;
+    let knownObject = /^(\$\w+)\->(?:\w+)$/.exec(symbol);
+    if(knownObject){
+        const targetVar = perlDoc.vartypes.get(knownObject[1]);
+        if(targetVar) qSymbol = qSymbol.replace(/^\$\w+(?=\->)/, targetVar.type);
+    }
+
     // Add what we mean when someone wants ->new().
     let synonyms = ['_init', 'BUILD'];
     for (const synonym of synonyms){
-        const initSymbol = symbol.replace(/->new$/, "::" + synonym); 
-        console.log(`Hunting for ${initSymbol}`);
-
-        found = perlDoc.elems.get(initSymbol);
+        found = perlDoc.elems.get(symbol.replace(/->new$/, "::" + synonym));
         if(found) return [found];
     }
+    found = perlDoc.elems.get(symbol.replace(/DBI->new$/, "DBI::connect"));
+    if(found) return [found];
+    
 
-
-    const qualifiedSymbol = symbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
-    found = perlDoc.elems.get(qualifiedSymbol);
+    qSymbol = qSymbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
+    found = perlDoc.elems.get(qSymbol);
     if(found) return [found];
 
-    if(qualifiedSymbol.includes('::')){
+    if(qSymbol.includes('::')){
     // Seems like we should only hunt for -> funcs not ::, but I'm not sure it can hurt. We're already unable to find it.
     // One example where ithelps is SamePackageSubs
     // if(symbol.includes('->')){
-        const method = qualifiedSymbol.split('::').pop();
-        console.log(`qualifiedSymbol ${qualifiedSymbol}   and method ${method}`);
+        const method = qSymbol.split('::').pop();
+        console.log(`qualifiedSymbol ${qSymbol}   and method ${method}`);
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);

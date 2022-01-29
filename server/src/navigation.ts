@@ -154,10 +154,10 @@ function resolveElem (perlDoc: PerlDocument, elem: PerlElem, symbol: string): Pe
         // Have file and is good.
         return elem;
     } else{
-        // Try looking it up by module instead of file.
+        // Try looking it up by package instead of file.
         // Happens with XS subs and Moo subs
-        if(elem.module){
-            const elemResolved = perlDoc.elems.get(elem.module);
+        if(elem.package){
+            const elemResolved = perlDoc.elems.get(elem.package);
             if(elemResolved && elemResolved.file && !badFile(elem.file)){
                 return elemResolved;
             }

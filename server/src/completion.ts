@@ -2,7 +2,8 @@ import {
     TextDocumentPositionParams,
     CompletionItem,
     CompletionItemKind,
-    Range
+    Range,
+    MarkupContent
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, CompletionPrefix } from "./types";
@@ -163,19 +164,31 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, lcQualifiedSymbol: s
     return true;
 }
 
-function buildMatch(elemName: string, elem: PerlElem, range: Range): CompletionItem {
+function buildMatch(lookupName: string, elem: PerlElem, range: Range): CompletionItem {
 
     let kind: CompletionItemKind;
+    let detail: string | undefined = undefined;
+    let documentation: MarkupContent | undefined = undefined;
+    let docs: string[] = [];
 
-    if (elem.type.length > 1 || ( elem.type == 'v' && elemName == '$self')) {
+    if (elem.type.length > 1 || ( ["v", "c"].includes(elem.type) && lookupName == '$self')) {
         // We either know the object type, or it's $self
-        kind = CompletionItemKind.Class;
+        kind = CompletionItemKind.Variable;
+        if(elem.type.length > 1 ){
+            docs.push(`${lookupName}: ${elem.type}`);
+        } else if (lookupName == '$self') {
+            docs.push(`${lookupName}: $self`); // I don't actually know the type, just matching with things in the current namespace.
+        }
     } else if(elem.type == 'v'){ 
         kind = CompletionItemKind.Variable;
+    } else if(elem.type == 'c'){ 
+        kind = CompletionItemKind.Constant;
     } else if (elem.type == 's'){
         kind = CompletionItemKind.Function;
-    } else if (elem.type == 't' || elem.type == 'i'){
+    } else if  (elem.type == 't' || elem.type == 'i'){
         kind = CompletionItemKind.Method;
+        docs.push(`Name  : ${elem.name}`);
+        docs.push(`Source: ${elem.package}`);
     }else if (elem.type == 'p' || elem.type == 'm'){
         kind = CompletionItemKind.Module;
     }else if (elem.type == 'l'){ // Loop labels
@@ -185,27 +198,36 @@ function buildMatch(elemName: string, elem: PerlElem, range: Range): CompletionI
         kind = CompletionItemKind.Property;
     }
 
+    if( elem.value ) docs.push(`Value : ${elem.value}`);
+
+    if(docs.length>0){
+        documentation = {kind: "markdown", value: "```\n" + docs.join("\n") + "\n```" };
+        console.log("Printing value" + documentation.value);
+    }
+    
     // Ensure sorting has public methods up front, followed by private and then capital. (private vs capital is arbitrary, but public makes sense).
     // Variables will still be higher when relevant. 
     let sortText: string;
 
-    if(/^[A-Z][A-Z_]+$/.test(elemName) || /(?:::|->)[A-Z][A-Z_]+$/.test(elemName)){
-        sortText = "4" + elemName;
-    } else if(/^_$/.test(elemName) || /(?:::|->)_\w+$/.test(elemName)){
-        sortText = "3" + elemName;
-    } else if(/^\w$/.test(elemName) || /(?:::|->)\w+$/.test(elemName)){
+    if(/^[A-Z][A-Z_]+$/.test(lookupName) || /(?:::|->)[A-Z][A-Z_]+$/.test(lookupName)){
+        sortText = "4" + lookupName;
+    } else if(/^_$/.test(lookupName) || /(?:::|->)_\w+$/.test(lookupName)){
+        sortText = "3" + lookupName;
+    } else if(/^\w$/.test(lookupName) || /(?:::|->)\w+$/.test(lookupName)){
         // Public methods / functions
-        sortText = "2" + elemName;
+        sortText = "2" + lookupName;
     } else {
         // Variables and regex mistakes
-        sortText = "1" + elemName;
+        sortText = "1" + lookupName;
     }
 
 
     return {
-        label: elemName,
-        textEdit: {newText: elemName, range},
+        label: lookupName,
+        textEdit: {newText: lookupName, range},
         kind: kind,
         sortText: sortText,
+        detail: detail,
+        documentation: documentation,
     }
 }

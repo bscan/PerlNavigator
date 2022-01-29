@@ -56,19 +56,19 @@ sub maybe_print_sub_info {
 
         my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
         my $line = $meta->START->isa('B::COP') ? $meta->START->line - 1: $UNKNOWN;
-        my $mod = $UNKNOWN;
+        my $pack = $UNKNOWN;
         if ($bIdentify) {
             my $subname = Sub::Util::subname($codeRef);
-            $mod = $1 if($subname =~ m/^(.+)::.*?$/);
+            $pack = $1 if($subname =~ m/^(.+)::.*?$/);
         } else {
             # Pure Perl version is not as good. Only needed for Perl < 5.22
-            $mod = $meta->GV->STASH->NAME if $meta->GV->isa('B::SPECIAL');
+            $pack = $meta->GV->STASH->NAME if $meta->GV->isa('B::SPECIAL');
         }
-        return 0 if $file =~ /([\0-\x1F])/ or $mod =~ /([\0-\x1F])/;
+        return 0 if $file =~ /([\0-\x1F])/ or $pack =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
-        if (($file and $file ne $0) or ($mod and $mod ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
-            print_tag($sDisplayName || $sFullPath, $subType, $file, $mod, $line, '') ;
+        if (($file and $file ne $0) or ($pack and $pack ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
+            print_tag($sDisplayName || $sFullPath, $subType, $file, $pack, $line, '') ;
             return 1;
         }
     }
@@ -77,11 +77,11 @@ sub maybe_print_sub_info {
 
 sub print_tag {
     # Dump details to STDOUT. Format depends on type
-    my ($symbol, $type, $file, $mod, $line, $value) = @_;
+    my ($symbol, $type, $file, $pack, $line, $value) = @_;
     #TODO: strip tabs and newlines from all of these? especially value
     return if $value =~ /[\0-\x1F]/;
     $file = '' if $file =~ /^\(eval/;
-    print "$symbol\t$type\t$file\t$mod\t$line\t$value\n";
+    print "$symbol\t$type\t$file\t$pack\t$line\t$value\n";
 }
 
 sub run_pltags {
@@ -110,14 +110,14 @@ sub dump_vars_to_main {
 
         if (defined ${$sFullPath}) {
             my $value = ${$sFullPath};
-            print_tag("\$$thing", "v", '', '', '', $value);
+            print_tag("\$$thing", "c", '', '', '', $value);
         } elsif (@{$sFullPath}) {
             my $value = join(',', map({ defined($_) ? $_ : "" } @{$sFullPath}));
-            print_tag("\@$thing", "v", '', '', '', $value);
+            print_tag("\@$thing", "c", '', '', '', $value);
         } elsif (%{$sFullPath} ) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them. Reconsider printing values if you find a good use-case.
-            print_tag("%$thing", "v", '', '', '', '');
+            print_tag("%$thing", "c", '', '', '', '');
         }
     }
 }

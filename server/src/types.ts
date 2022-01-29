@@ -24,9 +24,10 @@ export interface NavigatorSettings {
 
 
 export interface PerlElem {
+    name: string,
     type: string;
     file: string;
-    module: string;
+    package: string;
     line: number;
     value: string;
 };

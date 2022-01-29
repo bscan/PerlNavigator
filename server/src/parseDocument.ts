@@ -33,7 +33,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     const name    = items[0];
     const type    = items[1] || ""; 
     const file    = items[2] || ""; 
-    const module  = items[3] || ""; 
+    const pack = items[3] || ""; 
     const lineNum = items[4] ? +items[4] : 0; 
     const value   = items[5] || ""; 
 
@@ -54,9 +54,10 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     // Add anyway
     const newElem: PerlElem = {
+        name: name,
         type: type,
         file: file,
-        module: module,
+        package: pack,
         line: lineNum,
         value: value,
     };

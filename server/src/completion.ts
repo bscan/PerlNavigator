@@ -84,10 +84,12 @@ function getImportPrefix(text: string, position: number): CompletionPrefix | und
 function getImportMatches(mods: string[], symbol: string,  replace: Range): CompletionItem[] {
     const matches: CompletionItem[] = []
 
+    const lcSymbol = symbol.toLowerCase();
     mods.forEach(mod => {
-        if(mod.startsWith(symbol)){
+        if(mod.toLowerCase().startsWith(lcSymbol)){
             matches.push({
                 label: mod,
+                textEdit: {newText: mod, range: replace},
                 kind: CompletionItemKind.Module,
             });
         }
@@ -111,7 +113,8 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
     // If the magic variable $self->, then autocomplete to everything in main. 
     const bSelf = /^(\$self):(?::\w*)?$/.exec(qualifiedSymbol);
-           
+    const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
+
     perlDoc.elems.forEach((element: PerlElem, elemName: string) => {
         if(/\s/.test(elemName)) return; // Remove my "use" statements. TODO: put these somewhere other than doc.elems
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
@@ -119,7 +122,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
         // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list.
         if(bSelf && ["s", "i"].includes(element.type) ) elemName = `$self::${elemName}`;
 
-        if (goodMatch(perlDoc, elemName, qualifiedSymbol)){
+        if (goodMatch(perlDoc, elemName, lcQualifiedSymbol)){
             // Hooray, it's a match! 
 
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
@@ -143,9 +146,9 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 }
 
 // TODO: preprocess all "allowed" matches so we don't waste time iterating over them for every autocomplete.
-function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: string): boolean {
+function goodMatch(perlDoc: PerlDocument, elemName: string, lcQualifiedSymbol: string): boolean {
 
-    if(!elemName.startsWith(qualifiedSymbol)) return false;
+    if(!elemName.toLowerCase().startsWith(lcQualifiedSymbol)) return false;
 
     // Get the module name to see if it's been imported. Otherwise, don't allow it.
     let modRg = /^(.+)::.*?$/;

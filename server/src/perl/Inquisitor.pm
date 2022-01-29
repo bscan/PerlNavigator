@@ -70,8 +70,6 @@ sub maybe_print_sub_info {
         if (($file and $file ne $0) or ($mod and $mod ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
             print_tag($sDisplayName || $sFullPath, $subType, $file, $mod, $line, '') ;
             return 1;
-        } else {
-            print "Skip printing $sDisplayName / $sFullPath from $mod\n";
         }
     }
     return 0;

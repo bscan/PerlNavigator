@@ -86,7 +86,6 @@ sub myuniq {
 my $foo = get_modules();
 
 print "Dumping Mods\n";
-sleep 10;
 
 foreach my $mod (keys %$foo){
     # Name mangling to avoid picking up random stuff from stdout. 

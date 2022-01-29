@@ -17,27 +17,21 @@ CHECK {
         # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
         eval { require Sub::Util; $bIdentify = 1; }; 
 
-        my $modules = dump_loaded_mods();
+        dump_loaded_mods();
 
         dump_vars_to_main("main");
 
-        my $seen = {};
-        my $allowance = 30000;
         # This following one has the largest impact on memory and finds less interesting stuff. Low limits though, which probably helps
-        $modules = filter_modpacks($modules);
-        $allowance = dump_subs_from_modpacks($modules, $seen, $allowance);
-
-        print "Done with priority modules. Moving to remaining packages with an allowance of $allowance\n";
         my $allPackages = get_all_packages();
-        $allPackages = filter_modpacks($allPackages); 
-        dump_subs_from_modpacks($allPackages, $seen, $allowance);
+        $allPackages = filter_packages($allPackages); 
+        dump_subs_from_packages($allPackages);
 
         my $packages = run_pltags();
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
             print "Inspecting package $package\n";
-            # This is finding packages in the file we're inspecting, and then dumping them into the files namespace for easy navigation
+            # This is finding packages in the file we're inspecting, and then dumping them into a single namespace in the file
             dump_vars_to_main($package) if $package;
             dump_inherited_to_main($package) if $package;
         }
@@ -151,20 +145,19 @@ sub populate_preloaded {
     }
 }
 
-sub dump_subs_from_modpacks {
+sub dump_subs_from_packages {
     my ($modpacks, $seen, $allowance) = @_;
     my $totalCount = 0;
     my %baseCount;
     my $baseRegex = qr/^(\w+::\w+)/;
 
-    # Just in case we find too much stuff. Arbitrary limit of 100 elements per module, 200 fully loaded modules.
+    # Just in case we find too much stuff. Arbitrary limit of 100 elements per module, 300 fully loaded packages.
     # results in 10 fully loaded files in the server before we start dropping them on the ground because of the lru-cache
     # Test with these limits and then bump them up if things are working well 
     my $modLimit  = 100;
     my $nameSpaceLimit = 4000; # Applied to Foo::Bar 
-    my $totalLimit = $allowance; 
+    my $totalLimit = 30000; 
     INSPECTOR: foreach my $mod (@$modpacks){
-        next if $seen->{$mod}++;
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
         my $methods = lib_bs22::Inspectorito->local_methods( $mod );
@@ -190,12 +183,11 @@ sub dump_subs_from_modpacks {
         $baseCount{$1} += $pkgCount if ($mod =~ $baseRegex);
     }
 
-    $allowance -= $totalCount;
-    return $allowance;
+    return;
 }
 
-sub filter_modpacks {
-    my ($modpacks) = @_;
+sub filter_packages {
+    my ($packs) = @_;
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
@@ -210,7 +202,7 @@ sub filter_modpacks {
     my $private = qr/::_\w+/;
 
     foreach (@preloaded) { $filter{$_} = 0 }; 
-    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$modpacks;
+    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$packs;
     print "\n\nKeeping the following @filtered\n\n";
     return \@filtered;
 }
@@ -224,10 +216,9 @@ sub dump_loaded_mods {
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
         my $path = $INC{$module};
-        push @modules, $display_mod if lib_bs22::Inspectorito->loaded($display_mod);
-        print_tag("$display_mod", "m", $path, $display_mod, 0, "");
+        print_tag("$display_mod", "m", $path, $display_mod, 0, "") if lib_bs22::Inspectorito->loaded($display_mod);
     }
-    return \@modules;
+    return;
 }
 
 sub get_all_packages {

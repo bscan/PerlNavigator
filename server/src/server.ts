@@ -24,7 +24,7 @@ import {
 
 import Uri from 'vscode-uri';
 import { perlcompile, perlcritic } from "./diagnostics";
-import { getDefinition } from "./navigation";
+import { getDefinition, getAvailableMods } from "./navigation";
 import { buildNav } from "./parseDocument";
 
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
@@ -149,7 +149,9 @@ const documentDiags: Map<string, Diagnostic[]> = new Map();
 const navSymbols = new LRU({max: 250000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
 //     dispose: function (key, n) { n.close() }
 
-
+// Keep track of modules available for import. Building this is a slow operations and varies based on workspace settings, not documents
+const availableMods: Map<string, string[]> = new Map();
+let modCacheBuilt: boolean = false;
 
 connection.onDidChangeConfiguration(change => {
     if (hasConfigurationCapability) {
@@ -160,9 +162,38 @@ connection.onDidChangeConfiguration(change => {
             (change.settings.perlnavigator || defaultSettings)
         );
     }
+
+    rebuildModCache();
     // Pretty rare occurence, and can slow things down. Revalidate all open text documents
     // documents.all().forEach(validatePerlDocument);
 });
+
+async function rebuildModCache(){
+    const allDocs = documents.all();
+    if (allDocs.length > 0){
+        modCacheBuilt = true;
+        dispatchForMods(allDocs[allDocs.length-1]); // Rebuild with recent file
+    }
+    return;
+}
+
+async function buildModCache(textDocument: TextDocument){
+    if(!modCacheBuilt){
+        modCacheBuilt = true;
+        dispatchForMods(textDocument); 
+    }
+    return;
+}
+
+async function dispatchForMods(textDocument: TextDocument) {
+    // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
+    const settings = await getDocumentSettings(textDocument.uri);
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
+    const newMods = await getAvailableMods(workspaceFolders, settings);
+    console.log("Print found mods" + newMods.length);
+    availableMods.set('default', newMods);
+    return;
+}
 
 function getDocumentSettings(resource: string): Thenable<NavigatorSettings> {
     if (!hasConfigurationCapability) {
@@ -190,6 +221,7 @@ documents.onDidClose(e => {
 // The document has been opened.
 documents.onDidOpen(change => {
     validatePerlDocument(change.document);
+    buildModCache(change.document);
 });
 
 documents.onDidSave(change => {
@@ -255,9 +287,12 @@ function sendDiags(params: PublishDiagnosticsParams): void{
 connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
+    let mods = availableMods.get('default');
+
     if(!document) return [];
     if(!perlDoc) return []; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    let compOut: CompletionItem[] = getCompletions(params, perlDoc, document);
+    if(!mods) mods = [];
+    let compOut: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
     return compOut;
 });
 	

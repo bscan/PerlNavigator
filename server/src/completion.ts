@@ -8,7 +8,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, CompletionPrefix } from "./types";
 
 
-export function getCompletions(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument): CompletionItem[] {
+export function getCompletions(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, mods: string[]): CompletionItem[] {
 
     let position = params.position
     const start = { line: position.line, character: 0 };
@@ -17,19 +17,30 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
 
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
-    const prefix = getPrefix(text, index);
+    const imPrefix = getImportPrefix(text, index);
+    if (imPrefix) {
+        const replace: Range = {
+            start: { line: position.line, character: imPrefix.charStart },
+            end: { line: position.line, character: imPrefix.charEnd }  
+        };
 
-    if(!prefix.symbol) return [];
-    console.log("Looking at prefix: " + prefix.symbol);
+        const matches = getImportMatches(mods, imPrefix.symbol, replace);
+        return matches;
 
-    const replace: Range = {
-            start: { line: position.line, character: prefix.charStart },
-            end: { line: position.line, character: prefix.charEnd }  
-    };
+    } else {
+        const prefix = getPrefix(text, index);
 
-    const matches = getMatches(perlDoc, prefix.symbol, replace);
+        if(!prefix.symbol) return [];
+        console.log("Looking at prefix: " + prefix.symbol);
 
-    return matches;
+        const replace: Range = {
+                start: { line: position.line, character: prefix.charStart },
+                end: { line: position.line, character: prefix.charEnd }  
+        };
+
+        const matches = getMatches(perlDoc, prefix.symbol, replace);
+        return matches;
+    }
 
 }
 
@@ -40,14 +51,13 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     const leftAllow  = (c: string) => /[\w\:\>\-]/.exec(c);
 
     let left = position - 1;
-    let right = position;
 
     while (left >= 0 && leftAllow(text[left])) {
         left -= 1;
     }
     left = Math.max(0, left + 1);
 
-    let symbol = text.substring(left, right);
+    let symbol = text.substring(left, position);
     const lChar  = left > 0 ? text[left-1] : "";
 
     if(lChar === '$' || lChar === '@' || lChar === '%'){
@@ -55,9 +65,35 @@ function getPrefix(text: string, position: number): CompletionPrefix {
         left -= 1;
     }
 
-    return {symbol: symbol, charStart: left, charEnd: right};
+    return {symbol: symbol, charStart: left, charEnd: position};
 }
 
+// First we check if it's an import statement, which is a special type of autocomplete with far more options
+function getImportPrefix(text: string, position: number): CompletionPrefix | undefined {
+
+    text = text.substring(0, position);
+    console.log(`import check of ${text}`);
+
+    let partialImport = /^\s*(?:use|require)\s+([\w:]+)$/.exec(text);
+    if(!partialImport) return;
+    const symbol = partialImport[1];
+
+    return {symbol: symbol, charStart: position - symbol.length, charEnd: position};
+}
+
+function getImportMatches(mods: string[], symbol: string,  replace: Range): CompletionItem[] {
+    const matches: CompletionItem[] = []
+
+    mods.forEach(mod => {
+        if(mod.startsWith(symbol)){
+            matches.push({
+                label: mod,
+                kind: CompletionItemKind.Module,
+            });
+        }
+    });
+    return matches;
+}
 
 function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): CompletionItem[] {
 
@@ -127,6 +163,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
 function buildMatch(elemName: string, elem: PerlElem, range: Range): CompletionItem {
 
     let kind: CompletionItemKind;
+
     if (elem.type.length > 1 || ( elem.type == 'v' && elemName == '$self')) {
         // We either know the object type, or it's $self
         kind = CompletionItemKind.Class;

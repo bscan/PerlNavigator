@@ -54,7 +54,6 @@ export interface DiagnosedDoc {
     rawTags: string,
 }
 
-
 export interface CompletionPrefix {
     symbol: string,
     charStart: number,

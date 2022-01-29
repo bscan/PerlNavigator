@@ -8,10 +8,8 @@ import {
 } from 'vscode-languageserver-protocol';
 import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
-import { execFile } from 'child_process';
-import { promisify } from 'util';
+import { getIncPaths, async_execFile } from './utils';
 
-const async_execFile = promisify(execFile);
 
 export async function perlcompile(filePath: string, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<DiagnosedDoc> {
     let perlParams: string[] = ["-c"];
@@ -55,27 +53,6 @@ function getInquisitor(): string[]{
     const inq_loc = join(dirname(__dirname), 'src', 'perl');
     let inq: string[] = ['-I', inq_loc, '-MInquisitor'];
     return inq;
-}
-
-// TODO: This behaviour should be temporary. Review and update treatment of multi-root workspaces
-function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): string[] {
-    let includePaths: string[] = [];
-
-    settings.includePaths.forEach(path => {
-        if (/\$workspaceFolder/.test(path)) {
-            if (workspaceFolders) {
-                workspaceFolders.forEach(workspaceFolder => {
-                    const incPath = Uri.parse(workspaceFolder.uri).fsPath;
-                    includePaths = includePaths.concat(["-I", path.replace(/\$workspaceFolder/g, incPath)]);
-                });
-            } else {
-                console.log("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path);
-            }
-        } else {
-            includePaths = includePaths.concat(["-I", path]);
-        }
-    });
-    return includePaths;
 }
 
 function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diagnostics: Diagnostic[], filePath: string): void {

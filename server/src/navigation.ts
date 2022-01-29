@@ -1,14 +1,16 @@
 import {
     DefinitionParams,
     Location,
+    WorkspaceFolder
 } from 'vscode-languageserver/node';
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem } from "./types";
+import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
 import Uri from 'vscode-uri';
-import { realpathSync } from 'fs';
-
+import { realpathSync, existsSync } from 'fs';
+import { getIncPaths, async_execFile} from "./utils";
+import { dirname, join } from 'path';
 
 
 
@@ -80,8 +82,8 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
         const lineNum = elemResolved.line < 1 ? 0 : elemResolved.line-1;
 
         // TODO: make this whole thing async
-        let uri =  Uri.file(realpathSync(elemResolved.file)).toString();
-        console.log("Sending to " + uri);
+        if(!existsSync(elemResolved.file)) return; // Make sure the file exists and hasn't been deleted.
+        let uri =  Uri.file(realpathSync(elemResolved.file)).toString(); // Resolve symlinks
         const newLoc: Location = {
             uri: uri,
             range: { 
@@ -177,4 +179,38 @@ function resolveElem (perlDoc: PerlDocument, elem: PerlElem, symbol: string): Pe
 
 function badFile (file: string){
     return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm)$/.test(file);
+}
+
+
+export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<string[]> {
+       
+    let perlParams: string[] = [];
+    perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
+    const modHunterPath = join(dirname(__dirname), 'src', 'perl', 'lib_bs22', 'ModHunter.pl');
+    perlParams.push(modHunterPath);
+    console.log("Starting to look for perl modules with " + perlParams.join(" "));
+
+    const mods: string[] = [];
+
+    let output: string;
+    try {
+        // This can be slow, especially if reading modules over a network or on windows. 
+        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 90000, maxBuffer: 3 * 1024 * 1024});
+        output = out.stdout;
+        console.log("Success running mod hunter");
+    } catch(error: any) {
+        console.log("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal");
+        console.log(error);
+        return mods;
+    }
+
+    output.split("\n").forEach(mod => {
+        var items = mod.split('\t');
+
+        if(items.length != 4 || items[1] != 'M' || !items[2]){
+            return;
+        }
+        mods.push(items[2]);
+    });
+    return mods;
 }

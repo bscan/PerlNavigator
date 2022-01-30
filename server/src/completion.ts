@@ -121,8 +121,10 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
     // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase(); Case insensitive matches are hard since we restore what you originally matched on
 
-    perlDoc.elems.forEach((element: PerlElem, elemName: string) => {
+    perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
+
+        const element = elements[0]; // All Elements are with same name are normally the same.
 
         // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list, despite perl allowing them called on $self->
         if(bSelf && ["s", "i"].includes(element.type) ) elemName = `$self::${elemName}`;

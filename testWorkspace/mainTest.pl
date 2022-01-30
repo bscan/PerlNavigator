@@ -116,7 +116,6 @@ for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
     print "$cStyleLoopVar";
 }
 
-
 my $dbh2 = MyLib::DBI->connect();
 
 print "\nDone with test script\n";

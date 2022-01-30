@@ -55,7 +55,7 @@ sub maybe_print_sub_info {
         $meta->isa('B::CV') or return 0;
 
         my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
-        my $line = $meta->START->isa('B::COP') ? $meta->START->line - 1: $UNKNOWN;
+        my $line = $meta->START->isa('B::COP') ? $meta->START->line - 2: $UNKNOWN;
         my $pack = $UNKNOWN;
         my $subname = $UNKNOWN;
         if ($bIdentify) {
@@ -85,6 +85,7 @@ sub print_tag {
     #TODO: strip tabs and newlines from all of these? especially value
     return if $value =~ /[\0-\x1F]/;
     $file = '' if $file =~ /^\(eval/;
+    $line = 0 if ($line ne '' and $line < 0); 
     print "$symbol\t$type\t$typeDetails\t$file\t$pack\t$line\t$value\n";
 }
 

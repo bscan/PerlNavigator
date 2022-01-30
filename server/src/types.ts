@@ -45,7 +45,7 @@ export interface PerlImport {
 
 
 export interface PerlDocument {
-    elems: Map<string, PerlElem>;
+    elems: Map<string, PerlElem[]>;
     vartypes: Map<string, PerlType>;
     imported: Map<string, boolean>;
 }

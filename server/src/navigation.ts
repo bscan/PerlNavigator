@@ -67,7 +67,7 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     if(!symbol) return;
     console.log("Looking for: " + symbol);
 
-    const foundElems = lookupSymbol(perlDoc, symbol);
+    const foundElems = lookupSymbol(perlDoc, symbol, position.line);
 
     if(foundElems.length == 0){
         console.log("Could not find word: " + symbol);
@@ -79,7 +79,6 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     foundElems.forEach(elem => {
         const elemResolved: PerlElem | undefined = resolveElem(perlDoc, elem, symbol);
         if(!elemResolved) return;
-        const lineNum = elemResolved.line < 1 ? 0 : elemResolved.line-1;
 
         // TODO: make this whole thing async
         if(!existsSync(elemResolved.file)) return; // Make sure the file exists and hasn't been deleted.
@@ -87,8 +86,8 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
         const newLoc: Location = {
             uri: uri,
             range: { 
-                start: { line: lineNum, character: 0 },
-                end: { line: lineNum, character: 500}
+                start: { line: elemResolved.line, character: 0 },
+                end: { line: elemResolved.line, character: 500}
                 }
         }
         locationsFound.push(newLoc);
@@ -96,11 +95,19 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     return locationsFound;
 }
 
-function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
-    if(!symbol) return [];
+function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number): PerlElem[] {
 
     let found = perlDoc.elems.get(symbol);
-    if(found) return [found];
+    if(found?.length){
+        // Simple lookup worked. If we have multiple (e.g. 2 lexical variables), find the nearest earlier declaration. 
+        let best = found[0];
+        for (var i = 0; i < found.length; i++){
+            if(found[i].line > best.line && found[i].line <= line){
+                best = found[i];
+            }
+        };
+        return [best];
+    }
 
     let qSymbol = symbol;
     let knownObject = /^(\$\w+)\->(?:\w+)$/.exec(symbol);
@@ -113,15 +120,15 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
     let synonyms = ['_init', 'BUILD'];
     for (const synonym of synonyms){
         found = perlDoc.elems.get(symbol.replace(/->new$/, "::" + synonym));
-        if(found) return [found];
+        if(found?.length) return [found[0]];
     }
     found = perlDoc.elems.get(symbol.replace(/DBI->new$/, "DBI::connect"));
-    if(found) return [found];
+    if(found?.length) return [found[0]];
     
 
     qSymbol = qSymbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
     found = perlDoc.elems.get(qSymbol);
-    if(found) return [found];
+    if(found?.length) return [found[0]];
 
     if(qSymbol.includes('::')){
     // Seems like we should only hunt for -> funcs not ::, but I'm not sure it can hurt. We're already unable to find it.
@@ -132,10 +139,11 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string): PerlElem[] {
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);
-            if(found) return [found];
+            if(found?.length) return [found[0]];
             // Haven't found the method yet, let's check if anything could be a possible match since you don't know the object type
             let foundElems: PerlElem[] = [];
-            perlDoc.elems.forEach((element: PerlElem, elemName: string) => {
+            perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
+                const element = elements[0]; // All Elements are with same name are normally the same.
                 const elemMethod = elemName.split('::').pop();
                 if(elemMethod == method){
                     foundElems.push(element);
@@ -158,8 +166,9 @@ function resolveElem (perlDoc: PerlDocument, elem: PerlElem, symbol: string): Pe
         // Happens with XS subs and Moo subs
         if(elem.package){
             const elemResolved = perlDoc.elems.get(elem.package);
-            if(elemResolved && elemResolved.file && !badFile(elem.file)){
-                return elemResolved;
+
+            if(elemResolved?.length && elemResolved[0].file && !badFile(elem.file)){
+                return elemResolved[0];
             }
         }
 

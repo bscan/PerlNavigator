@@ -64,7 +64,13 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         value: value,
     };
 
-    perlDoc.elems.set(name, newElem);
+    addVal(perlDoc.elems, name, newElem);
 
     return;
+}
+
+function addVal (map: Map<string, any[]>, key: string, value: any) {
+    let array = map.get(key) || [];
+    array.push(value)
+    map.set(key, array);
 }

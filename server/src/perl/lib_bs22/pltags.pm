@@ -89,7 +89,7 @@ sub build_pltags {
     my $package_name  = "";
     my $var_continues = 0;
     my $file_handle;
-    my $line_number = 0;
+    my $line_number = -1;
     open($file_handle, '<', $file) or die "Can't open file '$file': $!";
 
     # Loop through file

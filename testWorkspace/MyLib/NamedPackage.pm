@@ -26,6 +26,10 @@ sub duplicate_sub_name {
 
 package MyLib::SubPackage;
 
+sub new {
+    return bless {};
+}
+
 sub subpackage_mod {
     print "in subpackage_mod\n";
 }

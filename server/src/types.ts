@@ -26,6 +26,7 @@ export interface NavigatorSettings {
 export interface PerlElem {
     name: string,
     type: string;
+    typeDetail: string,
     file: string;
     package: string;
     line: number;
@@ -47,7 +48,6 @@ export interface PerlDocument {
     elems: Map<string, PerlElem>;
     vartypes: Map<string, PerlType>;
     imported: Map<string, boolean>;
-    imports: Map<string, PerlImport>;
 }
 
 export interface DiagnosedDoc {

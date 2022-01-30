@@ -110,6 +110,8 @@ $mooseObj->moose_sub();
 
 my $nonObject = MyLib::MooseClass->new()->moose_sub();
 
+my $hiddenPackObj = MyLib::SubPackage->new();
+
 for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
     print "$cStyleLoopVar";
 }

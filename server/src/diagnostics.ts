@@ -17,7 +17,7 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
     perlParams.push(filePath);
-    console.log("Starting perl compilation check with: " + perlParams.join(" "));
+    console.log("Starting perl compilation check with: " + settings.perlPath + " " + perlParams.join(" "));
 
     let output: string;
     let stdout: string;

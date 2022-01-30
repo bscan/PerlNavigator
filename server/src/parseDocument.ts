@@ -10,7 +10,6 @@ export async function buildNav(stdout: string): Promise<PerlDocument> {
             elems: new Map(),
             vartypes: new Map(),
             imported: new Map(),
-            imports: new Map(),
         };
 
     stdout.split("\n").forEach(perl_elem => {
@@ -25,17 +24,19 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     var items = perlTag.split('\t');
 
-    if(items.length != 6){
+    if(items.length != 7){
         return;
     }
     if (!items[0] || items[0]=='_') return; // Need a look-up key
 
-    const name    = items[0];
-    const type    = items[1] || ""; 
-    const file    = items[2] || ""; 
-    const pack = items[3] || ""; 
-    const lineNum = items[4] ? +items[4] : 0; 
-    const value   = items[5] || ""; 
+    const name       = items[0];
+    const type       = items[1] || ""; 
+    const typeDetail = items[2] || ""; 
+    const file       = items[3] || ""; 
+    const pack       = items[4] || ""; 
+    const lineNum    = items[5] ? +items[5] : 0; 
+    const value      = items[6] || ""; 
+
 
     if (type.length > 1){
         const newType: PerlType = {
@@ -47,7 +48,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     if (type == 'u'){
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, true);
-        if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
+        // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 
 
@@ -56,6 +57,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     const newElem: PerlElem = {
         name: name,
         type: type,
+        typeDetail: typeDetail,
         file: file,
         package: pack,
         line: lineNum,

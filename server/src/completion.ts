@@ -73,7 +73,6 @@ function getPrefix(text: string, position: number): CompletionPrefix {
 function getImportPrefix(text: string, position: number): CompletionPrefix | undefined {
 
     text = text.substring(0, position);
-    console.log(`import check of ${text}`);
 
     let partialImport = /^\s*(?:use|require)\s+([\w:]+)$/.exec(text);
     if(!partialImport) return;
@@ -105,30 +104,35 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     let qualifiedSymbol = symbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
     qualifiedSymbol = qualifiedSymbol.replace(/-$/g, ":"); // Maybe I just started typing Module-
 
+    let bKnownObj = false;
     // Check if we know the type of this object
     let knownObject = /^(\$\w+):(?::\w*)?$/.exec(qualifiedSymbol);
     if(knownObject){
         const targetVar = perlDoc.vartypes.get(knownObject[1]);
-        if(targetVar) qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.type);
+        if(targetVar){
+            qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.type);
+            bKnownObj = true;
+        }
     }
 
     // If the magic variable $self->, then autocomplete to everything in main. 
     const bSelf = /^(\$self):(?::\w*)?$/.exec(qualifiedSymbol);
-    const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
+    if(bSelf) bKnownObj = true;
+
+    // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase(); Case insensitive matches are hard since we restore what you originally matched on
 
     perlDoc.elems.forEach((element: PerlElem, elemName: string) => {
-        if(/\s/.test(elemName)) return; // Remove my "use" statements. TODO: put these somewhere other than doc.elems
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
 
-        // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list.
+        // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list, despite perl allowing them called on $self->
         if(bSelf && ["s", "i"].includes(element.type) ) elemName = `$self::${elemName}`;
 
-        if (goodMatch(perlDoc, elemName, lcQualifiedSymbol)){
+        if (goodMatch(perlDoc, elemName, qualifiedSymbol, bKnownObj)){
             // Hooray, it's a match! 
-
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, '\\$1'); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
+            // console.log(`${symbol} became ${qualifiedSymbol} and matched with ${elemName}, so we displayed: ${aligned}`);
 
             if(symbol.endsWith('-')) aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->');  // Half-arrows count too
 
@@ -147,21 +151,22 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 }
 
 // TODO: preprocess all "allowed" matches so we don't waste time iterating over them for every autocomplete.
-function goodMatch(perlDoc: PerlDocument, elemName: string, lcQualifiedSymbol: string): boolean {
+function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: string, bKnownObj: boolean): boolean {
 
-    if(!elemName.toLowerCase().startsWith(lcQualifiedSymbol)) return false;
+    if(!elemName.startsWith(qualifiedSymbol)) return false;
+
+    if(bKnownObj) return true;
 
     // Get the module name to see if it's been imported. Otherwise, don't allow it.
     let modRg = /^(.+)::.*?$/;
     var match = modRg.exec(elemName);
-    if(match){
-        if(!perlDoc.imported.has(match[1]) && match[1] != '$self'){
-            // Thing looks like a module, but was not explicitly imported
-            return false;
-        }
+    if(match && !perlDoc.imported.has(match[1])){
+        // Thing looks like a module, but was not explicitly imported
+        return false;
+    } else {
+        // Thing was either explictly imported or not a module function
+        return true;
     }
-    // Thing was either explictly imported or not a module function
-    return true;
 }
 
 function buildMatch(lookupName: string, elem: PerlElem, range: Range): CompletionItem {
@@ -175,20 +180,27 @@ function buildMatch(lookupName: string, elem: PerlElem, range: Range): Completio
         // We either know the object type, or it's $self
         kind = CompletionItemKind.Variable;
         if(elem.type.length > 1 ){
-            docs.push(`${lookupName}: ${elem.type}`);
+            detail = `${lookupName}: ${elem.type}`;
         } else if (lookupName == '$self') {
-            docs.push(`${lookupName}: $self`); // I don't actually know the type, just matching with things in the current namespace.
+            // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
+            detail = `${lookupName}: ${elem.package}`; 
         }
     } else if(elem.type == 'v'){ 
         kind = CompletionItemKind.Variable;
     } else if(elem.type == 'c'){ 
         kind = CompletionItemKind.Constant;
+        // detail = elem.name;
+        docs.push(elem.name);
+        docs.push(`Value: ${elem.value}`);
+    } else if(elem.type == 'h'){ 
+        kind = CompletionItemKind.Constant;
     } else if (elem.type == 's'){
         kind = CompletionItemKind.Function;
     } else if  (elem.type == 't' || elem.type == 'i'){
         kind = CompletionItemKind.Method;
-        docs.push(`Name  : ${elem.name}`);
-        docs.push(`Source: ${elem.package}`);
+        // detail = elem.name;
+        docs.push(elem.name);
+        if(elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
     }else if (elem.type == 'p' || elem.type == 'm'){
         kind = CompletionItemKind.Module;
     }else if (elem.type == 'l'){ // Loop labels
@@ -198,11 +210,8 @@ function buildMatch(lookupName: string, elem: PerlElem, range: Range): Completio
         kind = CompletionItemKind.Property;
     }
 
-    if( elem.value ) docs.push(`Value : ${elem.value}`);
-
     if(docs.length>0){
         documentation = {kind: "markdown", value: "```\n" + docs.join("\n") + "\n```" };
-        console.log("Printing value" + documentation.value);
     }
     
     // Ensure sorting has public methods up front, followed by private and then capital. (private vs capital is arbitrary, but public makes sense).

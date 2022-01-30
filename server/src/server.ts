@@ -11,7 +11,7 @@ import {
     InitializeResult,
     Location,
     CompletionItem,
-	CompletionItemKind,
+    CompletionList,
 	TextDocumentPositionParams,
 } from 'vscode-languageserver/node';
 
@@ -190,7 +190,7 @@ async function dispatchForMods(textDocument: TextDocument) {
     const settings = await getDocumentSettings(textDocument.uri);
     const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
     const newMods = await getAvailableMods(workspaceFolders, settings);
-    console.log("Print found mods" + newMods.length);
+    console.log("Number of modules found: " + newMods.length);
     availableMods.set('default', newMods);
     return;
 }
@@ -284,16 +284,19 @@ function sendDiags(params: PublishDiagnosticsParams): void{
 
 
 // This handler provides the initial list of the completion items.
-connection.onCompletion((params: TextDocumentPositionParams): CompletionItem[] => {
+connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
     let mods = availableMods.get('default');
 
-    if(!document) return [];
-    if(!perlDoc) return []; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    if(!document) return;
+    if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
     if(!mods) mods = [];
-    let compOut: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
-    return compOut;
+    const completions: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
+    return {
+        items: completions,
+        isIncomplete: false,
+    };
 });
 	
 

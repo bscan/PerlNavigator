@@ -57,9 +57,13 @@ sub maybe_print_sub_info {
         my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
         my $line = $meta->START->isa('B::COP') ? $meta->START->line - 1: $UNKNOWN;
         my $pack = $UNKNOWN;
+        my $subname = $UNKNOWN;
         if ($bIdentify) {
-            my $subname = Sub::Util::subname($codeRef);
+            $subname = Sub::Util::subname($codeRef);
             $pack = $1 if($subname =~ m/^(.+)::.*?$/);
+
+            # Subname is a fully qualified name. If it's the normal name, just ignore it.
+            $subname = '' if (($pack and $sSkipPackage and $pack eq $sSkipPackage) or ($pack eq 'main'));
         } else {
             # Pure Perl version is not as good. Only needed for Perl < 5.22
             $pack = $meta->GV->STASH->NAME if $meta->GV->isa('B::SPECIAL');
@@ -68,7 +72,7 @@ sub maybe_print_sub_info {
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
         if (($file and $file ne $0) or ($pack and $pack ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
-            print_tag($sDisplayName || $sFullPath, $subType, $file, $pack, $line, '') ;
+            print_tag($sDisplayName || $sFullPath, $subType, $subname, $file, $pack, $line, '') ;
             return 1;
         }
     }
@@ -77,11 +81,11 @@ sub maybe_print_sub_info {
 
 sub print_tag {
     # Dump details to STDOUT. Format depends on type
-    my ($symbol, $type, $file, $pack, $line, $value) = @_;
+    my ($symbol, $type, $typeDetails, $file, $pack, $line, $value) = @_;
     #TODO: strip tabs and newlines from all of these? especially value
     return if $value =~ /[\0-\x1F]/;
     $file = '' if $file =~ /^\(eval/;
-    print "$symbol\t$type\t$file\t$pack\t$line\t$value\n";
+    print "$symbol\t$type\t$typeDetails\t$file\t$pack\t$line\t$value\n";
 }
 
 sub run_pltags {
@@ -110,14 +114,14 @@ sub dump_vars_to_main {
 
         if (defined ${$sFullPath}) {
             my $value = ${$sFullPath};
-            print_tag("\$$thing", "c", '', '', '', $value);
+            print_tag("\$$thing", "c", '', '', '', '', $value);
         } elsif (@{$sFullPath}) {
             my $value = join(',', map({ defined($_) ? $_ : "" } @{$sFullPath}));
-            print_tag("\@$thing", "c", '', '', '', $value);
+            print_tag("\@$thing", "c", '', '', '', '', $value);
         } elsif (%{$sFullPath} ) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them. Reconsider printing values if you find a good use-case.
-            print_tag("%$thing", "c", '', '', '', '');
+            print_tag("%$thing", "h", '', '', '', '', '');
         }
     }
 }
@@ -147,14 +151,14 @@ sub dump_subs_from_packages {
     my ($modpacks, $seen, $allowance) = @_;
     my $totalCount = 0;
     my %baseCount;
-    my $baseRegex = qr/^(\w+::\w+)/;
+    my $baseRegex = qr/^(\w+)/;
 
-    # Just in case we find too much stuff. Arbitrary limit of 100 elements per module, 300 fully loaded packages.
+    # Just in case we find too much stuff. Arbitrary limit of 100 subs per module, 200 fully loaded packages.
     # results in 10 fully loaded files in the server before we start dropping them on the ground because of the lru-cache
     # Test with these limits and then bump them up if things are working well 
     my $modLimit  = 100;
-    my $nameSpaceLimit = 4000; # Applied to Foo::Bar 
-    my $totalLimit = 30000; 
+    my $nameSpaceLimit = 6000; # Applied to Foo in Foo::Bar 
+    my $totalLimit = 20000; 
     INSPECTOR: foreach my $mod (@$modpacks){
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
@@ -214,7 +218,7 @@ sub dump_loaded_mods {
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
         my $path = $INC{$module};
-        print_tag("$display_mod", "m", $path, $display_mod, 0, "") if lib_bs22::Inspectorito->loaded($display_mod);
+        print_tag("$display_mod", "m", "", $path, $display_mod, 0, "") if lib_bs22::Inspectorito->loaded($display_mod);
     }
     return;
 }

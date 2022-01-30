@@ -4,6 +4,7 @@ use warnings;
 use MyLib::MyClass;
 use base qw(MyLib::MyClass);
 use Data::Dumper qw(Dumper);
+use MyLib::NonPackage;
 
 sub new {
     my $class = shift;

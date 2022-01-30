@@ -23,6 +23,7 @@ sub get_modules {
                     if($File::Find::dir =~ /\/\./){$File::Find::prune = 1; return }; # Skip hidden dirs
                     push @files, $_ if -f $_ and /\.pm$/ },
             no_chdir => 1,
+            follow_fast => 1,  # May generate duplicates
         },
         @find_dirs
     );

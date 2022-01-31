@@ -74,27 +74,18 @@ sub SubName {
 
 sub build_pltags {
 
-    my $file = shift;
+    my ($code, $file) = @_;
     my @tags = ();      # List of produced tags
     my @packages = ();    # List of discovered packages
 
-    # Skip if this is not a file we can open.  Also skip tags files and backup
-    # files
-
-    return \@tags unless ((-f $file)
-        && (-r $file)
-        && ($file !~ /tags$/)
-        && ($file !~ /~$/));
-
     my $package_name  = "";
     my $var_continues = 0;
-    my $file_handle;
-    my $line_number = -1;
-    open($file_handle, '<', $file) or die "Can't open file '$file': $!";
+    my $line_number = -4;
 
     # Loop through file
-    while ( my $line = <$file_handle> ){
+    foreach my $line (split("\n", $code)) {
         $line_number++;
+        next if $line_number < 0;
         # Statement is line with comments and whitespace trimmed
         my $stmt;
         ($stmt = $line) =~ s/#.*//;
@@ -209,7 +200,6 @@ sub build_pltags {
         }
 
     }
-    close($file_handle);
 
     return \@tags, \@packages;
 }

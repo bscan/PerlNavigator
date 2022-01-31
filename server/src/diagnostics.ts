@@ -10,21 +10,31 @@ import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
 import { getIncPaths, async_execFile } from './utils';
 
+import {
+    TextDocument
+} from 'vscode-languageserver-textdocument';
 
-export async function perlcompile(filePath: string, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<DiagnosedDoc> {
+export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<DiagnosedDoc> {
     let perlParams: string[] = ["-c"];
+    const filePath = Uri.parse(textDocument.uri).fsPath;
+
     if(settings.enableWarnings) perlParams.push("-Mwarnings");
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
-    perlParams.push(filePath);
-    console.log("Starting perl compilation check with: " + settings.perlPath + " " + perlParams.join(" "));
+    perlParams.push(filePath)
+
+    console.log("Starting perl compilation check with STDIN piped into: " + settings.perlPath + " " + perlParams.join(" "));
 
     let output: string;
     let stdout: string;
     let severity: DiagnosticSeverity;
     const diagnostics: Diagnostic[] = [];
+    const code = getAdjustedPerlCode(textDocument, filePath);
     try {
-        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
+        const process = async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
+        process?.child?.stdin?.write(code);
+        process?.child?.stdin?.end();
+        const out = await process;
 
         output = out.stderr;
         stdout = out.stdout;
@@ -50,9 +60,16 @@ export async function perlcompile(filePath: string, workspaceFolders: WorkspaceF
 }
 
 function getInquisitor(): string[]{
-    const inq_loc = join(dirname(__dirname), 'src', 'perl');
-    let inq: string[] = ['-I', inq_loc, '-MInquisitor'];
+    const inq_path = join(dirname(__dirname), 'src', 'perl');
+    const inq_file = join(inq_path, 'Inquisitor.pm');
+    let inq: string[] = ['-I', inq_path, inq_file];
     return inq;
+}
+
+function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): string {
+    let code = textDocument.getText();
+    code = `local \$0; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); } }\n# line 0 \"${filePath}\"\nreturn;\n` + code;
+    return code;
 }
 
 function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diagnostics: Diagnostic[], filePath: string): void {
@@ -63,12 +80,15 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     if(!match){
         return;
     }
+    if(/Too late to run CHECK block/.test(violation)) return;
+
     let lineNum = +match[2] - 1;
     if (match[1] != filePath){
         // The error/warnings must be in an imported library. TODO: Place error on the import statement. For now, line 0 works
         lineNum = 0;
     }
     violation = violation.replace(/\r/g, ""); // Clean up for Windows
+    violation = violation.replace(/, <STDIN> line 1\.$/g, ""); // Remove our stdin nonsense
 
     diagnostics.push({
         severity: severity,
@@ -81,16 +101,18 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     });
 }
 
-export async function perlcritic(filePath: string, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
-
+export async function perlcritic(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
+    if(!settings.perlcriticEnabled) return []; 
     let criticParams: string[] = ['--verbose', '%s~|~%l~|~%c~|~%m~|~%p~||~%n'];
     criticParams = criticParams.concat(getCriticProfile(workspaceFolders, settings));
-    criticParams.push(filePath);
     console.log("Now starting perlcritic with: " + criticParams.join(" "));
-
+    let code = textDocument.getText();
     const diagnostics: Diagnostic[] = [];
     try {
-        const { stdout, stderr } = await async_execFile(settings.perlcriticPath, criticParams, {timeout: 25000});
+        const process = async_execFile(settings.perlcriticPath, criticParams, {timeout: 25000});
+        process?.child?.stdin?.write(code);
+        process?.child?.stdin?.end();
+        const { stdout, stderr } = await process;
     } catch(error: any) {
         if("stdout" in error){
             // if ("stderr" in error && error.stderr) console.log("perl critic diags: " + error.stderr);

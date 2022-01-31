@@ -128,6 +128,7 @@ const defaultSettings: NavigatorSettings = {
     enableWarnings: true,
     perlcriticPath: "perlcritic",
     perlcriticProfile: "",
+    perlcriticEnabled: false,
     severity5: "warning",
     severity4: "info",
     severity3: "hint",
@@ -148,6 +149,8 @@ const documentDiags: Map<string, Diagnostic[]> = new Map();
 // My ballpark estimate is that 250k symbols will be about 25MB. Huge map, but a reasonable limit. 
 const navSymbols = new LRU({max: 250000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
 //     dispose: function (key, n) { n.close() }
+
+const timers: Map<string, NodeJS.Timeout> = new Map();
 
 // Keep track of modules available for import. Building this is a slow operations and varies based on workspace settings, not documents
 const availableMods: Map<string, string[]> = new Map();
@@ -228,6 +231,17 @@ documents.onDidSave(change => {
     validatePerlDocument(change.document);
 });
 
+// The content of a text document has changed. This event is emitted
+// when the text document first opened or when its content has changed.
+documents.onDidChangeContent(change => {
+
+    // VSCode sends a firehose of change events. Only check after it's been quiet for 1 second.
+    const timer = timers.get(change.document.uri)
+    if(timer) clearTimeout(timer);
+    const newTimer = setTimeout(function(){ validatePerlDocument(change.document)}, 1000);
+    timers.set(change.document.uri, newTimer);
+});
+
 
 // TODO: Currently, we aren't monitoring files that change under our feet (e.g from git pull)
 // connection.onDidChangeWatchedFiles(change => {
@@ -248,14 +262,14 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const start = Date.now();
 
     const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
-    const pCompile = perlcompile(filePath, workspaceFolders, settings); // Start compilation
-    const pCritic = perlcritic(filePath, workspaceFolders, settings); // Start perlcritic
+    const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
+    const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
 
     let perlOut = await pCompile;
     connection.console.log("Compilation Time: " + (Date.now() - start)/1000 + " seconds");
     let oldCriticDiags = documentDiags.get(textDocument.uri);
     let mixOldAndNew = perlOut.diags;
-    if(oldCriticDiags) {
+    if(oldCriticDiags && settings.perlcriticEnabled) {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }     
@@ -264,12 +278,15 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const pNav = await buildNav(perlOut.rawTags);
     navSymbols.set(textDocument.uri, pNav);
     connection.console.log("Symbols parse Time: " + (Date.now() - start)/1000 + " seconds. Found " + pNav.elems.size + " symbols.");
-    const diagCritic = await pCritic;
-    documentDiags.set(textDocument.uri, diagCritic);
-    const allNewDiags = perlOut.diags.concat(diagCritic);
-    connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
-    sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
 
+    // Perl critic things
+    const diagCritic = await pCritic;
+    documentDiags.set(textDocument.uri, diagCritic); // May need to clear out old ones if a user changed their settings.
+    if(settings.perlcriticEnabled){
+        const allNewDiags = perlOut.diags.concat(diagCritic);
+        connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
+        sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
+    }
     return;
 }
 

@@ -56,6 +56,10 @@ foreach my $lexLoopDuplicate (1..3){
     print $lexLoopDuplicate;
 }
 
+for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
+    print "$cStyleLoopVar";
+}
+
 print imported_constant . "\n";
 
 print $our_variable . "\n";
@@ -111,10 +115,6 @@ $mooseObj->moose_sub();
 my $nonObject = MyLib::MooseClass->new()->moose_sub();
 
 my $hiddenPackObj = MyLib::SubPackage->new();
-
-for (my $cStyleLoopVar = 0; $cStyleLoopVar <= 2; $cStyleLoopVar++){
-    print "$cStyleLoopVar";
-}
 
 my $dbh2 = MyLib::DBI->connect();
 

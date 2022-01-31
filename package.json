@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -50,6 +50,12 @@
 					"type": "string",
 					"default": "",
 					"description": "Path to perl critic profile. Otherwise perlcritic itself will default to ~/.perlcriticrc. (no aliases, .bat files or ~/)"
+				},
+				"perlnavigator.perlcriticEnabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": false,
+					"description": "Enable perl critic Currently only run when opening or saving files."
 				},
 				"perlnavigator.severity5": {
 					"scope": "resource",

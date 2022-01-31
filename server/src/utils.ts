@@ -28,3 +28,4 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
     });
     return includePaths;
 }
+

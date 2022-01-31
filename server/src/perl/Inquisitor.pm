@@ -1,3 +1,24 @@
+
+
+CHECK { ## no critic
+    use warnings;
+    ## no critic (strict)
+    # TODO: Add some safety checks here.
+    my $codeInAMangledName = do { local $/; <STDIN> };
+    $codeInAMangledName = "" if !defined($codeInAMangledName);
+    # TODO: Pass JSON
+    eval "$codeInAMangledName"; ## no critic
+    my $bError = $@;
+    print STDERR "\n";
+    print STDERR $@;
+    print STDERR "\n";
+    Inquisitor::run_inquisitor($codeInAMangledName, $ARGV[0]);
+    print "Compiled: " . $ARGV[0] . "\n";
+    exit(1) if $bError;
+}
+
+
+
 package Inquisitor;
 
 # be careful around importing anything since we don't want to pollute the users namespace
@@ -8,7 +29,14 @@ my $bIdentify; # Is Sub::Util available
 my @preloaded; # Check what's loaded before we pollute the namespace
 
 CHECK {
+    # A file based interface would be nice for debugging.
+    # run_inquisitor() if not caller();
+}
+
+sub run_inquisitor {
+    print "Running inquisitor\n";
     eval {
+        my ($code, $file) = @_;
         populate_preloaded();
         require B;
         require lib_bs22::Inspectorito;
@@ -26,7 +54,7 @@ CHECK {
         $allPackages = filter_packages($allPackages); 
         dump_subs_from_packages($allPackages);
 
-        my $packages = run_pltags();
+        my $packages = run_pltags($code, $file);
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
@@ -91,10 +119,9 @@ sub print_tag {
 
 sub run_pltags {
     require lib_bs22::pltags;
-    require File::Spec;
-    my $orig_file = File::Spec->rel2abs($0);
-    print "\n--------------Now Building the new pltags for $orig_file ---------------------\n";
-    my ($tags, $packages) = pltags::build_pltags($orig_file); # $0 should be the script getting compiled, not this module
+    my ($code, $file) = @_;
+    print "\n--------------Now Building the new pltags ---------------------\n";
+    my ($tags, $packages) = pltags::build_pltags($code, $file); # $0 should be the script getting compiled, not this module
     foreach my $newTag (@$tags){
         print $newTag . "\n";
     }

@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.1.1",
+	"version": "0.1.2",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -39,12 +39,6 @@
 					"default": true,
 					"description": "Enable warnings using -Mwarnings command switch"
 				},
-				"perlnavigator.perlcriticPath": {
-					"scope": "resource",
-					"type": "string",
-					"default": "perlcritic",
-					"description": "Path to the perl critic executable"
-				},
 				"perlnavigator.perlcriticProfile": {
 					"scope": "resource",
 					"type": "string",
@@ -54,8 +48,8 @@
 				"perlnavigator.perlcriticEnabled": {
 					"scope": "resource",
 					"type": "boolean",
-					"default": false,
-					"description": "Enable perl critic Currently only run when opening or saving files."
+					"default": true,
+					"description": "Enable perl critic."
 				},
 				"perlnavigator.severity5": {
 					"scope": "resource",

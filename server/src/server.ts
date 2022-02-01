@@ -126,7 +126,6 @@ connection.onInitialized(() => {
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
     enableWarnings: true,
-    perlcriticPath: "perlcritic",
     perlcriticProfile: "",
     perlcriticEnabled: false,
     severity5: "warning",

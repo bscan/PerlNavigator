@@ -39,18 +39,22 @@ function getSymbol(text: string, position: number) {
     const rChar  = right < text.length  ? text[right] : "";
 
     if(lChar === '$'){
-        if(rChar === '['){
-            symbol = '@' + symbol; // $foo[1] -> @foo
-        }else if(rChar === '{'){    
-            symbol = '%' + symbol; // $foo{1} -> %foo
-        }else{
-            symbol = '$' + symbol; // $foo, $foo->[1], $foo->{1} -> $foo
+        if(rChar === '[' && llChar != '$'){
+            symbol =  '@' + symbol; // $foo[1] -> @foo  $$foo[1] -> $foo
+        } else if(rChar === '{' && llChar != '$'){
+            symbol = '%' + symbol; // $foo{1} -> %foo   $$foo{1} -> $foo
+        } else{
+            symbol = '$' + symbol; //  $foo  $foo->[1]  $foo->{1} -> $foo
         }
-    }else if(lChar === '@' || lChar === '%'){ 
+    }else if(['@', '%'].includes(lChar)){ 
         symbol = lChar + symbol;   // @foo, %foo -> @foo, %foo
     }else if(lChar === '{' && rChar === '}' && ["$", "%", "@"].includes(llChar)){
         symbol = llChar + symbol;  // ${foo} -> $foo
     }
+
+    // print @$array_ref[0];
+    // print $$hash_ref{"Five"};
+
 
     return symbol;
 }
@@ -112,7 +116,7 @@ function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number): Perl
     let qSymbol = symbol;
     let knownObject = /^(\$\w+)\->(?:\w+)$/.exec(symbol);
     if(knownObject){
-        const targetVar = perlDoc.vartypes.get(knownObject[1]);
+        const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
         if(targetVar) qSymbol = qSymbol.replace(/^\$\w+(?=\->)/, targetVar.type);
     }
 

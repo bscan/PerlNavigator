@@ -18,20 +18,22 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     let perlParams: string[] = ["-c"];
     const filePath = Uri.parse(textDocument.uri).fsPath;
 
-    if(settings.enableWarnings) perlParams.push("-Mwarnings");
+    if(settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
     perlParams.push(filePath)
 
-    console.log("Starting perl compilation check with STDIN piped into: " + settings.perlPath + " " + perlParams.join(" "));
+    console.log("Starting perl compilation check: " + settings.perlPath + " " + perlParams.join(" "));
+    perlParams.push("--stdin"); // User can run command above for debugging, we need --stdin
 
     let output: string;
     let stdout: string;
     let severity: DiagnosticSeverity;
     const diagnostics: Diagnostic[] = [];
-    const code = getAdjustedPerlCode(textDocument, filePath);
+    const code = textDocument.getText();
     try {
         const process = async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
+        process?.child?.stdin?.on('error', (error) => console.log("Perl Compilation Error Caught: ", error));
         process?.child?.stdin?.write(code);
         process?.child?.stdin?.end();
         const out = await process;
@@ -61,15 +63,9 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
 
 function getInquisitor(): string[]{
     const inq_path = join(dirname(__dirname), 'src', 'perl');
-    const inq_file = join(inq_path, 'Inquisitor.pm');
+    const inq_file = join(inq_path, 'Inquisitor.pl');
     let inq: string[] = ['-I', inq_path, inq_file];
     return inq;
-}
-
-function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): string {
-    let code = textDocument.getText();
-    code = `local \$0; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); } }\n# line 0 \"${filePath}\"\nreturn;\n` + code;
-    return code;
 }
 
 function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diagnostics: Diagnostic[], filePath: string): void {
@@ -103,29 +99,32 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
 
 export async function perlcritic(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if(!settings.perlcriticEnabled) return []; 
-    let criticParams: string[] = ['--verbose', '%s~|~%l~|~%c~|~%m~|~%p~||~%n'];
-    criticParams = criticParams.concat(getCriticProfile(workspaceFolders, settings));
+    const critic_path = join(dirname(__dirname), 'src', 'perl', 'criticWrapper.pl');
+    let criticParams: string[] = [critic_path].concat(getCriticProfile(workspaceFolders, settings));
+    criticParams = criticParams.concat(['--file', Uri.parse(textDocument.uri).fsPath]);
+
     console.log("Now starting perlcritic with: " + criticParams.join(" "));
-    let code = textDocument.getText();
+    const code = textDocument.getText();
     const diagnostics: Diagnostic[] = [];
+    let output: string;
     try {
-        const process = async_execFile(settings.perlcriticPath, criticParams, {timeout: 25000});
+        const process = async_execFile(settings.perlPath, criticParams, {timeout: 25000});
+        process?.child?.stdin?.on('error', (error) => console.log("Perl Critic Error Caught: ", error));
         process?.child?.stdin?.write(code);
         process?.child?.stdin?.end();
-        const { stdout, stderr } = await process;
+        const out = await process;
+        output = out.stdout;
     } catch(error: any) {
-        if("stdout" in error){
-            // if ("stderr" in error && error.stderr) console.log("perl critic diags: " + error.stderr);
-            const output: string = error.stdout;
-            // console.log(output);
-            output.split("\n").forEach(violation => {
-                maybeAddCriticDiag(violation, diagnostics, settings);
-            });
-        } else {
-            console.log("Perlcritic failed with unknown error");
-            console.log(error);
-        }
+        console.log("Perlcritic failed with unknown error");
+        console.log(error);
+        return diagnostics;
     }
+
+    console.log("Critic output" + output);
+    output.split("\n").forEach(violation => {
+        maybeAddCriticDiag(violation, diagnostics, settings);
+    });
+
     return diagnostics;
 }
 

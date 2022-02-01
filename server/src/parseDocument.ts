@@ -1,5 +1,5 @@
 
-import { PerlDocument, PerlElem, PerlType, PerlImport } from "./types";
+import { PerlDocument, PerlElem, PerlImport } from "./types";
 
 
 export async function buildNav(stdout: string): Promise<PerlDocument> {
@@ -8,7 +8,7 @@ export async function buildNav(stdout: string): Promise<PerlDocument> {
 
     let perlDoc: PerlDocument = {
             elems: new Map(),
-            vartypes: new Map(),
+            canonicalElems: new Map(),
             imported: new Map(),
         };
 
@@ -37,14 +37,6 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     const lineNum    = items[5] ? +items[5] : 0; 
     const value      = items[6] || ""; 
 
-
-    if (type.length > 1){
-        const newType: PerlType = {
-            type: type,
-        }
-        perlDoc.vartypes.set(name, newType);
-    } 
-
     if (type == 'u'){
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, true);
@@ -63,6 +55,11 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         line: lineNum,
         value: value,
     };
+
+    if (type.length > 1){
+        // We overwrite, so the last typed element is the canonical one. No reason for this.
+        perlDoc.canonicalElems.set(name, newElem);
+    } 
 
     addVal(perlDoc.elems, name, newElem);
 

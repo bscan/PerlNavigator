@@ -4,7 +4,6 @@ use FindBin qw($Bin);
 use File::Spec;
 use lib "$Bin";
 use experimental 'signatures';
-
 # These are system test modules
 use Data::Dumper;                    # Module details. Dumper is auto-exported
 use Cwd qw(fast_abs_path);           # fast_abs_path is pure perl.
@@ -20,10 +19,7 @@ use MyLib::MooClass;
 use MyLib::DBI;
 use MySubClass;
 
-
-# TODO: Add simple Exporter module
-
-use constant MYCONSTANT => 5;
+use constant MYCONSTANT => 6;
 
 my $my_scalar = 1;
 my @my_array = (2,2);
@@ -38,10 +34,12 @@ print ${my_scalar};
 print $my_array[0];
 print "@my_array";
 print $array_ref->[0];
+print $$array_ref[0];
 print "@$array_ref";
 print $my_hash{"Four"};
 print %my_hash;
 print $hash_ref->{"Five"};
+print $$hash_ref{"Five"};
 
 print MYCONSTANT;
 
@@ -69,7 +67,7 @@ sub same_script_sub {
     print "$functionVar\n";
 }
 
-sub sub_with_sig($subParam1, @subParam2){
+sub sub_with_sig($subParam1, @subParam2){ ## no critic (prototypes)
     print "in sub_with_sig($subParam1, @subParam2)\n"
 }
 
@@ -120,10 +118,8 @@ my $dbh2 = MyLib::DBI->connect();
 
 print "\nDone with test script\n";
 
-package SameFilePackage;
+package SameFilePackage; ## no critic (package)
 
 sub same_file_package_sub {
     print "In same_file_package_sub\n";
 }
-
- 

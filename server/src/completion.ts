@@ -108,7 +108,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     // Check if we know the type of this object
     let knownObject = /^(\$\w+):(?::\w*)?$/.exec(qualifiedSymbol);
     if(knownObject){
-        const targetVar = perlDoc.vartypes.get(knownObject[1]);
+        const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
         if(targetVar){
             qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.type);
             bKnownObj = true;
@@ -124,7 +124,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
 
-        const element = elements[0]; // All Elements are with same name are normally the same.
+        let element = perlDoc.canonicalElems.get(elemName) || elements[0]; // Get the canonical (typed) element, otherwise just grab the first one.
 
         // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list, despite perl allowing them called on $self->
         if(bSelf && ["s", "i"].includes(element.type) ) elemName = `$self::${elemName}`;
@@ -140,11 +140,11 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
             // Don't send invalid constructs
             if(/\-\>\w+::/.test(aligned) ||  // like FOO->BAR::BAZ
-                (/\-\>\w+$/.test(aligned) && !["s","t", "i"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                (/\-\>\w+$/.test(aligned) && !["s", "t", "i"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
                 (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
                 ) return;
 
-            matches.push(buildMatch(aligned, element, replace));
+            matches = matches.concat(buildMatches(aligned, element, replace));
         }
     });
 
@@ -171,7 +171,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
     }
 }
 
-function buildMatch(lookupName: string, elem: PerlElem, range: Range): CompletionItem {
+function buildMatches(lookupName: string, elem: PerlElem, range: Range): CompletionItem[] {
 
     let kind: CompletionItemKind;
     let detail: string | undefined = undefined;
@@ -216,29 +216,46 @@ function buildMatch(lookupName: string, elem: PerlElem, range: Range): Completio
         documentation = {kind: "markdown", value: "```\n" + docs.join("\n") + "\n```" };
     }
     
-    // Ensure sorting has public methods up front, followed by private and then capital. (private vs capital is arbitrary, but public makes sense).
+    let labelsToBuild = [lookupName];
+
+    if(/::new$/.test(lookupName)){
+        // Having ->new at the top (- sorts before :) is the more common way to call packages (although you can call it either way).
+        labelsToBuild.push(lookupName.replace(/::new$/, "->new"));
+    }
+
+    let matches: CompletionItem[] = [];
+
+    labelsToBuild.forEach(label => {
+        matches.push({
+            label: label,
+            textEdit: {newText: label, range},
+            kind: kind,
+            sortText: getSortText(label),
+            detail: detail,
+            documentation: documentation,
+        });
+    });
+
+    return matches
+}
+
+function getSortText(label: string): string {
+    // Ensure sorting has public methods up front, followed by private and then capital. (private vs somewhat capital is arbitrary, but public makes sense).
     // Variables will still be higher when relevant. 
+    // use English puts a lot of capital variables, so these will end up lower as well (including Hungarian notation capitals)
+
     let sortText: string;
 
-    if(/^[A-Z][A-Z_]+$/.test(lookupName) || /(?:::|->)[A-Z][A-Z_]+$/.test(lookupName)){
-        sortText = "4" + lookupName;
-    } else if(/^_$/.test(lookupName) || /(?:::|->)_\w+$/.test(lookupName)){
-        sortText = "3" + lookupName;
-    } else if(/^\w$/.test(lookupName) || /(?:::|->)\w+$/.test(lookupName)){
+    if(/^[@\$%]?[a-z]?[a-z]?[A-Z][A-Z_]*$/.test(label) || /(?:::|->)[A-Z][A-Z_]+$/.test(label)){
+        sortText = "4" + label;
+    } else if(/^_$/.test(label) || /(?:::|->)_\w+$/.test(label)){
+        sortText = "3" + label;
+    } else if(/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)){
         // Public methods / functions
-        sortText = "2" + lookupName;
+        sortText = "2" + label;
     } else {
         // Variables and regex mistakes
-        sortText = "1" + lookupName;
+        sortText = "1" + label;
     }
-
-
-    return {
-        label: lookupName,
-        textEdit: {newText: lookupName, range},
-        kind: kind,
-        sortText: sortText,
-        detail: detail,
-        documentation: documentation,
-    }
+    return sortText;
 }

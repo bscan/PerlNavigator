@@ -11,7 +11,6 @@ import {
 export interface NavigatorSettings {
     perlPath: string;
     enableWarnings: boolean;
-    perlcriticPath: string;
     perlcriticProfile: string;
     perlcriticEnabled: boolean;
     severity5: string;
@@ -34,11 +33,6 @@ export interface PerlElem {
     value: string;
 };
 
-// Used for mapping variable names to object types
-export interface PerlType {
-    type: string;
-};
-
 // Used for keeping track of what has been imported
 export interface PerlImport {
     mod: string;
@@ -47,7 +41,7 @@ export interface PerlImport {
 
 export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
-    vartypes: Map<string, PerlType>;
+    canonicalElems: Map<string, PerlElem>;
     imported: Map<string, boolean>;
 }
 

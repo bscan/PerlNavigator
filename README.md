@@ -23,7 +23,7 @@ Please file a bug report if the Perl Navigator does not work out of the box.
 
 
 ### Perl paths
-If you have a nonstandard install of Perl, please set the settings "perlnavigator.perlPath" and "perlnavigator.perlcriticPath"
+If you have a nonstandard install of Perl, please set the setting "perlnavigator.perlPath"
 You can also add additional include paths that will be added to the perl search path (@INC) via "perlnavigator.includePaths" 
 
 

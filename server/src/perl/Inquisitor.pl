@@ -1,19 +1,28 @@
 
 
 CHECK { ## no critic
-    use warnings;
+    # Check block is important to have $^C set while eval'ing the script 
     ## no critic (strict)
-    # TODO: Add some safety checks here.
-    my $codeInAMangledName = do { local $/; <STDIN> };
-    $codeInAMangledName = "" if !defined($codeInAMangledName);
-    # TODO: Pass JSON
-    eval "$codeInAMangledName"; ## no critic
+
+    my $file = $ARGV[0];
+    exit(0) if !$file; # You might just be compiling, and probably don't want the rest of the script running.
+
+    my $source;
+    if ($ARGV[1] and $ARGV[1] =~ /^-?-?stdin$/){
+        # I want to read from stdin even if you passed a filename.
+        $source = do { local $/; <STDIN> };
+    } else{
+        open my $fh, '<', $file or die "Can't open file $!";
+        $source = do { local $/; <$fh> };
+    }
+    $source = "" if !defined($source);
+    $source = "local \$0; BEGIN { \$0 = '$file'; if (\$INC{'FindBin.pm'}) { FindBin->again(); } }\n# line 0 \"$file\"\nreturn;\n$source";
+
+    eval "$source"; ## no critic
     my $bError = $@;
-    print STDERR "\n";
-    print STDERR $@;
-    print STDERR "\n";
-    Inquisitor::run_inquisitor($codeInAMangledName, $ARGV[0]);
-    print "Compiled: " . $ARGV[0] . "\n";
+    print STDERR "\n$@\n";
+    Inquisitor::run_inquisitor($source, $file);
+    print "Compiled: $file\n";
     exit(1) if $bError;
 }
 
@@ -144,7 +153,8 @@ sub dump_vars_to_main {
             my $value = ${$sFullPath};
             print_tag("\$$thing", "c", '', '', '', '', $value);
         } elsif (@{$sFullPath}) {
-            my $value = join(',', map({ defined($_) ? $_ : "" } @{$sFullPath}));
+            next if $sFullPath =~ /^main::ARGV$/;
+            my $value = join(', ', map({ defined($_) ? $_ : "" } @{$sFullPath}));
             print_tag("\@$thing", "c", '', '', '', '', $value);
         } elsif (%{$sFullPath} ) {
             next if ($thing =~ /::/);
@@ -167,7 +177,7 @@ sub dump_inherited_to_main {
 }
 
 sub populate_preloaded {
-    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd Scalar::Util)){
+    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd Scalar::Util Carp)){
         # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
         my $file = $mod . ".pm";
         $file =~ s/::/\//g;
@@ -223,7 +233,7 @@ sub filter_packages {
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
                       "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Util","warnings","strict","utf8","File::Spec","List::Util", "constant","XSLoader",
-                      "base", "Config", "overloading", "Devel::Symdump", "vars", "Scalar::Util");
+                      "base", "Config", "overloading", "Devel::Symdump", "vars", "Scalar::Util", "Carp");
 
     my %filter = map { $_ => 1 } @to_remove;
 
@@ -233,7 +243,6 @@ sub filter_packages {
 
     foreach (@preloaded) { $filter{$_} = 0 }; 
     my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$packs;
-    print "\n\nKeeping the following @filtered\n\n";
     return \@filtered;
 }
 

@@ -39,7 +39,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     if (type == 'u'){
         // Explictly loaded module. Helpful for focusing autocomplete results
-        perlDoc.imported.set(name, true);
+        perlDoc.imported.set(name, lineNum);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 

@@ -42,12 +42,12 @@ export interface PerlImport {
 export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
     canonicalElems: Map<string, PerlElem>;
-    imported: Map<string, boolean>;
+    imported: Map<string, number>;
 }
 
-export interface DiagnosedDoc {
+export interface CompilationResults {
     diags: Diagnostic[],
-    rawTags: string,
+    perlDoc: PerlDocument,
 }
 
 export interface CompletionPrefix {

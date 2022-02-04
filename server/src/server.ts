@@ -12,6 +12,7 @@ import {
     Location,
     CompletionItem,
     CompletionList,
+    SymbolInformation,
 	TextDocumentPositionParams,
 } from 'vscode-languageserver/node';
 
@@ -25,8 +26,7 @@ import {
 import Uri from 'vscode-uri';
 import { perlcompile, perlcritic } from "./diagnostics";
 import { getDefinition, getAvailableMods } from "./navigation";
-import { buildNav } from "./parseDocument";
-
+import { getSymbols, getWorkspaceSymbols } from "./symbols";
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
 import { getCompletions } from './completion';
 var LRU = require("lru-cache");
@@ -77,7 +77,8 @@ connection.onInitialize((params: InitializeParams) => {
             },
 
             definitionProvider: true, // goto definition
-            // documentSymbolProvider: true, // Outline view and breadcrumbs
+            documentSymbolProvider: true, // Outline view and breadcrumbs
+            workspaceSymbolProvider: true, 
             // hoverProvider: true,   // Do this too.
         }
     };
@@ -117,6 +118,20 @@ connection.onInitialized(() => {
         return locOut;
     });
 
+    connection.onDocumentSymbol(params => {
+
+        console.log("Getting document symbols");
+        return getSymbols(navSymbols, params.textDocument.uri);
+    });
+
+    connection.onWorkspaceSymbol(params => {
+
+        console.log("Getting workspace symbols");
+        let defaultMods = availableMods.get('default');
+        if(!defaultMods) return;
+        return getWorkspaceSymbols(params, defaultMods);
+    });
+
 });
 
 
@@ -146,13 +161,13 @@ const documentDiags: Map<string, Diagnostic[]> = new Map();
 
 // Store all navigation symbols in all open documents. TODO: Change this to a lru-cache.
 // My ballpark estimate is that 250k symbols will be about 25MB. Huge map, but a reasonable limit. 
-const navSymbols = new LRU({max: 250000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
+const navSymbols = new LRU({max: 350000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
 //     dispose: function (key, n) { n.close() }
 
 const timers: Map<string, NodeJS.Timeout> = new Map();
 
 // Keep track of modules available for import. Building this is a slow operations and varies based on workspace settings, not documents
-const availableMods: Map<string, string[]> = new Map();
+const availableMods: Map<string, Map<string, string>> = new Map();
 let modCacheBuilt: boolean = false;
 
 connection.onDidChangeConfiguration(change => {
@@ -192,7 +207,7 @@ async function dispatchForMods(textDocument: TextDocument) {
     const settings = await getDocumentSettings(textDocument.uri);
     const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
     const newMods = await getAvailableMods(workspaceFolders, settings);
-    console.log("Number of modules found: " + newMods.length);
+    console.log("Number of modules found: " + newMods.size);
     availableMods.set('default', newMods);
     return;
 }
@@ -267,16 +282,15 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     let perlOut = await pCompile;
     connection.console.log("Compilation Time: " + (Date.now() - start)/1000 + " seconds");
     let oldCriticDiags = documentDiags.get(textDocument.uri);
+    if(!perlOut) return;
     let mixOldAndNew = perlOut.diags;
     if(oldCriticDiags && settings.perlcriticEnabled) {
-        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic
+        // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic. TODO: async wait if it's not that long.
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
     }     
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
 
-    const pNav = await buildNav(perlOut.rawTags);
-    navSymbols.set(textDocument.uri, pNav);
-    connection.console.log("Symbols parse Time: " + (Date.now() - start)/1000 + " seconds. Found " + pNav.elems.size + " symbols.");
+    navSymbols.set(textDocument.uri, perlOut.perlDoc);
 
     // Perl critic things
     const diagCritic = await pCritic;
@@ -294,6 +308,7 @@ function sendDiags(params: PublishDiagnosticsParams): void{
     if(documentSettings.has(params.uri)){
         connection.sendDiagnostics(params);
     } else {
+        connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
         console.log(`The ${params.uri} has already closed. Skipping diagnostics`);
     }
 }
@@ -307,7 +322,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
 
     if(!document) return;
     if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    if(!mods) mods = [];
+    if(!mods) mods = new Map();
     const completions: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
     return {
         items: completions,

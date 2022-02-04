@@ -1,33 +1,3 @@
-
-
-CHECK { ## no critic
-    # Check block is important to have $^C set while eval'ing the script 
-    ## no critic (strict)
-
-    my $file = $ARGV[0];
-    exit(0) if !$file; # You might just be compiling, and probably don't want the rest of the script running.
-
-    my $source;
-    if ($ARGV[1] and $ARGV[1] =~ /^-?-?stdin$/){
-        # I want to read from stdin even if you passed a filename.
-        $source = do { local $/; <STDIN> };
-    } else{
-        open my $fh, '<', $file or die "Can't open file $!";
-        $source = do { local $/; <$fh> };
-    }
-    $source = "" if !defined($source);
-    $source = "local \$0; BEGIN { \$0 = '$file'; if (\$INC{'FindBin.pm'}) { FindBin->again(); } }\n# line 0 \"$file\"\nreturn;\n$source";
-
-    eval "$source"; ## no critic
-    my $bError = $@;
-    print STDERR "\n$@\n";
-    Inquisitor::run_inquisitor($source, $file);
-    print "Compiled: $file\n";
-    exit(1) if $bError;
-}
-
-
-
 package Inquisitor;
 
 # be careful around importing anything since we don't want to pollute the users namespace
@@ -37,15 +7,12 @@ no warnings;
 my $bIdentify; # Is Sub::Util available
 my @preloaded; # Check what's loaded before we pollute the namespace
 
-CHECK {
-    # A file based interface would be nice for debugging.
-    # run_inquisitor() if not caller();
-}
+my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util );
 
-sub run_inquisitor {
+
+CHECK {
     print "Running inquisitor\n";
     eval {
-        my ($code, $file) = @_;
         populate_preloaded();
         require B;
         require lib_bs22::Inspectorito;
@@ -60,10 +27,10 @@ sub run_inquisitor {
 
         # This following one has the largest impact on memory and finds less interesting stuff. Low limits though, which probably helps
         my $allPackages = get_all_packages();
-        $allPackages = filter_packages($allPackages); 
+        $allPackages = filter_modpacks($allPackages); 
         dump_subs_from_packages($allPackages);
 
-        my $packages = run_pltags($code, $file);
+        my $packages = run_pltags();
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
@@ -128,9 +95,10 @@ sub print_tag {
 
 sub run_pltags {
     require lib_bs22::pltags;
-    my ($code, $file) = @_;
+    my ($source, $offset, $file) = load_source();
+
     print "\n--------------Now Building the new pltags ---------------------\n";
-    my ($tags, $packages) = pltags::build_pltags($code, $file); # $0 should be the script getting compiled, not this module
+    my ($tags, $packages) = pltags::build_pltags($source, $offset, $file); # $0 should be the script getting compiled, not this module
     foreach my $newTag (@$tags){
         print $newTag . "\n";
     }
@@ -177,7 +145,8 @@ sub dump_inherited_to_main {
 }
 
 sub populate_preloaded {
-    foreach my $mod (qw(List::Util File::Spec Sub::Util Cwd Scalar::Util Carp)){
+    # Populate preloaded modules before we pollute the symbol table. 
+    foreach my $mod (@checkPreloaded){ 
         # Ideally we'd use Module::Loaded, but it only became core in Perl 5.9
         my $file = $mod . ".pm";
         $file =~ s/::/\//g;
@@ -194,9 +163,9 @@ sub dump_subs_from_packages {
     # Just in case we find too much stuff. Arbitrary limit of 100 subs per module, 200 fully loaded packages.
     # results in 10 fully loaded files in the server before we start dropping them on the ground because of the lru-cache
     # Test with these limits and then bump them up if things are working well 
-    my $modLimit  = 100;
-    my $nameSpaceLimit = 6000; # Applied to Foo in Foo::Bar 
-    my $totalLimit = 20000; 
+    my $modLimit  = 150;
+    my $nameSpaceLimit = 10000; # Applied to Foo in Foo::Bar 
+    my $totalLimit = 30000; 
     INSPECTOR: foreach my $mod (@$modpacks){
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
@@ -226,14 +195,16 @@ sub dump_subs_from_packages {
     return;
 }
 
-sub filter_packages {
-    my ($packs) = @_;
+sub filter_modpacks {
+    my ($modpacks) = @_;
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
-                      "Exporter","Inquisitor", "XSLoader","attributes", "Sub::Util","warnings","strict","utf8","File::Spec","List::Util", "constant","XSLoader",
-                      "base", "Config", "overloading", "Devel::Symdump", "vars", "Scalar::Util", "Carp");
+                      "Exporter","Inquisitor", "XSLoader","attributes", "warnings","strict","utf8", "constant","XSLoader", "Carp",
+                      "base", "Config", "overloading", "Devel::Symdump", "vars", "Tie::Hash::NamedCapture", "Text::Balanced", "Filter::Util::Call", "IO::Poll", "IO::Seekable", "IO::Handle", 
+                       "IO::File", "Symbol", "IO", "SelectSaver", "overload", "Filter::Simple", "SelfLoader", "PerlIO::Layer", "Text::Balanced::Extractor", "IO::Socket", @checkPreloaded);
+
 
     my %filter = map { $_ => 1 } @to_remove;
 
@@ -242,20 +213,28 @@ sub filter_packages {
     my $private = qr/::_\w+/;
 
     foreach (@preloaded) { $filter{$_} = 0 }; 
-    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$packs;
+    my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$modpacks;
     return \@filtered;
 }
 
 sub dump_loaded_mods {
-    my @modules;
+    my @modules = 
+    my $displays = {};
 
     foreach my $module (keys %INC) {
         my $display_mod = $module;
         $display_mod =~ s/[\/\\]/::/g;
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
-        my $path = $INC{$module};
-        print_tag("$display_mod", "m", "", $path, $display_mod, 0, "") if lib_bs22::Inspectorito->loaded($display_mod);
+        next if !lib_bs22::Inspectorito->loaded($display_mod);
+        $displays->{$display_mod} = $INC{$module};
+    }
+
+    my $filtered_modules = filter_modpacks([keys %$displays]);
+
+    foreach my $key_to_print (@$filtered_modules) {
+        my $path = $displays->{$key_to_print};
+        print_tag("$key_to_print", "m", "", $path, $key_to_print, 0, "");
     }
     return;
 }
@@ -266,6 +245,24 @@ sub get_all_packages {
     return \@allPackages;
 }
 
+sub load_source {
+    my ($source, $offset, $file);
+    if ($INC{"lib_bs22/SourceStash.pm"}){
+        $source = $lib_bs22::SourceStash::source;
+        $file = $lib_bs22::SourceStash::filename;
+        print "Loading File: $file\n";
+        $offset = 3;
+    } else{
+        require File::Spec;
+        # TODO: Adjust PLTags offset in this case.
+        my $orig_file = File::Spec->rel2abs($0);
+        open my $fh, '<', $orig_file or die "Can't open file $!";
+        $source = do { local $/; <$fh> };
+        $offset = 1;
+    }
+    $source = "" if !defined($source);
+    return ($source, $offset, $file);
+}
 
 1;
 

@@ -1,5 +1,6 @@
 use strict;
 use warnings;
+use utf8;
 use FindBin qw($Bin);
 use File::Spec;
 use lib "$Bin";
@@ -26,6 +27,7 @@ my @my_array = (2,2);
 my $array_ref = [3,3];
 my %my_hash = ("Four"=>4);
 my $hash_ref = {"Five"=>5};
+# my $üτfⅷ = 10;
 
 print "\n------ Variables --------\n";
 print $my_scalar;
@@ -40,7 +42,7 @@ print $my_hash{"Four"};
 print %my_hash;
 print $hash_ref->{"Five"};
 print $$hash_ref{"Five"};
-
+# print $üτfⅷ;
 print MYCONSTANT;
 
 LABEL1: for (0..4) {

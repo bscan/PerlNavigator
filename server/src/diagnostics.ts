@@ -2,35 +2,33 @@ import {
     Diagnostic,
     DiagnosticSeverity,
 } from 'vscode-languageserver/node';
-import { NavigatorSettings, DiagnosedDoc } from "./types";
+import { NavigatorSettings, CompilationResults, PerlDocument } from "./types";
 import {
 	WorkspaceFolder
 } from 'vscode-languageserver-protocol';
 import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
 import { getIncPaths, async_execFile } from './utils';
+import { buildNav } from "./parseDocument";
 
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
-export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<DiagnosedDoc> {
+export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<CompilationResults | void> {
     let perlParams: string[] = ["-c"];
     const filePath = Uri.parse(textDocument.uri).fsPath;
 
     if(settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
-    perlParams.push(filePath)
-
-    console.log("Starting perl compilation check: " + settings.perlPath + " " + perlParams.join(" "));
-    perlParams.push("--stdin"); // User can run command above for debugging, we need --stdin
+    console.log("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath);
 
     let output: string;
     let stdout: string;
     let severity: DiagnosticSeverity;
     const diagnostics: Diagnostic[] = [];
-    const code = textDocument.getText();
+    const code = getAdjustedPerlCode(textDocument, filePath);
     try {
         const process = async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
         process?.child?.stdin?.on('error', (error) => console.log("Perl Compilation Error Caught: ", error));
@@ -50,41 +48,38 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
         } else {
             console.log("Perlcompile failed with unknown error")
             console.log(error);
-            return {diags: diagnostics, rawTags: ""};
+            return;
         }
     }
-    // console.log(stdout);
+
+    const perlDoc = await buildNav(stdout);
+
 
     output.split("\n").forEach(violation => {
-        maybeAddCompDiag(violation, severity, diagnostics, filePath);
+        maybeAddCompDiag(violation, severity, diagnostics, filePath, perlDoc);
     });
-    return {diags: diagnostics, rawTags: stdout};
+    return {diags: diagnostics, perlDoc: perlDoc};
 }
 
 function getInquisitor(): string[]{
     const inq_path = join(dirname(__dirname), 'src', 'perl');
-    const inq_file = join(inq_path, 'Inquisitor.pl');
-    let inq: string[] = ['-I', inq_path, inq_file];
+    let inq: string[] = ['-I', inq_path, '-MInquisitor'];
     return inq;
 }
 
-function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diagnostics: Diagnostic[], filePath: string): void {
+function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): string {
+    let code = textDocument.getText();
+    code = `local \$0; use lib_bs22::SourceStash; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); }; \$lib_bs22::SourceStash::filename = '${filePath}'; print "Setting file" . __FILE__; }\n# line 0 \"${filePath}\"\ndie('Not needed, but die for safety');\n` + code;
+    return code;
+}
 
-    const patt = /at\s+(.+?)\s+line\s+(\d+)/i;
-    const match = patt.exec(violation);
+function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diagnostics: Diagnostic[], filePath: string, perlDoc: PerlDocument): void {
 
-    if(!match){
-        return;
-    }
-    if(/Too late to run CHECK block/.test(violation)) return;
-
-    let lineNum = +match[2] - 1;
-    if (match[1] != filePath){
-        // The error/warnings must be in an imported library. TODO: Place error on the import statement. For now, line 0 works
-        lineNum = 0;
-    }
     violation = violation.replace(/\r/g, ""); // Clean up for Windows
     violation = violation.replace(/, <STDIN> line 1\.$/g, ""); // Remove our stdin nonsense
+
+    const lineNum = localizeErrors(violation, filePath, perlDoc);
+    if (typeof lineNum == 'undefined') return;
 
     diagnostics.push({
         severity: severity,
@@ -96,6 +91,46 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
         source: 'perlnavigator'
     });
 }
+
+
+function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocument): number | void {
+
+    if(/Too late to run CHECK block/.test(violation)) return;
+
+    let match = /at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
+
+    if(match){
+        if(match[1] == filePath){
+            return +match[2] - 1;
+        } else {
+            console.log("Matchy matchy");
+            // The error/warnings must be in an imported library (possibly indirectly imported).
+            let importLine = 0; // If indirectly imported
+            const importFileName = match[1].replace('.pm', '').replace(/[\\\/]/g, "::");
+            perlDoc.imported.forEach((line, mod) => {
+                // importFileName could be something like usr::lib::perl::dir::Foo::Bar
+                if (importFileName.endsWith(mod)){
+                    importLine = line;
+                }
+            })
+            return importLine; 
+        }
+    }
+    
+    match = /\s+is not exported by the ([\w:]+) module$/i.exec(violation);
+    if(match){
+        let importLine = perlDoc.imported.get(match[1])
+        if(typeof importLine != 'undefined'){
+            return importLine;
+        } else {
+            return 0;
+        }
+    }
+    return;
+}
+
+
+
 
 export async function perlcritic(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if(!settings.perlcriticEnabled) return []; 

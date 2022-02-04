@@ -8,7 +8,7 @@ import {
 } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
 import Uri from 'vscode-uri';
-import { realpathSync, existsSync } from 'fs';
+import { realpathSync, existsSync, realpath } from 'fs';
 import { getIncPaths, async_execFile} from "./utils";
 import { dirname, join } from 'path';
 
@@ -18,8 +18,11 @@ function getSymbol(text: string, position: number) {
     // Gets symbol from text at position. 
     // Ignore :: going left, but stop at :: when going to the right. (e.g Foo::bar::baz should be clickable on each spot)
     // Todo: Only allow -> once.
-    const leftAllow  = (c: string) => /[\w\:\>\-]/.exec(c);
-    const rightAllow = (c: string) => /[\w]/.exec(c);
+    const leftRg = /[\p{L}\p{N}_:>-]/u;
+    const rightRg = /[\p{L}\p{N}_]/u;
+
+    const leftAllow  = (c: string) => leftRg.exec(c);
+    const rightAllow = (c: string) => rightRg.exec(c);
 
     let left = position - 1;
     let right = position;
@@ -195,7 +198,7 @@ function badFile (file: string){
 }
 
 
-export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<string[]> {
+export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {
        
     let perlParams: string[] = [];
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
@@ -203,7 +206,7 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
     perlParams.push(modHunterPath);
     console.log("Starting to look for perl modules with " + perlParams.join(" "));
 
-    const mods: string[] = [];
+    const mods: Map<string, string> = new Map()
 
     let output: string;
     try {
@@ -220,10 +223,20 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
     output.split("\n").forEach(mod => {
         var items = mod.split('\t');
 
-        if(items.length != 4 || items[1] != 'M' || !items[2]){
+        if(items.length != 5 || items[1] != 'M' || !items[2] || !items[3]){
             return;
         }
-        mods.push(items[2]);
+        // Load file
+
+        realpath(items[3], function(err, path) {
+            if (err) {
+                // Skip if error
+            } else {
+                if (!path) return; // Could file be empty, but no error?
+                let uri =  Uri.file(path).toString(); // Resolve symlinks
+                mods.set(items[2], uri);
+            }
+        });
     });
     return mods;
 }

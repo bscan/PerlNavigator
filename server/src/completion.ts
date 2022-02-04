@@ -9,8 +9,9 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, CompletionPrefix } from "./types";
 
 
-export function getCompletions(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, mods: string[]): CompletionItem[] {
+export function getCompletions(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): CompletionItem[] {
 
+    const mods = Array.from(modMap.keys());
     let position = params.position
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };

@@ -43,7 +43,7 @@ sub get_modules {
         my $rel = substr($file, (length($d)+1));
         $rel =~ s/\.pm$//;
         $rel =~ s{/}{::}g;
-        $mods->{$rel} = 1; # Dedupes
+        $mods->{$rel} = $file if !defined($mods->{$rel}); # Dedupes with a preference for the first found in @INC, since that's the perl resolution order.
     }
     return $mods;
 }
@@ -68,10 +68,8 @@ sub reduce_dirs {
         }
     }
 
-    my @dsubs;
-    for (keys %substring_count) {
-        push @dsubs, $_ if $substring_count{$_} == 0;
-    }
+    my @dsubs = grep { $substring_count{$_} == 0 } @dirs;
+
     return @dsubs;
 }
 
@@ -84,13 +82,13 @@ sub myuniq {
 
 # use Time::HiRes;
 # my $start = Time::HiRes::time();
-my $foo = get_modules();
+my $modsFound = get_modules();
 
 print "Dumping Mods\n";
 
-foreach my $mod (keys %$foo){
+foreach my $mod (keys %$modsFound){
     # Name mangling to avoid picking up random stuff from stdout. 
-    print "\tM\t$mod\t\n"; 
+    print "\tM\t$mod\t$modsFound->{$mod}\t\n"; 
 }
 
 #print "Elapsed: " . (Time::HiRes::time() - $start);
@@ -114,7 +112,7 @@ App::Module::Lister is close, but opens all of the files which would slow this d
 HTML::Perlinfo::Modules is also close, but prints all the modules as HTML instead of returning the list. Perhaps it could be modified.
 
 This script is mostly copied PerlMonks: https://www.perlmonks.org/?node_id=795418, and modified for my purposes. If someone has a maintained library that does this, let me know so I can delete this script entirely.
-I modified it to skip private directories. 
+I modified it to skip private directories and to preserve order during lookup 
 
 This is also pretty slow on Windows (takes 10 to 15 seconds on my machine), so we only run it on Server starup and when configuration changes
 

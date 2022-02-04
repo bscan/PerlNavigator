@@ -10,6 +10,7 @@ package pltags;
 # Complain about undeclared variables
 use strict;
 no warnings;
+
 use Exporter;
 our @ISA    = qw(Exporter);
 our @EXPORT_OK = qw(build_pltags);
@@ -74,13 +75,13 @@ sub SubName {
 
 sub build_pltags {
 
-    my ($code, $file) = @_;
+    my ($code, $offset, $file) = @_;
     my @tags = ();      # List of produced tags
     my @packages = ();    # List of discovered packages
 
     my $package_name  = "";
     my $var_continues = 0;
-    my $line_number = -4;
+    my $line_number = -$offset;
 
     # Loop through file
     foreach my $line (split("\n", $code)) {
@@ -98,8 +99,8 @@ sub build_pltags {
         # TODO, allow specifying list of constructor names as config
         my $constructors = qr/(?:new|connect)/;
         # Declaring an object. Let's store the type
-        if ($stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*([\w\:]+)\-\>$constructors\s*(?:\((?!.*\->)|;)/ or
-            $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\((?!.*\->)|;)/) {
+        if ($stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*([\w\:]+)\-\>$constructors\s*(?:\((?!.*\)\->)|;)/ or
+            $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\((?!.*\)\->)|;)/) {
             my ($varName, $objName) = ($1, $2);
             $objName .= "::db" if ($objName =~ /\bDBI$/);
             MakeTag($varName, $objName, '', $file, $line_number, $package_name, \@tags);

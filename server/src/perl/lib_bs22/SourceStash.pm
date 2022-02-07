@@ -15,7 +15,8 @@ SourceStash.pm
 =head1 SYNOPSIS
 I don't love this module, but it performs a needed task.
 The Perl Navigator is passing Perl source code directly into perl via stdin for compilation, and I would like to inspect that code later in the same process.
-When loaded, this simply stores the source in the variable $lib_bs22::SourceStash::source
+When loaded, this simply stores the source in the variable $lib_bs22::SourceStash::source.
+The other dependencies don't have lib_bs22 as prefix, but SourceStash is loaded before main script compiles, and I don't want to mess with their include path until after.
 
 If you have an actual saved file with the source, you don't need this module.
 

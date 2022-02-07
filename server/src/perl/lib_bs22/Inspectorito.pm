@@ -1,4 +1,4 @@
-package lib_bs22::Inspectorito;
+package Inspectorito;
 # The Inspectorito, or "Little Inspector" is a subclass of Class::Inspector built for the perl navigator
 # It overrides ->methods to only specify locally defined methods. Normally, all imported functions become methods on a class which pollutes the namespace.
 # For example, if an object $foo uses the Data::Dumper internally, you can $foo->Dumper() on that object despite it not making any sense. 
@@ -9,7 +9,7 @@ use 5.006;
 use strict qw{vars subs};
 use warnings;
 use File::Spec ();
-use base qw(lib_bs22::Class::Inspector);
+use base qw(Class::Inspector);
 use vars qw{$VERSION $RE_IDENTIFIER $RE_CLASS $UNIX $BIDENTIFY};
 
 BEGIN {

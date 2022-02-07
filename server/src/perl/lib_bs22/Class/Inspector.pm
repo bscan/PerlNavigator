@@ -1,4 +1,4 @@
-package lib_bs22::Class::Inspector; # BScan note: Rename to avoid clashes and warnings
+package Class::Inspector;
 
 use 5.006;
 # We don't want to use strict refs anywhere in this module, since we do a

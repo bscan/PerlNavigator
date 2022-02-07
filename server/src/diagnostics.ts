@@ -103,7 +103,6 @@ function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocum
         if(match[1] == filePath){
             return +match[2] - 1;
         } else {
-            console.log("Matchy matchy");
             // The error/warnings must be in an imported library (possibly indirectly imported).
             let importLine = 0; // If indirectly imported
             const importFileName = match[1].replace('.pm', '').replace(/[\\\/]/g, "::");

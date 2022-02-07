@@ -14,9 +14,8 @@ CHECK {
     print "Running inquisitor\n";
     eval {
         populate_preloaded();
-        require B;
-        require lib_bs22::Inspectorito;
-        require Devel::Symdump; # Local copy, but it's old and unlikely to have version conflicts
+        load_dependencies();
+
 
         # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
         eval { require Sub::Util; $bIdentify = 1; }; 
@@ -46,6 +45,18 @@ CHECK {
     };
 }
 
+sub load_dependencies {
+    require File::Basename;
+    require File::Spec;
+    require B;
+
+    my $module_dir = File::Spec->catfile( File::Basename::dirname(__FILE__), 'lib_bs22');
+    unshift @INC, $module_dir; 
+
+    print "@INC";
+    require Inspectorito;
+    require Devel::Symdump;
+}
 
 sub maybe_print_sub_info {
     my ($sFullPath, $sDisplayName, $codeRef, $sSkipPackage, $subType) = @_;
@@ -94,7 +105,7 @@ sub print_tag {
 }
 
 sub run_pltags {
-    require lib_bs22::pltags;
+    require pltags;
     my ($source, $offset, $file) = load_source();
 
     print "\n--------------Now Building the new pltags ---------------------\n";
@@ -135,7 +146,7 @@ sub dump_vars_to_main {
 sub dump_inherited_to_main {
     my ($package) = @_;
 
-    my $methods = lib_bs22::Inspectorito->local_methods( $package );
+    my $methods = Inspectorito->local_methods( $package );
     foreach my $name (@$methods){
         next if $name =~ /^(F_|O_|L_)/; # The unhelpful C compiled things
         if (my $codeRef = $package->can($name)) {
@@ -169,8 +180,8 @@ sub dump_subs_from_packages {
     INSPECTOR: foreach my $mod (@$modpacks){
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
-        my $methods = lib_bs22::Inspectorito->local_methods( $mod );
-        #my $methods = lib_bs22::ClassInspector->functions( $mod ); # Less memory, but less accurate?
+        my $methods = Inspectorito->local_methods( $mod );
+        #my $methods = ClassInspector->functions( $mod ); # Less memory, but less accurate?
 
         # Sort because we have a memory limit and want to cut the less important things. 
         @$methods = sort { ($a =~ /^[A-Z][A-Z_]+$/) cmp ($b =~ /[A-Z][A-Z_]+$/) # Anything all UPPERCASE is at the end
@@ -226,7 +237,7 @@ sub dump_loaded_mods {
         $display_mod =~ s/[\/\\]/::/g;
         $display_mod =~ s/(?:\.pm|\.pl)$//g;
         next if $display_mod =~ /lib_bs22::|^(Inquisitor|B)$/;
-        next if !lib_bs22::Inspectorito->loaded($display_mod);
+        next if !Inspectorito->loaded($display_mod);
         $displays->{$display_mod} = $INC{$module};
     }
 

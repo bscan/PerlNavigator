@@ -4,7 +4,6 @@ package Inquisitor;
 use strict;
 no warnings; 
 
-my $bIdentify; # Is Sub::Util available
 my @preloaded; # Check what's loaded before we pollute the namespace
 
 my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util );
@@ -17,8 +16,7 @@ CHECK {
         load_dependencies();
 
 
-        # Sub::Util was added to core in 5.22. Used for finding package names of C code (e.g. List::Util)
-        eval { require Sub::Util; $bIdentify = 1; }; 
+
 
         dump_loaded_mods();
 
@@ -52,8 +50,9 @@ sub load_dependencies {
 
     my $module_dir = File::Spec->catfile( File::Basename::dirname(__FILE__), 'lib_bs22');
     unshift @INC, $module_dir; 
-
-    print "@INC";
+   
+    # Sub::Util was added to core in 5.22. The real version can find module names of C code (e.g. List::Util). The fallback can still trace Pure Perl functions
+    require SubUtilPP; 
     require Inspectorito;
     require Devel::Symdump;
 }
@@ -73,16 +72,12 @@ sub maybe_print_sub_info {
         my $line = $meta->START->isa('B::COP') ? $meta->START->line - 2: $UNKNOWN;
         my $pack = $UNKNOWN;
         my $subname = $UNKNOWN;
-        if ($bIdentify) {
-            $subname = Sub::Util::subname($codeRef);
-            $pack = $1 if($subname =~ m/^(.+)::.*?$/);
+        $subname = SubUtilPP::subname($codeRef);
+        $pack = $1 if($subname =~ m/^(.+)::.*?$/);
 
-            # Subname is a fully qualified name. If it's the normal name, just ignore it.
-            $subname = '' if (($pack and $sSkipPackage and $pack eq $sSkipPackage) or ($pack eq 'main'));
-        } else {
-            # Pure Perl version is not as good. Only needed for Perl < 5.22
-            $pack = $meta->GV->STASH->NAME if $meta->GV->isa('B::SPECIAL');
-        }
+        # Subname is a fully qualified name. If it's the normal name, just ignore it.
+        $subname = '' if (($pack and $sSkipPackage and $pack eq $sSkipPackage) or ($pack eq 'main'));
+
         return 0 if $file =~ /([\0-\x1F])/ or $pack =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
@@ -181,6 +176,7 @@ sub dump_subs_from_packages {
         my $pkgCount = 0;
         next INSPECTOR if($mod =~ $baseRegex and $baseCount{$1} > $nameSpaceLimit);
         my $methods = Inspectorito->local_methods( $mod );
+        next INSPECTOR if !defined($methods);
         #my $methods = ClassInspector->functions( $mod ); # Less memory, but less accurate?
 
         # Sort because we have a memory limit and want to cut the less important things. 

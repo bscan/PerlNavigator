@@ -3,8 +3,6 @@ package Inspectorito;
 # It overrides ->methods to only specify locally defined methods. Normally, all imported functions become methods on a class which pollutes the namespace.
 # For example, if an object $foo uses the Data::Dumper internally, you can $foo->Dumper() on that object despite it not making any sense. 
 
-# TODO: Test on Perl 5.8 without Sub::Util
-
 use 5.006;
 use strict qw{vars subs};
 use warnings;
@@ -27,12 +25,7 @@ BEGIN {
     # Are we on something Unix-like?
     $UNIX  = !! ( $File::Spec::ISA[0] eq 'File::Spec::Unix'  );
 
-    eval {
-        require Sub::Util;
-        Sub::Util->import('subname');
-        $BIDENTIFY = 1;
-        1;
-    }
+    require SubUtilPP;
 }
 
 
@@ -71,17 +64,15 @@ sub local_methods {
             keys %{"${namespace}::"};
         
         foreach my $func ( @functions ) {
-            if($BIDENTIFY){ # Perl versions older than 5.22 will have a polluted, but still accurate namespace on autocomplete.
-                if (my $codeRef = $namespace->can($func)) {
-                    my $source = subname( $codeRef );
-                    # print "Found $func in $namespace with source $source\n";
-                    next unless "${namespace}::$func" eq $source;
-                } else {
-                    # What are these things?
-                    # print "WARNING: Skipping $func\n";
-                    next;
-                } 
-            }
+            if (my $codeRef = $namespace->can($func)) {
+                my $source = SubUtilPP::subname( $codeRef );
+                my $pack = $1 if($source =~ m/^(.+)::.*?$/);
+                next unless defined($pack) and $namespace eq $pack;
+            } else {
+                # What are these things?
+                # print "WARNING: Skipping $func\n";
+                next;
+            } 
             $methods{$func} = $namespace;
         }
     }

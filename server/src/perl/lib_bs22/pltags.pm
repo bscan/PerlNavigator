@@ -10,6 +10,7 @@ package pltags;
 # Complain about undeclared variables
 use strict;
 no warnings;
+use utf8;
 
 use Exporter;
 our @ISA    = qw(Exporter);
@@ -82,14 +83,18 @@ sub build_pltags {
     my $package_name  = "";
     my $var_continues = 0;
     my $line_number = -$offset;
-
+        
     # Loop through file
     foreach my $line (split("\n", $code)) {
         $line_number++;
         next if $line_number < 0;
-        # Statement is line with comments and whitespace trimmed
+
+        # Statement will be line with comments, whitespace and POD trimmed
         my $stmt;
         ($stmt = $line) =~ s/#.*//;
+
+        # Skip pod. Applied before stripping leading whitespace
+        next if ($line =~ /^=(?:pod|head|head1|head2|head3|head4|over|item|back|begin|end|for|encoding)/ .. $line =~ /^=cut/); 
         $stmt =~ s/^\s*//;
         $stmt =~ s/\s*$//;
 

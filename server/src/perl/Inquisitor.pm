@@ -15,9 +15,6 @@ CHECK {
         populate_preloaded();
         load_dependencies();
 
-
-
-
         dump_loaded_mods();
 
         dump_vars_to_main("main");
@@ -47,7 +44,7 @@ sub load_dependencies {
     require File::Basename;
     require File::Spec;
     require B;
-
+    require Encode;
     my $module_dir = File::Spec->catfile( File::Basename::dirname(__FILE__), 'lib_bs22');
     unshift @INC, $module_dir; 
    
@@ -257,13 +254,13 @@ sub load_source {
     if ($INC{"lib_bs22/SourceStash.pm"}){
         $source = $lib_bs22::SourceStash::source;
         $file = $lib_bs22::SourceStash::filename;
-        print "Loading File: $file\n";
+        $source = Encode::decode('utf-8', $source);
         $offset = 3;
     } else{
         require File::Spec;
         # TODO: Adjust PLTags offset in this case.
         my $orig_file = File::Spec->rel2abs($0);
-        open my $fh, '<', $orig_file or die "Can't open file $!";
+        open my $fh, '<:utf8', $orig_file or die "Can't open file $!"; ## no critic (UTF8)
         $source = do { local $/; <$fh> };
         $offset = 1;
     }

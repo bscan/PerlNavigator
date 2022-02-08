@@ -198,10 +198,10 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     } else if(elem.type == 'h'){ 
         kind = CompletionItemKind.Constant;
     } else if (elem.type == 's'){
+        if(/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
         kind = CompletionItemKind.Function;
     } else if  (elem.type == 't' || elem.type == 'i'){
         kind = CompletionItemKind.Method;
-        // detail = elem.name;
         docs.push(elem.name);
         if(elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
     }else if (elem.type == 'p' || elem.type == 'm'){

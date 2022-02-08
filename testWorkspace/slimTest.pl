@@ -27,7 +27,8 @@ my @my_array = (2,2);
 my $array_ref = [3,3];
 my %my_hash = ("Four"=>4);
 my $hash_ref = {"Five"=>5};
-# my $üτfⅷ = 10;
+my $üτfⅷ = 8;
+my $üτfⅷ = 9; # 2nd declaration to test warnings.
 
 print "\n------ Variables --------\n";
 print $my_scalar;
@@ -42,7 +43,13 @@ print $my_hash{"Four"};
 print %my_hash;
 print $hash_ref->{"Five"};
 print $$hash_ref{"Five"};
-# print $üτfⅷ;
+print $üτfⅷ;
+
+{
+    # Run this on severity 3 to see the butchered utf-8 name via Variables::ProhibitReusedNames. It does work though
+    my $üτfⅷ = 2;
+}
+
 print MYCONSTANT;
 
 LABEL1: for (0..4) {

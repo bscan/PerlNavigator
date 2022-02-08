@@ -305,7 +305,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
 function sendDiags(params: PublishDiagnosticsParams): void{
     // Before sending new diagnostics, check if the file is still open. 
-    if(documentSettings.has(params.uri)){
+    if(documents.get(params.uri)){
         connection.sendDiagnostics(params);
     } else {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });

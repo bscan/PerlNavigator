@@ -28,6 +28,7 @@ import { perlcompile, perlcritic } from "./diagnostics";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
+import { getHover } from "./hover";
 import { getCompletions } from './completion';
 var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
@@ -79,7 +80,7 @@ connection.onInitialize((params: InitializeParams) => {
             definitionProvider: true, // goto definition
             documentSymbolProvider: true, // Outline view and breadcrumbs
             workspaceSymbolProvider: true, 
-            // hoverProvider: true,   // Do this too.
+            hoverProvider: true, 
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -131,6 +132,8 @@ connection.onInitialized(() => {
         if(!defaultMods) return;
         return getWorkspaceSymbols(params, defaultMods);
     });
+
+
 
 });
 
@@ -329,7 +332,15 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
         isIncomplete: false,
     };
 });
-	
+
+
+connection.onHover(params => {
+    let document = documents.get(params.textDocument.uri);
+    let perlDoc = navSymbols.get(params.textDocument.uri);
+    if(!document || !perlDoc) return;
+
+    return getHover(params, perlDoc, document);
+});
 
 // This handler resolves additional information for the item selected in
 // // the completion list.

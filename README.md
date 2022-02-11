@@ -18,6 +18,10 @@ Works on almost any version of Perl, tested all the way back to Perl 5.8. Has fu
 * Works well with single files and large multi-folder workspaces
 * Support for Classes including Moo/Moose style classes
 
+## Demo
+
+![gif of Navigator in action](https://github.com/bscan/PerlNavigator/blob/main/Demo.gif)
+
 
 ## Installation
 Install the VSCode extension and it should just work. All required dependencies are bundled with the extension. 

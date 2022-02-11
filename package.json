@@ -4,11 +4,11 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.1.8",
+	"version": "0.1.9",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/bscan"
+		"url": "https://github.com/bscan/PerlNavigator"
 	},
 	"publisher": "bscan",
 	"categories": [],

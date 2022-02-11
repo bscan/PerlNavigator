@@ -1,5 +1,5 @@
 # Perl Navigator Language Server
-Extension for Perl that includes syntax checking, perlcritic, and code navigation. 
+Provides syntax checking, autocompletion, perlcritic, code navigation, hover for Perl.
 
 Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and parsing.  
 
@@ -20,7 +20,7 @@ Works on almost any version of Perl, tested all the way back to Perl 5.8. Has fu
 
 ## Demo
 
-![gif of Navigator in action](https://github.com/bscan/PerlNavigator/blob/main/Demo.gif)
+![gif of Navigator in action](https://raw.githubusercontent.com/bscan/PerlNavigator/main/Demo.gif)
 
 
 ## Installation

@@ -1,70 +1,39 @@
+"use strict";
 /* Perl Navigator server. See licenses.txt file for licensing and copyright information */
-
-import {
-    createConnection,
-    TextDocuments,
-    Diagnostic,
-    ProposedFeatures,
-    InitializeParams,
-    DidChangeConfigurationNotification,
-    TextDocumentSyncKind,
-    InitializeResult,
-    Location,
-    CompletionItem,
-    CompletionList,
-	TextDocumentPositionParams,
-} from 'vscode-languageserver/node';
-
-import {
-    TextDocument
-} from 'vscode-languageserver-textdocument';
-import {
-    PublishDiagnosticsParams
-} from 'vscode-languageserver-protocol';
-
-import Uri from 'vscode-uri';
-import { perlcompile, perlcritic } from "./diagnostics";
-import { getDefinition, getAvailableMods } from "./navigation";
-import { getSymbols, getWorkspaceSymbols } from "./symbols";
-import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
-import { getHover } from "./hover";
-import { getCompletions } from './completion';
+Object.defineProperty(exports, "__esModule", { value: true });
+const node_1 = require("vscode-languageserver/node");
+const vscode_languageserver_textdocument_1 = require("vscode-languageserver-textdocument");
+const vscode_uri_1 = require("vscode-uri");
+const diagnostics_1 = require("./diagnostics");
+const navigation_1 = require("./navigation");
+const symbols_1 = require("./symbols");
+const hover_1 = require("./hover");
+const completion_1 = require("./completion");
 var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
-const connection = createConnection(ProposedFeatures.all);
-
+const connection = (0, node_1.createConnection)(node_1.ProposedFeatures.all);
 // Create a simple text document manager.
-const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
-
+const documents = new node_1.TextDocuments(vscode_languageserver_textdocument_1.TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
-
-connection.onInitialize((params: InitializeParams) => {
+connection.onInitialize((params) => {
     const capabilities = params.capabilities;
-
     // Does the client support the `workspace/configuration` request?
     // If not, we fall back using global settings.
-    hasConfigurationCapability = !!(
-        capabilities.workspace && !!capabilities.workspace.configuration
-    );
-    hasWorkspaceFolderCapability = !!(
-        capabilities.workspace && !!capabilities.workspace.workspaceFolders
-    );
-
-    const result: InitializeResult = {
+    hasConfigurationCapability = !!(capabilities.workspace && !!capabilities.workspace.configuration);
+    hasWorkspaceFolderCapability = !!(capabilities.workspace && !!capabilities.workspace.workspaceFolders);
+    const result = {
         capabilities: {
-            textDocumentSync: TextDocumentSyncKind.Incremental,
-
+            textDocumentSync: node_1.TextDocumentSyncKind.Incremental,
             completionProvider: {
                 resolveProvider: false,
-                triggerCharacters: ['$','@','%','-', '>',':']
+                triggerCharacters: ['$', '@', '%', '-', '>', ':']
             },
-
-            definitionProvider: true, // goto definition
-            documentSymbolProvider: true, // Outline view and breadcrumbs
-            workspaceSymbolProvider: true, 
-            hoverProvider: true, 
+            definitionProvider: true,
+            documentSymbolProvider: true,
+            workspaceSymbolProvider: true,
+            hoverProvider: true,
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -76,11 +45,10 @@ connection.onInitialize((params: InitializeParams) => {
     }
     return result;
 });
-
 connection.onInitialized(() => {
     if (hasConfigurationCapability) {
         // Register for all configuration changes.
-        connection.client.register(DidChangeConfigurationNotification.type, undefined);
+        connection.client.register(node_1.DidChangeConfigurationNotification.type, undefined);
     }
     if (hasWorkspaceFolderCapability) {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
@@ -88,12 +56,10 @@ connection.onInitialized(() => {
         });
     }
 });
-
-
 // The global settings, used when the `workspace/configuration` request is not supported by the client.
 // Does not happen with the vscode client could happen with other clients.
 // The "real" default settings are in the top-level package.json
-const defaultSettings: NavigatorSettings = {
+const defaultSettings = {
     perlPath: "perl",
     enableWarnings: true,
     perlcriticProfile: "",
@@ -105,52 +71,41 @@ const defaultSettings: NavigatorSettings = {
     severity1: "hint",
     includePaths: [],
 };
-
-let globalSettings: NavigatorSettings = defaultSettings;
-
+let globalSettings = defaultSettings;
 // Cache the settings of all open documents
-const documentSettings: Map<string, NavigatorSettings> = new Map();
-
+const documentSettings = new Map();
 // Store recent critic diags to prevent blinking of diagnostics
-const documentDiags: Map<string, Diagnostic[]> = new Map();
-
+const documentDiags = new Map();
 // My ballpark estimate is that 350k symbols will be about 35MB. Huge map, but a reasonable limit. 
-const navSymbols = new LRU({max: 350000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
-
-const timers: Map<string, NodeJS.Timeout> = new Map();
-
+const navSymbols = new LRU({ max: 350000, length: function (value, key) { return value.elems.size; } });
+const timers = new Map();
 // Keep track of modules available for import. Building this is a slow operations and varies based on workspace settings, not documents
-const availableMods: Map<string, Map<string, string>> = new Map();
-let modCacheBuilt: boolean = false;
-
-
-async function rebuildModCache(){
+const availableMods = new Map();
+let modCacheBuilt = false;
+async function rebuildModCache() {
     const allDocs = documents.all();
-    if (allDocs.length > 0){
+    if (allDocs.length > 0) {
         modCacheBuilt = true;
-        dispatchForMods(allDocs[allDocs.length-1]); // Rebuild with recent file
+        dispatchForMods(allDocs[allDocs.length - 1]); // Rebuild with recent file
     }
     return;
 }
-
-async function buildModCache(textDocument: TextDocument){
-    if(!modCacheBuilt){
+async function buildModCache(textDocument) {
+    if (!modCacheBuilt) {
         modCacheBuilt = true; // Set true first to prevent other files from building concurrently.
-        dispatchForMods(textDocument); 
+        dispatchForMods(textDocument);
     }
     return;
 }
-
-async function dispatchForMods(textDocument: TextDocument) {
+async function dispatchForMods(textDocument) {
     // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
     const settings = await getDocumentSettings(textDocument.uri);
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
-    const newMods = await getAvailableMods(workspaceFolders, settings);
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+    const newMods = await (0, navigation_1.getAvailableMods)(workspaceFolders, settings);
     availableMods.set('default', newMods);
     return;
 }
-
-async function getDocumentSettings(resource: string): Promise<NavigatorSettings> {
+async function getDocumentSettings(resource) {
     if (!hasConfigurationCapability) {
         return globalSettings;
     }
@@ -160,14 +115,13 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
             scopeUri: resource,
             section: 'perlnavigator'
         });
-        if(!result) return globalSettings;
+        if (!result)
+            return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
         documentSettings.set(resource, resolvedSettings);
     }
     return result;
 }
-
-
 // Only keep settings for open documents
 documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
@@ -175,143 +129,124 @@ documents.onDidClose(e => {
     navSymbols.del(e.document.uri);
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
-
-
 documents.onDidOpen(change => {
     console.log('Hello? Received an onDidOpen');
     validatePerlDocument(change.document);
     buildModCache(change.document);
 });
-
-
 documents.onDidSave(change => {
     validatePerlDocument(change.document);
 });
-
-
 documents.onDidChangeContent(change => {
     // VSCode sends a firehose of change events. Only check after it's been quiet for 1 second.
-    const timer = timers.get(change.document.uri)
-    if(timer) clearTimeout(timer);
-    const newTimer = setTimeout(function(){ validatePerlDocument(change.document)}, 1000);
+    const timer = timers.get(change.document.uri);
+    if (timer)
+        clearTimeout(timer);
+    const newTimer = setTimeout(function () { validatePerlDocument(change.document); }, 1000);
     timers.set(change.document.uri, newTimer);
 });
-
-
-async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
+async function validatePerlDocument(textDocument) {
     const settings = await getDocumentSettings(textDocument.uri);
     console.log("Found settings");
     console.log(settings);
-    const filePath = Uri.parse(textDocument.uri).fsPath;
-    
+    const filePath = vscode_uri_1.default.parse(textDocument.uri).fsPath;
     const start = Date.now();
-
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
-    const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
-    const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
-
+    const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+    const pCompile = (0, diagnostics_1.perlcompile)(textDocument, workspaceFolders, settings); // Start compilation
+    const pCritic = (0, diagnostics_1.perlcritic)(textDocument, workspaceFolders, settings); // Start perlcritic
     let perlOut = await pCompile;
-    connection.console.log("Compilation Time: " + (Date.now() - start)/1000 + " seconds");
+    connection.console.log("Compilation Time: " + (Date.now() - start) / 1000 + " seconds");
     let oldCriticDiags = documentDiags.get(textDocument.uri);
-    if(!perlOut) return;
+    if (!perlOut)
+        return;
     let mixOldAndNew = perlOut.diags;
-    if(oldCriticDiags && settings.perlcriticEnabled) {
+    if (oldCriticDiags && settings.perlcriticEnabled) {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic. TODO: async wait if it's not that long.
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
-    }     
+    }
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
-
     navSymbols.set(textDocument.uri, perlOut.perlDoc);
-
     // Perl critic things
     const diagCritic = await pCritic;
     documentDiags.set(textDocument.uri, diagCritic); // May need to clear out old ones if a user changed their settings.
-    if(settings.perlcriticEnabled){
+    if (settings.perlcriticEnabled) {
         const allNewDiags = perlOut.diags.concat(diagCritic);
-        connection.console.log("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds");
+        connection.console.log("Perl Critic Time: " + (Date.now() - start) / 1000 + " seconds");
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
     return;
 }
-
-function sendDiags(params: PublishDiagnosticsParams): void{
+function sendDiags(params) {
     // Before sending new diagnostics, check if the file is still open. 
-    if(documents.get(params.uri)){
+    if (documents.get(params.uri)) {
         connection.sendDiagnostics(params);
-    } else {
+    }
+    else {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
         console.log(`The ${params.uri} has already closed. Skipping diagnostics`);
     }
 }
-
-
 connection.onDidChangeConfiguration(change => {
+    var _a;
     if (hasConfigurationCapability) {
         // Reset all cached document settings
         documentSettings.clear();
-    } else {
-        globalSettings = { ...defaultSettings, ...change?.settings?.perlnavigator };
     }
-
+    else {
+        globalSettings = { ...defaultSettings, ...(_a = change === null || change === void 0 ? void 0 : change.settings) === null || _a === void 0 ? void 0 : _a.perlnavigator };
+    }
     rebuildModCache();
     // Pretty rare occurence, and can slow things down. Revalidate all open text documents
     // documents.all().forEach(validatePerlDocument);
 });
-
-
 // This handler provides the initial list of the completion items.
-connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
+connection.onCompletion((params) => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
     let mods = availableMods.get('default');
-
-    if(!document) return;
-    if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    if(!mods) mods = new Map();
-    const completions: CompletionItem[] = getCompletions(params, perlDoc, document, mods);
+    if (!document)
+        return;
+    if (!perlDoc)
+        return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    if (!mods)
+        mods = new Map();
+    const completions = (0, completion_1.getCompletions)(params, perlDoc, document, mods);
     return {
         items: completions,
         isIncomplete: false,
     };
 });
-
-
 connection.onHover(params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
-    if(!document || !perlDoc) return;
-
-    return getHover(params, perlDoc, document);
+    if (!document || !perlDoc)
+        return;
+    return (0, hover_1.getHover)(params, perlDoc, document);
 });
-
-
 connection.onDefinition(params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
-    if(!document) return;
-    if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document);
+    if (!document)
+        return;
+    if (!perlDoc)
+        return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    let locOut = (0, navigation_1.getDefinition)(params, perlDoc, document);
     return locOut;
 });
-
-
 connection.onDocumentSymbol(params => {
     console.log("Getting document symbols");
-    return getSymbols(navSymbols, params.textDocument.uri);
+    return (0, symbols_1.getSymbols)(navSymbols, params.textDocument.uri);
 });
-
-
 connection.onWorkspaceSymbol(params => {
     console.log("Getting workspace symbols");
     let defaultMods = availableMods.get('default');
-    if(!defaultMods) return;
-    return getWorkspaceSymbols(params, defaultMods);
+    if (!defaultMods)
+        return;
+    return (0, symbols_1.getWorkspaceSymbols)(params, defaultMods);
 });
-
-
 // Make the text document manager listen on the connection
 // for open, change and close text document events
 documents.listen(connection);
-
 // Listen on the connection
 connection.listen();
+//# sourceMappingURL=server.js.map

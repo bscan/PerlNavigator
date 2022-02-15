@@ -38,14 +38,14 @@ You can also add additional include paths that will be added to the perl search 
 The default severities are reasonable, but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
 
 
-### Sublime Text (and other editors) Installation
-Currently, this is not yet packaged for other editors but you can build from source.
+## Install For Other Editors
+Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
 ```
 git clone https://github.com/bscan/PerlNavigator.git
 cd PerlNavigator
 npm install
 ```
-Sublime requires the following minimum settings under LSP settings (modify depending on your install location)
+Sublime Text requires the following minimum settings under LSP settings (modify depending on your install location and editor)
 ```
 {
     "clients": {

@@ -18,12 +18,12 @@ Works on almost any version of Perl, tested all the way back to Perl 5.8. Has fu
 * Works well with single files and large multi-folder workspaces
 * Support for Classes including Moo/Moose style classes
 
-## Demo
+## Visual Studio Code Demo
 
-![gif of Navigator in action](https://raw.githubusercontent.com/bscan/PerlNavigator/main/Demo.gif)
+![gif of Navigator in vscode](https://raw.githubusercontent.com/bscan/PerlNavigator/main/Demo.gif)
 
 
-## Installation
+## Vscode Installation
 Install the VSCode extension and it should just work. All required dependencies are bundled with the extension. 
 Please file a bug report if the Perl Navigator does not work out of the box.
 Perl::Critic is not currently bundled and needs to be installed separately, but the remaining features (e.g. navigation, autocomplete, syntax check) do not require it.
@@ -36,6 +36,29 @@ You can also add additional include paths that will be added to the perl search 
 
 ### Customizable Perl Critic severities
 The default severities are reasonable, but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
+
+
+## Install For Other Editors
+Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
+```
+git clone https://github.com/bscan/PerlNavigator.git
+cd PerlNavigator
+npm install
+```
+Sublime Text requires the following minimum settings under LSP settings (modify depending on your install location and editor)
+```
+{
+    "clients": {
+        "perlnavigator": {
+            "enabled": true,
+            "command": ["node", "C:\\temp\\PerlNavigator\\server\\out\\server.js","--stdio"],
+            "selector": "source.perl",
+        },
+    }
+}
+```
+
+![gif of Navigator in sublime](https://raw.githubusercontent.com/bscan/PerlNavigator/main/images/Sublime.gif)
 
 
 ## Licenses / Acknowledgments

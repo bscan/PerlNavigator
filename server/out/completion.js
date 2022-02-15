@@ -22,7 +22,6 @@ function getCompletions(params, perlDoc, txtDoc, modMap) {
         const prefix = getPrefix(text, index);
         if (!prefix.symbol)
             return [];
-        console.log("Looking at prefix: " + prefix.symbol);
         const replace = {
             start: { line: position.line, character: prefix.charStart },
             end: { line: position.line, character: prefix.charEnd }
@@ -102,7 +101,6 @@ function getMatches(perlDoc, symbol, replace) {
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, '\\$1'); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
-            // console.log(`${symbol} became ${qualifiedSymbol} and matched with ${elemName}, so we displayed: ${aligned}`);
             if (symbol.endsWith('-'))
                 aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->'); // Half-arrows count too
             // Don't send invalid constructs

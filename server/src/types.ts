@@ -19,6 +19,7 @@ export interface NavigatorSettings {
     severity2: string;
     severity1: string;
     includePaths: string[];
+    logging: boolean;
 }
 
 

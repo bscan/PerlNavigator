@@ -60,9 +60,8 @@ function buildHoverDoc(symbol, elem) {
         desc = `(label) ${symbol}`;
     }
     else {
-        // We should never get here
-        desc = `Unknown: ${symbol}`;
+        console.log("What is this thing? Fix me!");
     }
     return desc;
 }
-//# sourceMappingURL=hover.js.map
+//# sourceMappingURL=logging.js.map

@@ -24,7 +24,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
                     includePaths = includePaths.concat(["-I", path.replace(/\$workspaceFolder/g, incPath)]);
                 });
             } else {
-                console.log("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path);
+                nLog("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path, settings);
             }
         } else {
             includePaths = includePaths.concat(["-I", path]);
@@ -128,7 +128,6 @@ export function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number
     // One example where ithelps is SamePackageSubs
     // if(symbol.includes('->')){
         const method = qSymbol.split('::').pop();
-        console.log(`qualifiedSymbol ${qSymbol}   and method ${method}`);
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);
@@ -149,5 +148,12 @@ export function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number
     return [];
 }
 
+
+export function nLog(message: string, settings: NavigatorSettings){
+    // TODO: Remove resource level settings and just use a global logging setting?
+    if(settings.logging){
+        console.log(message);
+    }
+}
 
 

@@ -8,7 +8,7 @@ import {
 } from 'vscode-languageserver-protocol';
 import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
-import { getIncPaths, async_execFile } from './utils';
+import { getIncPaths, async_execFile, nLog } from './utils';
 import { buildNav } from "./parseDocument";
 
 import {
@@ -22,7 +22,7 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     if(settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
-    console.log("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath);
+    nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
 
     let output: string;
     let stdout: string;
@@ -31,7 +31,10 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     const code = getAdjustedPerlCode(textDocument, filePath);
     try {
         const process = async_execFile(settings.perlPath, perlParams, {timeout: 10000, maxBuffer: 20 * 1024 * 1024});
-        process?.child?.stdin?.on('error', (error) => console.log("Perl Compilation Error Caught: ", error));
+        process?.child?.stdin?.on('error', (error: any) => { 
+            nLog("Perl Compilation Error Caught: ", settings);
+            nLog(error, settings);
+        });
         process?.child?.stdin?.write(code);
         process?.child?.stdin?.end();
         const out = await process;
@@ -46,8 +49,8 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
             stdout = error.stdout;
             severity = DiagnosticSeverity.Error;
         } else {
-            console.log("Perlcompile failed with unknown error")
-            console.log(error);
+            nLog("Perlcompile failed with unknown error", settings);
+            nLog(error, settings);
             return;
         }
     }
@@ -136,24 +139,27 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
     let criticParams: string[] = [critic_path].concat(getCriticProfile(workspaceFolders, settings));
     criticParams = criticParams.concat(['--file', Uri.parse(textDocument.uri).fsPath]);
 
-    console.log("Now starting perlcritic with: " + criticParams.join(" "));
+    nLog("Now starting perlcritic with: " + criticParams.join(" "), settings);
     const code = textDocument.getText();
     const diagnostics: Diagnostic[] = [];
     let output: string;
     try {
         const process = async_execFile(settings.perlPath, criticParams, {timeout: 25000});
-        process?.child?.stdin?.on('error', (error) => console.log("Perl Critic Error Caught: ", error));
+        process?.child?.stdin?.on('error', (error: any) => {
+            nLog("Perl Critic Error Caught: ", settings);
+            nLog(error, settings);
+        });
         process?.child?.stdin?.write(code);
         process?.child?.stdin?.end();
         const out = await process;
         output = out.stdout;
     } catch(error: any) {
-        console.log("Perlcritic failed with unknown error");
-        console.log(error);
+        nLog("Perlcritic failed with unknown error", settings);
+        nLog(error, settings);
         return diagnostics;
     }
 
-    console.log("Critic output" + output);
+    nLog("Critic output" + output, settings);
     output.split("\n").forEach(violation => {
         maybeAddCriticDiag(violation, diagnostics, settings);
     });
@@ -172,7 +178,7 @@ function getCriticProfile (workspaceFolders: WorkspaceFolder[] | null, settings:
                 profileCmd.push('--profile');
                 profileCmd.push(profile.replace(/\$workspaceFolder/g, workspaceUri));
             } else {
-                console.log("You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.");
+                nLog("You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.", settings);
             }
         } else {
             profileCmd.push('--profile');

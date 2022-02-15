@@ -57,7 +57,7 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
         });
         return symbols;
     }).catch((reason)=>{
-        console.log(reason);
+        // console.log(reason);
         return [];
     });
 }

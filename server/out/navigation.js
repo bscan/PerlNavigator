@@ -10,10 +10,8 @@ function getDefinition(params, perlDoc, txtDoc) {
     const symbol = (0, utils_1.getSymbol)(position, txtDoc);
     if (!symbol)
         return;
-    console.log("Looking for: " + symbol);
     const foundElems = (0, utils_1.lookupSymbol)(perlDoc, symbol, position.line);
     if (foundElems.length == 0) {
-        console.log("Could not find word: " + symbol);
         return;
     }
     let locationsFound = [];
@@ -72,18 +70,18 @@ async function getAvailableMods(workspaceFolders, settings) {
     perlParams = perlParams.concat((0, utils_1.getIncPaths)(workspaceFolders, settings));
     const modHunterPath = (0, path_1.join)((0, path_1.dirname)(__dirname), 'src', 'perl', 'lib_bs22', 'ModHunter.pl');
     perlParams.push(modHunterPath);
-    console.log("Starting to look for perl modules with " + perlParams.join(" "));
+    (0, utils_1.nLog)("Starting to look for perl modules with " + perlParams.join(" "), settings);
     const mods = new Map();
     let output;
     try {
         // This can be slow, especially if reading modules over a network or on windows. 
         const out = await (0, utils_1.async_execFile)(settings.perlPath, perlParams, { timeout: 90000, maxBuffer: 3 * 1024 * 1024 });
         output = out.stdout;
-        console.log("Success running mod hunter");
+        (0, utils_1.nLog)("Success running mod hunter", settings);
     }
     catch (error) {
-        console.log("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal");
-        console.log(error);
+        (0, utils_1.nLog)("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal", settings);
+        (0, utils_1.nLog)(error, settings);
         return mods;
     }
     output.split("\n").forEach(mod => {

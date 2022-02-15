@@ -9,7 +9,7 @@ import {
 import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
 import Uri from 'vscode-uri';
 import { realpathSync, existsSync, realpath } from 'fs';
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol } from "./utils";
+import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog } from "./utils";
 import { dirname, join } from 'path';
 
 
@@ -20,12 +20,10 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     const symbol = getSymbol(position, txtDoc);
 
     if(!symbol) return;
-    console.log("Looking for: " + symbol);
 
     const foundElems = lookupSymbol(perlDoc, symbol, position.line);
 
     if(foundElems.length == 0){
-        console.log("Could not find word: " + symbol);
         return;
     }
 
@@ -92,7 +90,7 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     const modHunterPath = join(dirname(__dirname), 'src', 'perl', 'lib_bs22', 'ModHunter.pl');
     perlParams.push(modHunterPath);
-    console.log("Starting to look for perl modules with " + perlParams.join(" "));
+    nLog("Starting to look for perl modules with " + perlParams.join(" "), settings);
 
     const mods: Map<string, string> = new Map()
 
@@ -101,10 +99,10 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
         // This can be slow, especially if reading modules over a network or on windows. 
         const out = await async_execFile(settings.perlPath, perlParams, {timeout: 90000, maxBuffer: 3 * 1024 * 1024});
         output = out.stdout;
-        console.log("Success running mod hunter");
+        nLog("Success running mod hunter", settings);
     } catch(error: any) {
-        console.log("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal");
-        console.log(error);
+        nLog("ModHunter failed. You will lose autocomplete on importing modules. Not a huge deal", settings);
+        nLog(error, settings);
         return mods;
     }
 

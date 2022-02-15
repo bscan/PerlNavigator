@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.lookupSymbol = exports.getSymbol = exports.getIncPaths = exports.async_execFile = void 0;
+exports.nLog = exports.lookupSymbol = exports.getSymbol = exports.getIncPaths = exports.async_execFile = void 0;
 const vscode_uri_1 = require("vscode-uri");
 const child_process_1 = require("child_process");
 const util_1 = require("util");
@@ -17,7 +17,7 @@ function getIncPaths(workspaceFolders, settings) {
                 });
             }
             else {
-                console.log("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path);
+                nLog("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path, settings);
             }
         }
         else {
@@ -113,7 +113,6 @@ function lookupSymbol(perlDoc, symbol, line) {
         // One example where ithelps is SamePackageSubs
         // if(symbol.includes('->')){
         const method = qSymbol.split('::').pop();
-        console.log(`qualifiedSymbol ${qSymbol}   and method ${method}`);
         if (method) {
             // Perhaps the method is within our current scope, or explictly imported. 
             found = perlDoc.elems.get(method);
@@ -135,4 +134,11 @@ function lookupSymbol(perlDoc, symbol, line) {
     return [];
 }
 exports.lookupSymbol = lookupSymbol;
+function nLog(message, settings) {
+    // TODO: Remove resource level settings and just use a global logging setting?
+    if (settings.logging) {
+        console.log(message);
+    }
+}
+exports.nLog = nLog;
 //# sourceMappingURL=utils.js.map

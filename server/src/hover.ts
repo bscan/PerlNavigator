@@ -57,7 +57,8 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
     } else if (elem.type == 'l'){ // Loop labels
         desc = `(label) ${symbol}`;
     } else{
-        console.log("What is this thing? Fix me!");
+        // We should never get here
+        desc = `Unknown: ${symbol}`;
     }
 
 

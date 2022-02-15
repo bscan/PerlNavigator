@@ -43,7 +43,7 @@ function getSymbols(navSymbols, uri) {
         });
         return symbols;
     }).catch((reason) => {
-        console.log(reason);
+        // console.log(reason);
         return [];
     });
 }

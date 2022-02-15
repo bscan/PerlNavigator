@@ -14,7 +14,7 @@ async function perlcompile(textDocument, workspaceFolders, settings) {
         perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
     perlParams = perlParams.concat((0, utils_1.getIncPaths)(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
-    console.log("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath);
+    (0, utils_1.nLog)("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
     let output;
     let stdout;
     let severity;
@@ -22,7 +22,10 @@ async function perlcompile(textDocument, workspaceFolders, settings) {
     const code = getAdjustedPerlCode(textDocument, filePath);
     try {
         const process = (0, utils_1.async_execFile)(settings.perlPath, perlParams, { timeout: 10000, maxBuffer: 20 * 1024 * 1024 });
-        (_b = (_a = process === null || process === void 0 ? void 0 : process.child) === null || _a === void 0 ? void 0 : _a.stdin) === null || _b === void 0 ? void 0 : _b.on('error', (error) => console.log("Perl Compilation Error Caught: ", error));
+        (_b = (_a = process === null || process === void 0 ? void 0 : process.child) === null || _a === void 0 ? void 0 : _a.stdin) === null || _b === void 0 ? void 0 : _b.on('error', (error) => {
+            (0, utils_1.nLog)("Perl Compilation Error Caught: ", settings);
+            (0, utils_1.nLog)(error, settings);
+        });
         (_d = (_c = process === null || process === void 0 ? void 0 : process.child) === null || _c === void 0 ? void 0 : _c.stdin) === null || _d === void 0 ? void 0 : _d.write(code);
         (_f = (_e = process === null || process === void 0 ? void 0 : process.child) === null || _e === void 0 ? void 0 : _e.stdin) === null || _f === void 0 ? void 0 : _f.end();
         const out = await process;
@@ -38,8 +41,8 @@ async function perlcompile(textDocument, workspaceFolders, settings) {
             severity = node_1.DiagnosticSeverity.Error;
         }
         else {
-            console.log("Perlcompile failed with unknown error");
-            console.log(error);
+            (0, utils_1.nLog)("Perlcompile failed with unknown error", settings);
+            (0, utils_1.nLog)(error, settings);
             return;
         }
     }
@@ -116,24 +119,27 @@ async function perlcritic(textDocument, workspaceFolders, settings) {
     const critic_path = (0, path_1.join)((0, path_1.dirname)(__dirname), 'src', 'perl', 'criticWrapper.pl');
     let criticParams = [critic_path].concat(getCriticProfile(workspaceFolders, settings));
     criticParams = criticParams.concat(['--file', vscode_uri_1.default.parse(textDocument.uri).fsPath]);
-    console.log("Now starting perlcritic with: " + criticParams.join(" "));
+    (0, utils_1.nLog)("Now starting perlcritic with: " + criticParams.join(" "), settings);
     const code = textDocument.getText();
     const diagnostics = [];
     let output;
     try {
         const process = (0, utils_1.async_execFile)(settings.perlPath, criticParams, { timeout: 25000 });
-        (_b = (_a = process === null || process === void 0 ? void 0 : process.child) === null || _a === void 0 ? void 0 : _a.stdin) === null || _b === void 0 ? void 0 : _b.on('error', (error) => console.log("Perl Critic Error Caught: ", error));
+        (_b = (_a = process === null || process === void 0 ? void 0 : process.child) === null || _a === void 0 ? void 0 : _a.stdin) === null || _b === void 0 ? void 0 : _b.on('error', (error) => {
+            (0, utils_1.nLog)("Perl Critic Error Caught: ", settings);
+            (0, utils_1.nLog)(error, settings);
+        });
         (_d = (_c = process === null || process === void 0 ? void 0 : process.child) === null || _c === void 0 ? void 0 : _c.stdin) === null || _d === void 0 ? void 0 : _d.write(code);
         (_f = (_e = process === null || process === void 0 ? void 0 : process.child) === null || _e === void 0 ? void 0 : _e.stdin) === null || _f === void 0 ? void 0 : _f.end();
         const out = await process;
         output = out.stdout;
     }
     catch (error) {
-        console.log("Perlcritic failed with unknown error");
-        console.log(error);
+        (0, utils_1.nLog)("Perlcritic failed with unknown error", settings);
+        (0, utils_1.nLog)(error, settings);
         return diagnostics;
     }
-    console.log("Critic output" + output);
+    (0, utils_1.nLog)("Critic output" + output, settings);
     output.split("\n").forEach(violation => {
         maybeAddCriticDiag(violation, diagnostics, settings);
     });
@@ -152,7 +158,7 @@ function getCriticProfile(workspaceFolders, settings) {
                 profileCmd.push(profile.replace(/\$workspaceFolder/g, workspaceUri));
             }
             else {
-                console.log("You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.");
+                (0, utils_1.nLog)("You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.", settings);
             }
         }
         else {

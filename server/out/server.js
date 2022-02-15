@@ -9,6 +9,7 @@ const navigation_1 = require("./navigation");
 const symbols_1 = require("./symbols");
 const hover_1 = require("./hover");
 const completion_1 = require("./completion");
+const utils_1 = require("./utils");
 var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -52,7 +53,7 @@ connection.onInitialized(() => {
     }
     if (hasWorkspaceFolderCapability) {
         connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            connection.console.log('Workspace folder change event received.');
+            // connection.console.log('Workspace folder change event received.');
         });
     }
 });
@@ -70,6 +71,7 @@ const defaultSettings = {
     severity2: "hint",
     severity1: "hint",
     includePaths: [],
+    logging: false, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
 };
 let globalSettings = defaultSettings;
 // Cache the settings of all open documents
@@ -130,7 +132,6 @@ documents.onDidClose(e => {
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
 documents.onDidOpen(change => {
-    console.log('Hello? Received an onDidOpen');
     validatePerlDocument(change.document);
     buildModCache(change.document);
 });
@@ -147,15 +148,14 @@ documents.onDidChangeContent(change => {
 });
 async function validatePerlDocument(textDocument) {
     const settings = await getDocumentSettings(textDocument.uri);
-    console.log("Found settings");
-    console.log(settings);
+    (0, utils_1.nLog)("Found settings", settings);
     const filePath = vscode_uri_1.default.parse(textDocument.uri).fsPath;
     const start = Date.now();
     const workspaceFolders = await connection.workspace.getWorkspaceFolders();
     const pCompile = (0, diagnostics_1.perlcompile)(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = (0, diagnostics_1.perlcritic)(textDocument, workspaceFolders, settings); // Start perlcritic
     let perlOut = await pCompile;
-    connection.console.log("Compilation Time: " + (Date.now() - start) / 1000 + " seconds");
+    (0, utils_1.nLog)("Compilation Time: " + (Date.now() - start) / 1000 + " seconds", settings);
     let oldCriticDiags = documentDiags.get(textDocument.uri);
     if (!perlOut)
         return;
@@ -171,7 +171,7 @@ async function validatePerlDocument(textDocument) {
     documentDiags.set(textDocument.uri, diagCritic); // May need to clear out old ones if a user changed their settings.
     if (settings.perlcriticEnabled) {
         const allNewDiags = perlOut.diags.concat(diagCritic);
-        connection.console.log("Perl Critic Time: " + (Date.now() - start) / 1000 + " seconds");
+        (0, utils_1.nLog)("Perl Critic Time: " + (Date.now() - start) / 1000 + " seconds", settings);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
     return;
@@ -183,7 +183,6 @@ function sendDiags(params) {
     }
     else {
         connection.sendDiagnostics({ uri: params.uri, diagnostics: [] });
-        console.log(`The ${params.uri} has already closed. Skipping diagnostics`);
     }
 }
 connection.onDidChangeConfiguration(change => {
@@ -234,11 +233,9 @@ connection.onDefinition(params => {
     return locOut;
 });
 connection.onDocumentSymbol(params => {
-    console.log("Getting document symbols");
     return (0, symbols_1.getSymbols)(navSymbols, params.textDocument.uri);
 });
 connection.onWorkspaceSymbol(params => {
-    console.log("Getting workspace symbols");
     let defaultMods = availableMods.get('default');
     if (!defaultMods)
         return;

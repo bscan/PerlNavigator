@@ -11,6 +11,7 @@ package pltags;
 use strict;
 no warnings;
 use utf8;
+use Text::Balanced qw();
 
 use Exporter;
 our @ISA    = qw(Exporter);
@@ -74,6 +75,17 @@ sub SubName {
     }
 }
 
+sub SubEndLine {
+    my ($paCode, $line_num, $offset) = @_;
+    my $end = $#$paCode - $line_num > 1000 ? $line_num + 1000 : $#$paCode;    # Limit to 1000 line subroutines for speed
+    my $toInpect = join("\n", @{$paCode}[$line_num..$end]);            # All code from sub { through end of file
+    my ($extracted, undef, $prefix) = Text::Balanced::extract_codeblock($toInpect, '{', '(?s).*?(?={)'); # Will ignore up to start of sub, and then match through to the end
+    return $line_num - $offset + 1 if (!$extracted);  # if we didn't find the end, mark the end at the beginning. 
+    $extracted = $prefix . $extracted; 
+    my $length = $extracted =~ tr/\n//; # Count lines in sub definition
+    return $line_num + $length - $offset + 1;
+}
+
 sub build_pltags {
 
     my ($code, $offset, $file) = @_;
@@ -84,10 +96,14 @@ sub build_pltags {
     my $var_continues = 0;
     my $line_number = -$offset;
         
+    my @code = split("\n", $code);
+    my $n = scalar(@code);
     # Loop through file
-    foreach my $line (split("\n", $code)) {
+    for (my $i=0; $i<$n;$i++){
         $line_number++;
         next if $line_number < 0;
+
+        my $line = $code[$i];
 
         # Statement will be line with comments, whitespace and POD trimmed
         my $stmt;
@@ -166,15 +182,16 @@ sub build_pltags {
 
         # This is a sub declaration if the line starts with sub
         elsif ($stmt =~ /^sub\b/) {
-            MakeTag(SubName($stmt), "s", '', $file, $line_number, $package_name, \@tags);
-
-
-            # Define subrountine signatures, but exclude prototypes
-            # The declaration continues if the line does not end with ;
-            $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
             
+            my $end_line = SubEndLine(\@code, $i, $offset);
+            MakeTag(SubName($stmt), "s", '', $file, "$line_number;$end_line", $package_name, \@tags);
+
             # Match the after the sub declaration and before the start of the actual sub. 
             if($stmt =~ /^sub\s+[\w:]+([^{]*)/){
+                # Define subrountine signatures, but exclude prototypes
+                # The declaration continues if the line does not end with ;
+                $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
+
                 my @vars = ($1 =~ /([\$\@\%][\w:]+)\b/g);
                 foreach my $var (@vars) {
                     MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
@@ -209,3 +226,5 @@ sub build_pltags {
 
     return \@tags, \@packages;
 }
+
+1;

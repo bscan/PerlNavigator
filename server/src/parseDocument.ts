@@ -34,12 +34,17 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     const typeDetail = items[2] || ""; 
     const file       = items[3] || ""; 
     const pack       = items[4] || ""; 
-    const lineNum    = items[5] ? +items[5] : 0; 
+    
+    const lines      = items[5].split(';');
+
+    const startLine  = lines[0] ? +lines[0] : 0;
+    const endLine    = lines[1] ? +lines[1] : startLine;
+
     const value      = items[6] || ""; 
 
     if (type == 'u'){
         // Explictly loaded module. Helpful for focusing autocomplete results
-        perlDoc.imported.set(name, lineNum);
+        perlDoc.imported.set(name, startLine);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 
@@ -52,7 +57,8 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         typeDetail: typeDetail,
         file: file,
         package: pack,
-        line: lineNum,
+        line: startLine,
+        lineEnd: endLine,
         value: value,
     };
 

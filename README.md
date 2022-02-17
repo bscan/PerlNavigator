@@ -6,6 +6,7 @@ Implemented as a Language Server using the Microsoft LSP libraries along with Pe
 Works on Windows, MacOS, and Linux. The vscode extension includes everything needed to work, no additional installation should be necessary.
 Works on almost any version of Perl, tested all the way back to Perl 5.8. Has full support for multi-root workspaces, single file editing, and multiple open windows.
 
+Install the vscode extension from here: https://marketplace.visualstudio.com/items?itemName=bscan.perlnavigator 
 
 ## Currently Implemented Features:
 * Syntax Checking

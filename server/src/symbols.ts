@@ -41,7 +41,7 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
                 const location: Location = {
                     range: {
                         start: { line: element.line, character: 0 },
-                        end: { line: element.line, character: 100 }  
+                        end: { line: element.lineEnd, character: 100 }  
                     },
                     uri: uri
                 };

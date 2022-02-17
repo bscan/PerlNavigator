@@ -31,6 +31,7 @@ export interface PerlElem {
     file: string;
     package: string;
     line: number;
+    lineEnd: number;
     value: string;
 };
 

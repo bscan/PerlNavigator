@@ -1,5 +1,5 @@
 
-import { PerlDocument, PerlElem, PerlImport } from "./types";
+import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind} from "./types";
 
 
 export async function buildNav(stdout: string): Promise<PerlDocument> {
@@ -53,7 +53,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
     // Add anyway
     const newElem: PerlElem = {
         name: name,
-        type: type,
+        type: type as PerlSymbolKind,
         typeDetail: typeDetail,
         file: file,
         package: pack,
@@ -62,6 +62,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         value: value,
     };
 
+    // Move fancy object types into the typeDetail field????
     if (type.length > 1){
         // We overwrite, so the last typed element is the canonical one. No reason for this.
         perlDoc.canonicalElems.set(name, newElem);

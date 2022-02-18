@@ -1,6 +1,8 @@
 package MySubClass;
 use strict;
 use warnings;
+use FindBin qw($Bin);
+use lib "$Bin";
 use MyLib::MyClass;
 use base qw(MyLib::MyClass);
 use Data::Dumper qw(Dumper);

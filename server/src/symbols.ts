@@ -5,7 +5,7 @@ import {
     Location,
     WorkspaceSymbolParams
 } from 'vscode-languageserver/node';
-import { PerlDocument, PerlElem } from "./types";
+import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import Uri from 'vscode-uri';
 import { realpathSync, existsSync } from 'fs';
 import { Console } from 'console';
@@ -36,8 +36,28 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
     return waitForDoc(navSymbols, uri).then((perlDoc) => {
         let symbols: SymbolInformation[] = [];
         perlDoc.elems?.forEach((elements: PerlElem[], elemName: string) => {
-            const element = elements[0]; // All Elements are with same name are normally the same.
-            if (["s","p"].includes(element.type)) {
+            
+            elements.forEach(element => {
+                let kind: SymbolKind;
+                if (element.type == PerlSymbolKind.LocalSub){
+                    kind = SymbolKind.Function;
+                } else if (element.type == PerlSymbolKind.LocalMethod){
+                    kind = SymbolKind.Method;
+                } else if (element.type == PerlSymbolKind.Package){
+                    kind = SymbolKind.Package;
+                } else if (element.type == PerlSymbolKind.Class){
+                    kind = SymbolKind.Class;
+                } else if (element.type == PerlSymbolKind.Field){
+                    kind = SymbolKind.Field;
+                } else if (element.type == PerlSymbolKind.Label){
+                    kind = SymbolKind.Key;
+                } else if (element.type == PerlSymbolKind.Phaser){
+                    kind = SymbolKind.Event;
+                } else if (element.type == PerlSymbolKind.Constant){
+                    kind = SymbolKind.Constant;
+                } else {
+                    return;
+                }
                 const location: Location = {
                     range: {
                         start: { line: element.line, character: 0 },
@@ -46,18 +66,19 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
                     uri: uri
                 };
                 const newSymbol: SymbolInformation = {
-                    kind: element.type == "p" ? SymbolKind.Package: SymbolKind.Function,
+                    kind: kind,
                     location: location,
                     name: elemName
                 }
 
                 symbols.push(newSymbol);
-            } 
-
+            }); 
         });
+
         return symbols;
     }).catch((reason)=>{
-        // console.log(reason);
+        console.log("Failed in getSymbols");
+        console.log(reason);
         return [];
     });
 }

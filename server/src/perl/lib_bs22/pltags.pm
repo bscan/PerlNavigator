@@ -43,47 +43,67 @@ sub MakeTag {
     }
 }
 
-# Parse package name from statement
-sub PackageName {
-    my ($stmt) = @_;    # Statement
-
-    # Look for the argument to "package".  Return it if found, else return ""
-    if ($stmt =~ /^package\s+([\w:]+)/) {
-        my $pkgname = $1;
-
-        # Remove any parent package name(s)
-        #$pkgname =~ s/.*://; # TODO: WHY WOULD WE REMOVE THIS????
-        return $pkgname;
-    } else {
-        return "";
-    }
-}
-
-# Parse sub name from statement
-sub SubName {
-    my ($stmt) = @_;    # Statement
-
-    # Look for the argument to "sub".  Return it if found, else return ""
-    if ($stmt =~ /^sub\s+([\w:]+)/) {
-        my $subname = $1;
-
-        # Remove any parent package name(s)
-        $subname =~ s/.*://;
-        return $subname;
-    } else {
-        return "";
-    }
-}
-
 sub SubEndLine {
     my ($paCode, $line_num, $offset) = @_;
-    my $end = $#$paCode - $line_num > 1000 ? $line_num + 1000 : $#$paCode;    # Limit to 1000 line subroutines for speed
-    my $toInpect = join("\n", @{$paCode}[$line_num..$end]);            # All code from sub { through end of file
-    my ($extracted, undef, $prefix) = Text::Balanced::extract_codeblock($toInpect, '{', '(?s).*?(?={)'); # Will ignore up to start of sub, and then match through to the end
+    my $end = $#$paCode - $line_num > 700 ? $line_num + 700 : $#$paCode;    # Limit to 700 line subroutines for speed. Will still display otherwise, but won't have depth
+    # Contains workaraound for https://rt.cpan.org/Public/Bug/Display.html?id=78313
+    my $toInpect = join("\n", map {my $s=$_; $s=~ s@\s//=?\s@\s\s@g; $s } @{$paCode}[$line_num..$end]);            # All code from sub { through end of file
+    my ($extracted, undef, $prefix) = Text::Balanced::extract_codeblock($toInpect, '{', '(?s).*?(?=[{;])'); # Will ignore up to start of sub, and then match through to the end
     return $line_num - $offset + 1 if (!$extracted);  # if we didn't find the end, mark the end at the beginning. 
     $extracted = $prefix . $extracted; 
     my $length = $extracted =~ tr/\n//; # Count lines in sub definition
     return $line_num + $length - $offset + 1;
+}
+
+# Finding the end of a package is hard because of the different syntaxes:
+# package foo; contents
+# package { contents }
+# { package foo; contents } 
+sub PackageEndLine  {
+    my ($paCode, $line_num, $offset) = @_;
+    my $end = $#$paCode - $line_num > 1200 ? $line_num + 1200 : $#$paCode;  # Limit to 1200 line subroutines for speed
+    my @smallCopy = @{$paCode}[$line_num..$end];
+    my $toInpect = join("\n", @smallCopy);                       # Maybe we're already in a scope, so look for the end of it. 
+    my $prefixRg = undef;
+    if ($paCode->[$line_num] =~ /package[^#]+;/){ # Single line package definition.
+        if ($paCode->[$line_num] =~ /{.*package/ or ( ($line_num - $offset + 1) > 0 and  $paCode->[$line_num-1] =~ /{/)){
+            # Text::Balanced is pretty unreliable, so don't hunt for the closing } unless you absolutely need to.
+            $toInpect = "{" . $toInpect; 
+        } else {
+            $toInpect = "";
+        }
+    } else {
+        $prefixRg = '(?s).*?(?=[{;])'; # Start new block either now or on upcoming lines
+    }
+    my $extracted = Text::Balanced::extract_codeblock($toInpect, '{', $prefixRg); 
+    my $length;
+    if ($extracted){ 
+        $length = $extracted =~ tr/\n//; # Count lines in sub definition
+        print "Found extracted wioth length $length\n";
+
+    }
+    
+    my $count = 1;
+    shift @smallCopy; # Remove first line to avoid finding itself
+    foreach my $stmt (@smallCopy){
+        last if (defined($length) and $count > $length);
+        if($stmt =~ /^\s*package\s+([\w:]+)/){
+            $length = $count-1;
+            last;
+        }
+        $count++;
+    }
+
+    if ($length){
+        print "Found $length, but from where??\n";
+        # If we found a delimited package
+        return $line_num + $length - $offset + 1;
+    } else {
+        # Run until end of package
+        print "Run forever\n";
+
+        return $line_num + $#$paCode - $offset + 1;
+    }
 }
 
 sub build_pltags {
@@ -170,48 +190,66 @@ sub build_pltags {
         }
 
         # This is a package declaration if the line starts with package
-        elsif ($stmt =~ /^package\b/) {
+        elsif ($stmt =~ /^package\s+([\w:]+)/) {
             # Get name of the package
-            $package_name = PackageName($stmt);
+            $package_name = $1;
+            my $end_line = PackageEndLine(\@code, $i, $offset);
+            MakeTag($package_name, "p", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            push(@packages, $package_name);
+        }
 
-            if ($package_name) {
-                MakeTag($package_name, "p", '', $file, $line_number, $package_name, \@tags);
-                push(@packages, $package_name);
-            }
+        # This is a class decoration for Object::Pad, Corinna, or Moops 
+        elsif ($stmt =~ /^class\s+([\w:]+)/) {
+            # Get name of the package
+            my $class_name = $1;
+
+            my $end_line = SubEndLine(\@code, $i, $offset);
+            MakeTag($class_name, "a", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            push(@packages, $package_name);
         }
 
         # This is a sub declaration if the line starts with sub
-        elsif ($stmt =~ /^sub\b/) {
-            
+        elsif ($stmt =~ /^(sub|method)\s+([\w:]+)/) {
+            my $subName = $2;
+            my $kind = $1 eq 'sub' ? 's' : 'o';
             my $end_line = SubEndLine(\@code, $i, $offset);
-            MakeTag(SubName($stmt), "s", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            MakeTag($subName, "s", '', $file, "$line_number;$end_line", $package_name, \@tags);
 
-            # Match the after the sub declaration and before the start of the actual sub. 
+            # Match the after the sub declaration and before the start of the actual sub for signatures
             if($stmt =~ /^sub\s+[\w:]+([^{]*)/){
+                my @vars = ($1 =~ /([\$\@\%][\w:]+)\b/g);
+
                 # Define subrountine signatures, but exclude prototypes
                 # The declaration continues if the line does not end with ;
                 $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
 
-                my @vars = ($1 =~ /([\$\@\%][\w:]+)\b/g);
                 foreach my $var (@vars) {
                     MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
                 }
             }
         }
 
+        # Phaser block
+        elsif ($stmt=~/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/) {
+            my $phaser = $1;
+            my $end_line = SubEndLine(\@code, $i, $offset);
+            MakeTag($phaser, "e", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        }
+
         # Label line
         elsif ($stmt=~/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:(?:[^:]|$)/) {
-            MakeTag($1, "l", '', $file, $line_number, $package_name, \@tags);
-
+            my $label = $1;
+            my $end_line = SubEndLine(\@code, $i, $offset);
+            MakeTag($label, "l", '', $file, "$line_number;$end_line", $package_name, \@tags);
         }
 
         # Constants. Important because they look like subs (and technically are), so I'll tags them as such 
         elsif ($stmt =~/^use\s+constant\s+(\w+)\b/) {
-            MakeTag($1, "s", '', $file, $line_number, $package_name, \@tags);
+            MakeTag($1, "n", '', $file, $line_number, $package_name, \@tags);
         }
 
-        elsif ($stmt=~/^has\s+["']?(\w+)\b/) { # Moo/Moose variables. Look like variables, but act like methods
-            MakeTag($1, "s", '', $file, $line_number, $package_name, \@tags);
+        elsif ($stmt=~/^has(?:\s+|\()(?:["']|\$)?(\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
+            MakeTag($1, "f", '', $file, $line_number, $package_name, \@tags);
         }
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 

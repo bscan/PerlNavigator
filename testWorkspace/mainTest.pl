@@ -45,6 +45,10 @@ print $$hash_ref{"Five"};
 # print $üτfⅷ;
 print MYCONSTANT;
 
+INIT {
+    print "Init blocks"
+}
+
 LABEL1: for (0..4) {
     LABEL2: foreach my $lexLoopDuplicate (0..4) {
         next LABEL2 if $lexLoopDuplicate > 2;

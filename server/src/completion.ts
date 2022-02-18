@@ -6,7 +6,7 @@ import {
     MarkupContent
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, CompletionPrefix } from "./types";
+import { PerlDocument, PerlElem, CompletionPrefix, PerlSymbolKind } from "./types";
 
 
 export function getCompletions(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): CompletionItem[] {
@@ -186,28 +186,33 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
             detail = `${lookupName}: ${elem.package}`; 
         }
-    } else if(elem.type == 'v'){ 
+    } else if(elem.type == PerlSymbolKind.LocalVar){ 
         kind = CompletionItemKind.Variable;
-    } else if(elem.type == 'c'){ 
+    } else if(elem.type == PerlSymbolKind.ImportedVar){ 
         kind = CompletionItemKind.Constant;
         // detail = elem.name;
         docs.push(elem.name);
         docs.push(`Value: ${elem.value}`);
-    } else if(elem.type == 'h'){ 
+    } else if(elem.type == PerlSymbolKind.ImportedHash || elem.type == PerlSymbolKind.Constant) { 
         kind = CompletionItemKind.Constant;
-    } else if (elem.type == 's'){
+    } else if (elem.type == PerlSymbolKind.LocalSub){
         if(/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
         kind = CompletionItemKind.Function;
-    } else if  (elem.type == 't' || elem.type == 'i'){
+    } else if  (elem.type == PerlSymbolKind.ImportedSub || elem.type == PerlSymbolKind.Inherited || elem.type == PerlSymbolKind.LocalMethod){
         kind = CompletionItemKind.Method;
         docs.push(elem.name);
         if(elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
-    }else if (elem.type == 'p' || elem.type == 'm'){
+    }else if (elem.type == PerlSymbolKind.Package || elem.type == PerlSymbolKind.Module){
         kind = CompletionItemKind.Module;
-    }else if (elem.type == 'l'){ // Loop labels
+    }else if (elem.type == PerlSymbolKind.Label){ // Loop labels
         kind = CompletionItemKind.Reference;
-    } else{
-        // A sign that something needs fixing. Everything should've been enumerated. 
+    } else if (elem.type == PerlSymbolKind.Class){ // Loop labels
+        kind = CompletionItemKind.Class;
+    } else if (elem.type == PerlSymbolKind.Field){
+        kind = CompletionItemKind.Field;
+    } else if (elem.type == PerlSymbolKind.Phaser){
+        return [];
+    } else {        // A sign that something needs fixing. Everything should've been enumerated. 
         kind = CompletionItemKind.Property;
     }
 

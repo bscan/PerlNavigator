@@ -26,7 +26,7 @@ export interface NavigatorSettings {
 
 export interface PerlElem {
     name: string,
-    type: string;
+    type: PerlSymbolKind;
     typeDetail: string,
     file: string;
     package: string;
@@ -57,3 +57,22 @@ export interface CompletionPrefix {
     charStart: number,
     charEnd: number,
 }
+
+export enum PerlSymbolKind {
+    Module       = "m",
+    Package      = "p",
+    Class        = "a",
+    ImportedSub  = "t",
+    Inherited    = "i",
+    Field        = "f",
+    LocalSub     = "s",
+    LocalMethod  = "o",
+    LocalVar     = "v",
+    Constant     = "n",
+    Label        = "l",
+    Phaser       = "e",
+    UseStatement = "u",
+    ImportedVar  = "c",
+    ImportedHash = "h",
+}
+

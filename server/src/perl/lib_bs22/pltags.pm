@@ -79,8 +79,6 @@ sub PackageEndLine  {
     my $length;
     if ($extracted){ 
         $length = $extracted =~ tr/\n//; # Count lines in sub definition
-        print "Found extracted wioth length $length\n";
-
     }
     
     my $count = 1;
@@ -95,13 +93,10 @@ sub PackageEndLine  {
     }
 
     if ($length){
-        print "Found $length, but from where??\n";
         # If we found a delimited package
         return $line_num + $length - $offset + 1;
     } else {
         # Run until end of package
-        print "Run forever\n";
-
         return $line_num + $#$paCode - $offset + 1;
     }
 }
@@ -125,12 +120,16 @@ sub build_pltags {
 
         my $line = $code[$i];
 
+        # Skip pod. Applied before stripping leading whitespace
+        next if ($line =~ /^=(?:pod|head|head1|head2|head3|head4|over|item|back|begin|end|for|encoding)/ .. $line =~ /^=cut/); 
+
+        if ($line =~ /#.*(\$\w+) isa ([\w:]+)\b/){
+            MakeTag($1, $2, '1', $file, $line_number, $package_name, \@tags);
+        }
+
         # Statement will be line with comments, whitespace and POD trimmed
         my $stmt;
         ($stmt = $line) =~ s/#.*//;
-
-        # Skip pod. Applied before stripping leading whitespace
-        next if ($line =~ /^=(?:pod|head|head1|head2|head3|head4|over|item|back|begin|end|for|encoding)/ .. $line =~ /^=cut/); 
         $stmt =~ s/^\s*//;
         $stmt =~ s/\s*$//;
 
@@ -250,6 +249,9 @@ sub build_pltags {
 
         elsif ($stmt=~/^has(?:\s+|\()(?:["']|\$)?(\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
             MakeTag($1, "f", '', $file, $line_number, $package_name, \@tags);
+            # If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or $foo->attr, you need the full path.
+            # Subs don't need this since we find them at compile time. We also find "d" types from imported packages in Inquisitor.pm
+            MakeTag("${package_name}::$1", "d", '', $file, $line_number, $package_name, \@tags);
         }
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 

@@ -18,7 +18,7 @@ sub new {
 
 sub overridden_method {
     my $self = shift;
-    print "In orverridden_method from MySubClass\n";
+    print "In overridden_method from MySubClass\n";
 }
 
 

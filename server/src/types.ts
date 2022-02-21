@@ -65,13 +65,15 @@ export enum PerlSymbolKind {
     ImportedSub  = "t",
     Inherited    = "i",
     Field        = "f",
+    PathedField  = "d",
     LocalSub     = "s",
     LocalMethod  = "o",
     LocalVar     = "v",
     Constant     = "n",
     Label        = "l",
     Phaser       = "e",
-    UseStatement = "u",
+    Canonical    = "1",
+    // UseStatement = "u" . Reserved: used in pltags, but removed before symbol assignment.
     ImportedVar  = "c",
     ImportedHash = "h",
 }

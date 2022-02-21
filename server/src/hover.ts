@@ -38,14 +38,16 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
         } else if (/^\$self/.test(symbol)) {
             desc += `${elem.package}`; 
         }
-    } else if(elem.type == 'v'){ 
-        // What should I show here? Nothing? Definition line?
+    } else if(elem.type == 'v'){
+        // desc = `(variable) ${symbol}`; //  Not very interesting info
+    } else if (elem.type == 'n'){ 
+        desc = `(constant) ${symbol}`;
     } else if(elem.type == 'c'){ 
         desc = `${elem.name}: ${elem.value}`;
         if(elem.package) desc += ` (${elem.package})` ; // Is this ever known?
     } else if(elem.type == 'h'){ 
         desc = `${elem.name}  (${elem.package})`;
-    } else if (elem.type == 's'){
+    } else if (elem.type == 's' || elem.type == 'o'){
         desc = `(subroutine) ${symbol}`;
     } else if  (elem.type == 't' || elem.type == 'i'){
         desc = `(subroutine) ${elem.name}`;
@@ -54,9 +56,15 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
         desc = `(package) ${elem.name}`;
     } else if (elem.type == 'm'){
         desc = `(module) ${elem.name}: ${elem.file}`;
-    } else if (elem.type == 'l'){ // Loop labels
+    } else if (elem.type == 'l'){ 
         desc = `(label) ${symbol}`;
-    } else{
+    } else if (elem.type == 'a'){
+        desc = `(class) ${symbol}`;
+    } else if (elem.type == 'f' || elem.type == 'd'){
+        desc = `(attribute) ${symbol}`;
+    } else if (elem.type == 'e'){ 
+        desc = `(phase) ${symbol}`;
+    } else {
         // We should never get here
         desc = `Unknown: ${symbol}`;
     }
@@ -64,4 +72,3 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
 
     return desc;
 }
-

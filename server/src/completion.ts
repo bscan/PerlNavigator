@@ -126,8 +126,8 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
         let element = perlDoc.canonicalElems.get(elemName) || elements[0]; // Get the canonical (typed) element, otherwise just grab the first one.
 
-        // All plain and inherited subroutines should match with $self. We're excluding methods here because imports clutter the list, despite perl allowing them called on $self->
-        if(bSelf && ["s", "i"].includes(element.type) ) elemName = `$self::${elemName}`;
+        // All plain and inherited subroutines should match with $self. We're excluding "t" here because imports clutter the list, despite perl allowing them called on $self->
+        if(bSelf && ["s", "i", "o", "f"].includes(element.type) ) elemName = `$self::${elemName}`;
 
         if (goodMatch(perlDoc, elemName, qualifiedSymbol, bKnownObj)){
             // Hooray, it's a match! 
@@ -139,7 +139,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
             // Don't send invalid constructs
             if(/\-\>\w+::/.test(aligned) ||  // like FOO->BAR::BAZ
-                (/\-\>\w+$/.test(aligned) && !["s", "t", "i"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                (/\-\>\w+$/.test(aligned) && !["s", "t", "i", "o", "f", "d"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
                 (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
                 ) return;
 
@@ -162,6 +162,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
     let modRg = /^(.+)::.*?$/;
     var match = modRg.exec(elemName);
     if(match && !perlDoc.imported.has(match[1])){
+        // TODO: Allow completion on packages/class defined within the file itself (e.g. Foo->new, $foo->new already works)
         // Thing looks like a module, but was not explicitly imported
         return false;
     } else {
@@ -208,7 +209,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
         kind = CompletionItemKind.Reference;
     } else if (elem.type == PerlSymbolKind.Class){ // Loop labels
         kind = CompletionItemKind.Class;
-    } else if (elem.type == PerlSymbolKind.Field){
+    } else if (elem.type == PerlSymbolKind.Field || elem.type == PerlSymbolKind.PathedField){
         kind = CompletionItemKind.Field;
     } else if (elem.type == PerlSymbolKind.Phaser){
         return [];

@@ -18,6 +18,11 @@ use MyLib::NonPackage;
 use MyLib::MooseClass;
 use MyLib::MooClass;
 use MyLib::DBI;
+use MyLib::ObjectPad;
+use MyLib::ClassAccessor;
+use MyLib::ClassTiny;
+use MyLib::ObjectTiny;
+
 use MySubClass;
 
 use constant MYCONSTANT => 6;
@@ -106,7 +111,7 @@ my $otherObj = MyLib::MyOtherClass->new();
 $otherObj->unique_method_name();
 $otherObj->duplicate_method_name();
 
-my $unknownObj = $otherObj;
+my $unknownObj = $otherObj; # Type hints: $unknownObj isa MyLib::MyOtherClass
 $unknownObj->duplicate_method_name();
 
 my $mooObj = MyLib::MooClass->new();
@@ -115,12 +120,26 @@ print $mooObj->moo_attrib . "\n";
 
 my $mooseObj = MyLib::MooseClass->new();
 $mooseObj->moose_sub();
+$mooseObj->moose_attrib; # Better hover than the moo_attrib
 
 my $nonObject = MyLib::MooseClass->new()->moose_sub();
 
 my $hiddenPackObj = MyLib::SubPackage->new();
 
 my $dbh2 = MyLib::DBI->connect();
+
+my $padObj = ObjectPad->new(x => 5, y => 10);
+$padObj->describe();
+
+my $caObj = MyLib::ClassAccessor->new();
+my $caaObj = MyLib::ClassAccessorAntlers->new();
+
+my $ctObj = MyLib::ClassTiny->new();
+
+my $otObj = MyLib::ObjectTiny->new();
+
+use attributes ();
+print "ObjectPad attributes: " . attributes::get(\&ObjectPad::describe) . "\n";
 
 print "\nDone with test script\n";
 
@@ -129,3 +148,14 @@ package SameFilePackage; ## no critic (package)
 sub same_file_package_sub {
     print "In same_file_package_sub\n";
 }
+
+
+package Foo {
+    use Moo;
+    has generic_attrib => (is => 'ro');
+    
+    sub baz {
+        my $self = shift;
+    }
+}
+

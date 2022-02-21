@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.2.3",
+	"version": "0.2.4",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -25,7 +25,7 @@
 	"contributes": {
 		"configuration": {
 			"type": "object",
-			"title": "Perl Navigator configuration",
+			"title": "Perl Navigator",
 			"properties": {
 				"perlnavigator.perlPath": {
 					"scope": "resource",

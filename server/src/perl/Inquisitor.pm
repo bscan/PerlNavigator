@@ -65,8 +65,8 @@ sub maybe_print_sub_info {
         my $meta = B::svref_2object($codeRef);
         $meta->isa('B::CV') or return 0;
 
-        my $file = $meta->START->isa('B::COP') ? $meta->START->file : $UNKNOWN;
-        my $line = $meta->START->isa('B::COP') ? $meta->START->line - 2: $UNKNOWN;
+        my ($file, $line, $subType) = resolve_file($meta, $subType);
+        
         my $pack = $UNKNOWN;
         my $subname = $UNKNOWN;
         $subname = SubUtilPP::subname($codeRef);
@@ -84,6 +84,32 @@ sub maybe_print_sub_info {
         }
     }
     return 0;
+}
+
+sub resolve_file {
+    my ($meta, $subType) = @_;
+
+    my $file = '';
+    my $line = '';
+
+    if ($meta->START->isa('B::COP')){
+        $file = $meta->START->file;
+        $line = $meta->START->line - 2;
+    } elsif ($meta->GV->isa('B::GV')){
+        if($meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/){
+            # If something comes from XSAccessor or Accessor, it's an attribute (e.g. Moo, ClassAccessor), but we don't know where in the Moo class it's defined.
+            $subType = 'd';
+        }
+    } 
+
+    # Moose (but not Moo) attributes return this for a file.
+    if ($file =~ /^accessor [\w:]+ \(defined at ([\w\\\/\.\s]+) line (\d+)\)$/){
+        $file = $1;
+        $line = $2;
+        $subType = 'd';
+    }
+    
+    return ($file, $line, $subType);
 }
 
 sub print_tag {

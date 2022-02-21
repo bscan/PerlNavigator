@@ -68,6 +68,11 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         perlDoc.canonicalElems.set(name, newElem);
     } 
 
+    if (type == '1'){
+        // This object is only intended as the canonicalLookup, not for anything else.
+        return;
+    }
+
     addVal(perlDoc.elems, name, newElem);
 
     return;

@@ -2,6 +2,7 @@ package Inquisitor;
 
 # be careful around importing anything since we don't want to pollute the users namespace
 use strict;
+use attributes;
 no warnings; 
 
 my @preloaded; # Check what's loaded before we pollute the namespace
@@ -28,10 +29,12 @@ CHECK {
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
-            print "Inspecting package $package\n";
             # This is finding packages in the file we're inspecting, and then dumping them into a single namespace in the file
-            dump_vars_to_main($package) if $package;
-            dump_inherited_to_main($package) if $package;
+            if ($package) {
+                dump_vars_to_main($package);
+                dump_inherited_to_main($package);
+                tag_parents($package);
+            }
         }
         1; # For the eval
     } or do {
@@ -65,7 +68,7 @@ sub maybe_print_sub_info {
         my $meta = B::svref_2object($codeRef);
         $meta->isa('B::CV') or return 0;
 
-        my ($file, $line, $subType) = resolve_file($meta, $subType);
+        my ($file, $line, $subType) = resolve_file($meta, $subType, $codeRef);
         
         my $pack = $UNKNOWN;
         my $subname = $UNKNOWN;
@@ -86,11 +89,25 @@ sub maybe_print_sub_info {
     return 0;
 }
 
+sub tag_parents {
+    my $package = shift;
+
+    no strict 'refs';
+    my @parents = @{"${package}::ISA"};
+    my $primaryGuardian = $parents[0];
+    if($primaryGuardian){
+        print_tag("$package", '2', $primaryGuardian, '', '', '', '');
+    }
+}
+
 sub resolve_file {
-    my ($meta, $subType) = @_;
+    my ($meta, $subType, $codeRef) = @_;
 
     my $file = '';
     my $line = '';
+
+    # Very few things are tagged method, but we can clean up autocomplete if it is. Can something be both an attribute and a attribute? Also, i and t both become x?
+    $subType = 'x' if (grep /^method$/, attributes::get($codeRef));
 
     if ($meta->START->isa('B::COP')){
         $file = $meta->START->file;
@@ -108,7 +125,7 @@ sub resolve_file {
         $line = $2;
         $subType = 'd';
     }
-    
+
     return ($file, $line, $subType);
 }
 

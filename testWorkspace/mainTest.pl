@@ -128,7 +128,7 @@ my $hiddenPackObj = MyLib::SubPackage->new();
 
 my $dbh2 = MyLib::DBI->connect();
 
-my $padObj = ObjectPad->new(x => 5, y => 10);
+my $padObj = MyLib::ObjectPad->new(x => 5, y => 10);
 $padObj->describe();
 
 my $caObj = MyLib::ClassAccessor->new();

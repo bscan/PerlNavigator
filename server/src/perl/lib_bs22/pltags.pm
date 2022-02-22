@@ -208,11 +208,11 @@ sub build_pltags {
         }
 
         # This is a sub declaration if the line starts with sub
-        elsif ($stmt =~ /^(sub|method)\s+([\w:]+)/) {
+        elsif ($stmt =~ /^(sub|method)\s+([\w:]+)(\s+:method)?/) {
             my $subName = $2;
-            my $kind = $1 eq 'sub' ? 's' : 'o';
+            my $kind = ($1 eq 'method' or $3) ? 'o' : 's';
             my $end_line = SubEndLine(\@code, $i, $offset);
-            MakeTag($subName, "s", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            MakeTag($subName, $kind, '', $file, "$line_number;$end_line", $package_name, \@tags);
 
             # Match the after the sub declaration and before the start of the actual sub for signatures
             if($stmt =~ /^sub\s+[\w:]+([^{]*)/){

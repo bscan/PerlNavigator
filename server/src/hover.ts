@@ -47,9 +47,11 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
         if(elem.package) desc += ` (${elem.package})` ; // Is this ever known?
     } else if(elem.type == 'h'){ 
         desc = `${elem.name}  (${elem.package})`;
-    } else if (elem.type == 's' || elem.type == 'o'){
+    } else if (elem.type == 's'){
         desc = `(subroutine) ${symbol}`;
-    } else if  (elem.type == 't' || elem.type == 'i'){
+    } else if (['o','x'].includes(elem.type)){
+        desc = `(method) ${symbol}`;
+    } else if  (['t','i'].includes(elem.type)){ // inherited methods can still be subs (e.g. new from a parent)
         desc = `(subroutine) ${elem.name}`;
         if(elem.typeDetail && elem.typeDetail != elem.name) desc = desc + ` (${elem.typeDetail})`;
     }else if (elem.type == 'p'){

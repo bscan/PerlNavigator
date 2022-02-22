@@ -10,6 +10,7 @@ export async function buildNav(stdout: string): Promise<PerlDocument> {
             elems: new Map(),
             canonicalElems: new Map(),
             imported: new Map(),
+            parents: new Map()
         };
 
     stdout.split("\n").forEach(perl_elem => {
@@ -46,6 +47,11 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
+        return; // Don't store it as an element
+    } 
+
+    if (type == '2'){
+        perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     } 
 

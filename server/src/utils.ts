@@ -86,23 +86,42 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
     return symbol;
 }
 
-
+function findRecent (found: PerlElem[], line: number){
+    let best = found[0];
+    for (var i = 0; i < found.length; i++){
+        if(found[i].line > best.line && found[i].line <= line){
+            best = found[i];
+        }
+    };
+    return best;
+}
 
 export function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number): PerlElem[] {
 
     let found = perlDoc.elems.get(symbol);
     if(found?.length){
         // Simple lookup worked. If we have multiple (e.g. 2 lexical variables), find the nearest earlier declaration. 
-        let best = found[0];
-        for (var i = 0; i < found.length; i++){
-            if(found[i].line > best.line && found[i].line <= line){
-                best = found[i];
-            }
-        };
+        const best = findRecent(found, line);
         return [best];
     }
 
     let qSymbol = symbol;
+
+    let superClass = /^(\$\w+)\-\>SUPER\b/.exec(symbol);
+    if(superClass){
+        // If looking up the superclass of $self->SUPER, we need to find the package in which $self is defined, and then find the parent
+        let child = perlDoc.elems.get(superClass[1]);
+        if(child?.length){
+            const recentChild = findRecent(child, line);
+            if(recentChild.package){
+                const parentVar = perlDoc.parents.get(recentChild.package);
+                if(parentVar){
+                    qSymbol = qSymbol.replace(/^\$\w+\-\>SUPER/, parentVar);
+                }
+            }
+        }
+    }
+
     let knownObject = /^(\$\w+)\->(?:\w+)$/.exec(symbol);
     if(knownObject){
         const targetVar = perlDoc.canonicalElems.get(knownObject[1]);

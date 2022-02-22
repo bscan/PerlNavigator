@@ -139,7 +139,9 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
             // Don't send invalid constructs
             if(/\-\>\w+::/.test(aligned) ||  // like FOO->BAR::BAZ
-                (/\-\>\w+$/.test(aligned) && !["s", "t", "i", "o", "f", "d"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                (/\-\>\w+$/.test(aligned) && !["s", "t", "i", "o", "x", "f", "d"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                (!/^\$.*\-\>\w+$/.test(aligned) &&  ["o", "x", "f", "d"].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
+                (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
                 (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
                 ) return;
 
@@ -199,7 +201,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     } else if (elem.type == PerlSymbolKind.LocalSub){
         if(/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
         kind = CompletionItemKind.Function;
-    } else if  (elem.type == PerlSymbolKind.ImportedSub || elem.type == PerlSymbolKind.Inherited || elem.type == PerlSymbolKind.LocalMethod){
+    } else if  (elem.type == PerlSymbolKind.ImportedSub || elem.type == PerlSymbolKind.Inherited || elem.type == PerlSymbolKind.Method || elem.type == PerlSymbolKind.LocalMethod){
         kind = CompletionItemKind.Method;
         docs.push(elem.name);
         if(elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);

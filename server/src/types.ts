@@ -45,6 +45,7 @@ export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
     canonicalElems: Map<string, PerlElem>;
     imported: Map<string, number>;
+    parents: Map<string, string>;
 }
 
 export interface CompilationResults {
@@ -64,10 +65,11 @@ export enum PerlSymbolKind {
     Class        = "a",
     ImportedSub  = "t",
     Inherited    = "i",
-    Field        = "f",
-    PathedField  = "d",
-    LocalSub     = "s",
-    LocalMethod  = "o",
+    Field        = "f", // Instance fields
+    PathedField  = "d", // Instance fields
+    LocalSub     = "s", 
+    LocalMethod  = "o", // Assumed to be instance methods
+    Method       = "x", // Assumed to be instance methods
     LocalVar     = "v",
     Constant     = "n",
     Label        = "l",

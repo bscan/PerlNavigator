@@ -47,6 +47,8 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
                     kind = SymbolKind.Package;
                 } else if (element.type == PerlSymbolKind.Class){
                     kind = SymbolKind.Class;
+                } else if (element.type == PerlSymbolKind.Role){
+                    kind = SymbolKind.Interface;
                 } else if (element.type == PerlSymbolKind.Field){
                     kind = SymbolKind.Field;
                 } else if (element.type == PerlSymbolKind.Label){

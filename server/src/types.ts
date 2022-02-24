@@ -63,6 +63,7 @@ export enum PerlSymbolKind {
     Module       = "m",
     Package      = "p",
     Class        = "a",
+    Role         = "b",
     ImportedSub  = "t",
     Inherited    = "i",
     Field        = "f", // Instance fields

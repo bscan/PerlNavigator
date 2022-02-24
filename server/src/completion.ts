@@ -209,8 +209,10 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
         kind = CompletionItemKind.Module;
     }else if (elem.type == PerlSymbolKind.Label){ // Loop labels
         kind = CompletionItemKind.Reference;
-    } else if (elem.type == PerlSymbolKind.Class){ // Loop labels
+    } else if (elem.type == PerlSymbolKind.Class){
         kind = CompletionItemKind.Class;
+    } else if (elem.type == PerlSymbolKind.Role){
+        kind = CompletionItemKind.Interface;
     } else if (elem.type == PerlSymbolKind.Field || elem.type == PerlSymbolKind.PathedField){
         kind = CompletionItemKind.Field;
     } else if (elem.type == PerlSymbolKind.Phaser){

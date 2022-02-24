@@ -62,6 +62,8 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
         desc = `(label) ${symbol}`;
     } else if (elem.type == 'a'){
         desc = `(class) ${symbol}`;
+    } else if (elem.type == 'b'){
+        desc = `(role) ${symbol}`;
     } else if (elem.type == 'f' || elem.type == 'd'){
         desc = `(attribute) ${symbol}`;
     } else if (elem.type == 'e'){ 

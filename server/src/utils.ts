@@ -142,10 +142,8 @@ export function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number
     found = perlDoc.elems.get(qSymbol);
     if(found?.length) return [found[0]];
 
-    if(qSymbol.includes('::')){
-    // Seems like we should only hunt for -> funcs not ::, but I'm not sure it can hurt. We're already unable to find it.
-    // One example where ithelps is SamePackageSubs
-    // if(symbol.includes('->')){
+    if(qSymbol.includes('::') && symbol.includes('->')){
+    // Launching to the wrong explicitly stated module is a bad experience, and common with "require'd" modules 
         const method = qSymbol.split('::').pop();
         if(method){
             // Perhaps the method is within our current scope, or explictly imported. 

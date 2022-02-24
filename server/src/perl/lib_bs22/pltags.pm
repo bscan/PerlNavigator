@@ -48,7 +48,6 @@ sub SubEndLine {
     my $end = $#$paCode - $line_num > 700 ? $line_num + 700 : $#$paCode;    # Limit to 700 line subroutines for speed. Will still display otherwise, but won't have depth
     # Contains workaraound for https://rt.cpan.org/Public/Bug/Display.html?id=78313
     my $toInpect = join("\n", map { CleanForBalanced($_) } @{$paCode}[$line_num..$end]);            # All code from sub { through end of file
-    print "\nLooking at $toInpect\n";
     my ($extracted, undef, $prefix) = Text::Balanced::extract_codeblock($toInpect, '{', '(?s).*?(?=[{;])'); # Will ignore up to start of sub, and then match through to the end
     return $line_num - $offset + 1 if (!$extracted);  # if we didn't find the end, mark the end at the beginning. 
     $extracted = $prefix . $extracted; 

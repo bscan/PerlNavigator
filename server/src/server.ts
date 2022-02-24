@@ -166,6 +166,7 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
         if(!result) return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
         documentSettings.set(resource, resolvedSettings);
+        return resolvedSettings;
     }
     return result;
 }

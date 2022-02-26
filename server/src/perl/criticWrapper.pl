@@ -1,6 +1,8 @@
 use strict;
 use warnings;
 use Getopt::Long;
+use File::Spec;
+use File::Basename;
 use utf8;
 use Unicode::Normalize qw(NFKD);
 use open qw(:std :utf8);
@@ -20,10 +22,11 @@ GetOptions ("file=s"    => \$file,
 
 my $sSource = do { local $/; <STDIN> };
 die("Did not pass any source via stdin") if !defined($sSource);
-die("Critic profile not readable") if ($profile and !-f $profile); # Profie may be undef
-# Do not check for readability of the file since we never actually read it. Only checking the name for policy violations.
 
-print "Analyzing $file\n";
+$profile = resolve_profile($profile);
+
+# Do not check for readability of the source $file since we never actually read it. Only checking the name for policy violations.
+print "Perlcritic on $file and using profile $profile \n";
 $sSource =~ s/([^\x00-\x7F])/AsciiReplacementChar($1)/ge;
 
 my $doc = PPI::Document->new( \$sSource);
@@ -60,4 +63,28 @@ sub AsciiReplacementChar {
     return $ord < 26 ? chr($ord + 65) : chr($ord + 71);
 }
 
+sub resolve_profile {
+    my $profile = shift;
+    if ($profile){
+        return $profile if -f $profile;
+        die("User specified Critic profile $profile not readable");
+    }
 
+    if ( my $home_dir = find_home_dir() ) {
+        $profile = File::Spec->catfile( $home_dir, '.perlcriticrc' );
+        return $profile if -f $profile;
+    }
+
+    $profile = File::Spec->catfile( File::Basename::dirname(__FILE__), 'defaultCriticProfile' );
+    die("Can't find Navigator's default profile $profile ?!") unless( -f $profile );
+
+    return $profile;
+}
+
+sub find_home_dir {
+    # This logic is taken from File::HomeDir::Tiny (via Perl::Critic)
+    return
+        ($^O eq 'MSWin32') && ("$]" < 5.016)  ## no critic ( Variables::ProhibitPunctuationVars ValuesAndExpressions::ProhibitMagicNumbers ValuesAndExpressions::ProhibitMismatchedOperators )
+            ? ($ENV{HOME} || $ENV{USERPROFILE})
+            : (<~>)[0];
+}

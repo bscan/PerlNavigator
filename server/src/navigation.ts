@@ -14,14 +14,14 @@ import { dirname, join } from 'path';
 
 
 
-export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument): Location[] | undefined {
+export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Location[] | undefined {
     
     let position = params.position
     const symbol = getSymbol(position, txtDoc);
 
     if(!symbol) return;
 
-    const foundElems = lookupSymbol(perlDoc, symbol, position.line);
+    const foundElems = lookupSymbol(perlDoc, modMap, symbol, position.line);
 
     if(foundElems.length == 0){
         return;

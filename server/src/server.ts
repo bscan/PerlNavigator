@@ -13,6 +13,7 @@ import {
     CompletionItem,
     CompletionList,
 	TextDocumentPositionParams,
+    TextEdit
 } from 'vscode-languageserver/node';
 
 import {
@@ -29,6 +30,7 @@ import { getSymbols, getWorkspaceSymbols } from "./symbols";
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
 import { getHover } from "./hover";
 import { getCompletions } from './completion';
+import { formatDoc, formatRange } from "./formatting";
 import { nLog } from './utils';
 
 var LRU = require("lru-cache");
@@ -67,6 +69,8 @@ connection.onInitialize((params: InitializeParams) => {
             documentSymbolProvider: true, // Outline view and breadcrumbs
             workspaceSymbolProvider: true, 
             hoverProvider: true, 
+            documentFormattingProvider: true, 
+            documentRangeFormattingProvider: true, 
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -98,6 +102,7 @@ connection.onInitialized(() => {
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
     enableWarnings: true,
+    perltidyProfile: "",
     perlcriticProfile: "",
     perlcriticEnabled: true,
     severity5: "warning",
@@ -280,18 +285,23 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
 connection.onHover(params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
+    let mods = availableMods.get('default');
+    if(!mods) mods = new Map();
+    
     if(!document || !perlDoc) return;
 
-    return getHover(params, perlDoc, document);
+    return getHover(params, perlDoc, document, mods);
 });
 
 
 connection.onDefinition(params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
+    let mods = availableMods.get('default');
+    if(!mods) mods = new Map();
     if(!document) return;
     if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document);
+    let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document, mods);
     return locOut;
 });
 
@@ -305,6 +315,26 @@ connection.onWorkspaceSymbol(params => {
     let defaultMods = availableMods.get('default');
     if(!defaultMods) return;
     return getWorkspaceSymbols(params, defaultMods);
+});
+
+
+connection.onDocumentFormatting(params => {
+    let document = documents.get(params.textDocument.uri);
+    let settings = documentSettings.get(params.textDocument.uri); 
+    if(!document || !settings) return;
+    console.log(params);
+    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings);
+    return editOut;
+});
+
+
+connection.onDocumentRangeFormatting(params => {
+    let document = documents.get(params.textDocument.uri);
+    let settings = documentSettings.get(params.textDocument.uri); 
+    if(!document || !settings) return;
+    console.log(params);
+    const editOut: TextEdit[] | undefined = formatRange(params, document, settings);
+    return editOut;
 });
 
 

@@ -35,17 +35,24 @@ If you have a nonstandard install of Perl, please set the setting "perlnavigator
 You can also add additional include paths that will be added to the perl search path (@INC) via "perlnavigator.includePaths" 
 
 
-### Customizable Perl Critic severities
-The default severities are reasonable, but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
+### Perl Critic Customization 
+You should specify a Perl::Critic profile via "perlnavigator.perlcriticProfile". If this is not set, it will check for "~./perlcriticrc".
+If that also does not exist, a default profile will be used. This default profile is not very strict.
+The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
 
 
-## Install For Other Editors
+## Installation For Other Editors
 Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
 ```
-git clone https://github.com/bscan/PerlNavigator.git
-cd PerlNavigator
+git clone https://github.com/bscan/PerlNavigator
+cd PerlNavigator/
 npm install
+cd server/
+npm install
+tsc
 ```
+
+### Sublime Text
 Sublime Text requires the following minimum settings under LSP settings (modify depending on your install location and editor)
 ```
 {
@@ -61,6 +68,19 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
 
 ![gif of Navigator in sublime](https://raw.githubusercontent.com/bscan/PerlNavigator/main/images/Sublime.gif)
 
+### Emacs
+Emacs requires lsp-mode. You can use something similar to the following configuration. 
+```
+  (require 'lsp-mode)
+(add-to-list 'lsp-language-id-configuration '(perl-mode . "perl"))
+(add-to-list 'lsp-language-id-configuration '(cperl-mode . "perl"))
+(lsp-register-client
+(make-lsp-client :new-connection (lsp-stdio-connection '("node" "/home/username/src/PerlNavigator/server/out/server.js" "--stdio"))
+;; :activation-fn (lsp-activate-on "perl")
+:major-modes '(cperl-mode perl-mode)
+:priority 10
+:server-id 'perl-ls))
+```
 
 ## Licenses / Acknowledgments
 The Perl Navigator is free software licensed under the MIT License. It has a number of bundled dependencies as well, all of which have their respective open source licenses included.

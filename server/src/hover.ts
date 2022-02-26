@@ -6,7 +6,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
 
-export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument): Hover | undefined {
+export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Hover | undefined {
 
     let position = params.position
     const symbol = getSymbol(position, txtDoc);
@@ -14,7 +14,7 @@ export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocume
     let elem = perlDoc.canonicalElems.get(symbol);
 
     if(!elem){
-        const elems = lookupSymbol(perlDoc, symbol, position.line);
+        const elems = lookupSymbol(perlDoc, modMap, symbol, position.line);
         if(elems.length != 1) return; // Nothing or too many things.
         elem = elems[0];
     }

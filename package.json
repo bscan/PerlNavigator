@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -38,6 +38,12 @@
 					"type": "boolean",
 					"default": true,
 					"description": "Enable warnings using -Mwarnings command switch"
+				},
+				"perlnavigator.perltidyProfile": {
+					"scope": "resource",
+					"type": "string",
+					"default": "",
+					"description": "Path to perl tidy profile (no aliases, .bat files or ~/)"
 				},
 				"perlnavigator.perlcriticProfile": {
 					"scope": "resource",

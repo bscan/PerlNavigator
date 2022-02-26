@@ -159,7 +159,7 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
         return diagnostics;
     }
 
-    nLog("Critic output" + output, settings);
+    nLog("Critic output: " + output, settings);
     output.split("\n").forEach(violation => {
         maybeAddCriticDiag(violation, diagnostics, settings);
     });

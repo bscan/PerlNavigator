@@ -8,7 +8,7 @@ import {
     TextDocument,
     Position
 } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
+import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind } from "./types";
 
 export const async_execFile = promisify(execFile);
 
@@ -89,20 +89,38 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
 function findRecent (found: PerlElem[], line: number){
     let best = found[0];
     for (var i = 0; i < found.length; i++){
-        if(found[i].line > best.line && found[i].line <= line){
+        // Find the most recently declared variable. Modules and Packages are both declared at line 0, so Package is tiebreaker (better navigation; modules can be faked by Moose) 
+        if( (found[i].line > best.line && found[i].line <= line) || (found[i].line == best.line && found[i].type == PerlSymbolKind.Package)  ){
             best = found[i];
         }
     };
     return best;
 }
 
-export function lookupSymbol(perlDoc: PerlDocument, symbol: string, line: number): PerlElem[] {
+export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>, symbol: string, line: number): PerlElem[] {
 
     let found = perlDoc.elems.get(symbol);
     if(found?.length){
         // Simple lookup worked. If we have multiple (e.g. 2 lexical variables), find the nearest earlier declaration. 
         const best = findRecent(found, line);
         return [best];
+    }
+
+    let foundMod = modMap.get(symbol);
+    if(foundMod){
+        // Ideally we would've found the module in the PerlDoc, but perhaps it was "required" instead of "use'd"
+        const modFile = Uri.parse(foundMod).fsPath;
+        const modElem: PerlElem = {
+            name: symbol,
+            type: PerlSymbolKind.Module,
+            typeDetail: "",
+            file: modFile,
+            package: symbol,
+            line: 0,
+            lineEnd: 0,
+            value: "",
+        }
+        return [modElem];
     }
 
     let qSymbol = symbol;

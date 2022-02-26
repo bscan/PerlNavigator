@@ -1,0 +1,30 @@
+severity=4
+
+program-extensions = .pl .t
+
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Modern::Perl Object::Pad common::sense
+
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Modern::Perl Object::Pad common::sense
+
+# Gets confused with subroutine signatures
+[-Subroutines::ProhibitSubroutinePrototypes]
+
+# I like strict and warnings, but no strict and no warnings are intentional
+[TestingAndDebugging::ProhibitNoStrict]
+allow = vars subs refs
+
+[-TestingAndDebugging::ProhibitNoWarnings]
+
+# Surprisingly controversial policy, considering Community::EmptyReturn recommends the exact opposite.
+[-Subroutines::ProhibitExplicitReturnUndef]
+
+# I find code such as if($foo and !$bar) to be clear enough. 
+[-ValuesAndExpressions::ProhibitMixedBooleanOperators]
+
+# Constant is part of core and seems fairly popular
+[-ValuesAndExpressions::ProhibitConstantPragma]
+
+# Multiple packages in one file is bad form, but it's not a bug or unintentional
+[-Modules::ProhibitMultiplePackages]

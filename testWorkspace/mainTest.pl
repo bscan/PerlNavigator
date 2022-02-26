@@ -139,7 +139,7 @@ my $ctObj = MyLib::ClassTiny->new();
 my $otObj = MyLib::ObjectTiny->new();
 
 use attributes ();
-print "ObjectPad attributes: " . attributes::get(\&ObjectPad::describe) . "\n";
+print "ObjectPad attributes: " . attributes::get(\&MyLib::ObjectPad::describe) . "\n";
 
 print "\nDone with test script\n";
 

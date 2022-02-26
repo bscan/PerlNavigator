@@ -1,6 +1,7 @@
+package MyLib::ObjectPad;
+
 use v5.26;
 use Object::Pad;
-package MyLib::ObjectPad;
 class MyLib::ObjectPad;
 
 has $x :param = 0;

@@ -13,6 +13,7 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 * Perl Critic static code analysis/suggestions
 * Smart context-aware autocompletion and navigation
 * Code Navigation ("Go To Definition") anywhere, including to installed modules and compile-time dependencies
+* Code formatting via Perl::Tidy
 * Outline view
 * Hover for more details about objects, subs, and modules
 * Does not write any cache directories or temp files.
@@ -40,6 +41,8 @@ You should specify a Perl::Critic profile via "perlnavigator.perlcriticProfile".
 If that also does not exist, a default profile will be used. This default profile is not very strict.
 The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
 
+### Perl Tidy Customization
+It is recommended to set "perlnavigator.perltidyProfile" if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
 
 ## Installation For Other Editors
 Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.

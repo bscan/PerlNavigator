@@ -7,8 +7,11 @@ use utf8;
 use Unicode::Normalize qw(NFKD);
 use open qw(:std :utf8);
 
+my $sSource = do { local $/; <STDIN> };
+
 if ( !eval{ require PPI; require Perl::Critic; 1} ){
     print "\nSkipping Perl::Critic as it is not installed\n";
+    # Quit early is fine, but needs to happen after fully reading STDIN due to a pipe issue on MacOS.
     exit(0);
 }
 =head
@@ -20,7 +23,6 @@ my ($file, $profile);
 GetOptions ("file=s"    => \$file,
             "profile=s" => \$profile);
 
-my $sSource = do { local $/; <STDIN> };
 die("Did not pass any source via stdin") if !defined($sSource);
 
 $profile = resolve_profile($profile);

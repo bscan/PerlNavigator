@@ -8,13 +8,12 @@ import * as assert from 'assert';
 import { getDocUri, activate } from './helper';
 
 suite('Should get diagnostics', () => {
-	const docUri = getDocUri('mainTest.pl');
+	const docUri = getDocUri('MyLib/MyClass.pm');
 
-	test('Diagnoses uppercase texts', async () => {
+	test('Checks perl compilation warnings', async () => {
 		await testDiagnostics(docUri, [
-			{ message: 'ANY is all uppercase.', range: toRange(0, 0, 0, 3), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
-			{ message: 'ANY is all uppercase.', range: toRange(0, 14, 0, 17), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' },
-			{ message: 'OS is all uppercase.', range: toRange(0, 18, 0, 20), severity: vscode.DiagnosticSeverity.Warning, source: 'ex' }
+			{ message: 'Syntax: "my" variable $genWarning masks earlier declaration in same scope at /home/brian/github/PerlNavigator/testWorkspace/MyLib/MyClass.pm line 27.',
+					range: toRange(26, 0, 26, 500), severity: vscode.DiagnosticSeverity.Warning, source: 'perlnavigator' },
 		]);
 	});
 });

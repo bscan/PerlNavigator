@@ -28,3 +28,5 @@ allow = vars subs refs
 
 # Multiple packages in one file is bad form, but it's not a bug or unintentional
 [-Modules::ProhibitMultiplePackages]
+
+[-Subroutines::RequireFinalReturn]

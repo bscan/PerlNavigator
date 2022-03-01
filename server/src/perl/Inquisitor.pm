@@ -11,8 +11,16 @@ my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util );
 
 
 CHECK {
+    if(!$ENV{'PERLNAVIGATORTEST'}){
+        run();
+    }
+}
+
+sub run {
     print "Running inquisitor\n";
+    my $sourceFilePath = shift;
     eval {
+        load_test_file($sourceFilePath);
         populate_preloaded();
         load_dependencies();
 
@@ -25,7 +33,7 @@ CHECK {
         $allPackages = filter_modpacks($allPackages); 
         dump_subs_from_packages($allPackages);
 
-        my $packages = run_pltags();
+        my $packages = run_pltags($sourceFilePath);
         print "Done with pltags. Now dumping same-file packages\n";
 
         foreach my $package (@$packages){
@@ -55,6 +63,22 @@ sub load_dependencies {
     require SubUtilPP; 
     require Inspectorito;
     require Devel::Symdump;
+}
+
+sub load_test_file {
+    # If we're in test mode for a .t file, we haven't loaded the file yet, so let's eval it to populate the symbol table
+    my $filePath = shift;
+    return if !$filePath;
+    my ($source, $offset, $file) = load_source($filePath); 
+
+    $source = "local \$0; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); };  }\n# line 0 \"${filePath}\"\nCORE::die('END_EARLY');\n$source";
+    eval $source; ## no critic
+
+    if ($@ eq "END_EARLY.\n"){
+        return;
+    } else {
+        die("Rethrowing error from $filePath: ---$@---");
+    }
 }
 
 sub maybe_print_sub_info {
@@ -141,7 +165,8 @@ sub print_tag {
 
 sub run_pltags {
     require pltags;
-    my ($source, $offset, $file) = load_source();
+    my $sourceFilePath = shift;
+    my ($source, $offset, $file) = load_source($sourceFilePath);
 
     print "\n--------------Now Building the new pltags ---------------------\n";
     my ($tags, $packages) = pltags::build_pltags($source, $offset, $file); # $0 should be the script getting compiled, not this module
@@ -293,22 +318,49 @@ sub get_all_packages {
 }
 
 sub load_source {
+    my $sourceFilePath = shift; # Only set during testing.
     my ($source, $offset, $file);
-    if ($INC{"lib_bs22/SourceStash.pm"}){
+
+    if($sourceFilePath){
+        # Currently loading the source twice, which is a waste. TODO: Move some stuff around
+        open my $fh, '<:utf8', $sourceFilePath or die "Can't open file $!"; ## no critic (UTF8)
+        $file = $sourceFilePath;
+        $source = do { local $/; <$fh> };
+        $offset = 1;
+        close($fh);
+    } elsif ($INC{"lib_bs22/SourceStash.pm"}){
+        # Path run during the extension
         $source = $lib_bs22::SourceStash::source;
         $file = $lib_bs22::SourceStash::filename;
         $source = Encode::decode('utf-8', $source);
         $offset = 3;
     } else{
+        # Used for debugging the extension and shown to users in the log
         require File::Spec;
         # TODO: Adjust PLTags offset in this case.
-        my $orig_file = File::Spec->rel2abs($0);
-        open my $fh, '<:utf8', $orig_file or die "Can't open file $!"; ## no critic (UTF8)
+        $file = File::Spec->rel2abs($0);
+        open my $fh, '<:utf8', $file or die "Can't open file $!"; ## no critic (UTF8)
         $source = do { local $/; <$fh> };
         $offset = 1;
+        close($fh);
     }
     $source = "" if !defined($source);
     return ($source, $offset, $file);
+}
+
+sub tags_to_symbols {
+    # Currently only used for testing. Turns an output of tags into a hash of symbol array, similiar to ParseDocument.ts
+    my $tags = shift;
+    my $symbols = {};
+    foreach my $tag_str (split("\n", $tags)){
+        my @pieces =  split("\t", $tag_str, -1);
+        if( scalar( @pieces ) == 7 ){
+            my ($tag, $type, $typeDetails, $file, $package_name, $line) = @pieces;
+            $symbols->{$tag} = [] if !exists($symbols->{$tag});
+            push @{ $symbols->{$tag} }, {'type'=> $type, 'typeDetails' => $typeDetails, 'file'=>$file, 'package_name'=>$package_name, 'line'=>$line};
+        } 
+    }
+    return $symbols;
 }
 
 1;

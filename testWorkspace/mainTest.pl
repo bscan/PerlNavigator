@@ -27,6 +27,8 @@ use MySubClass;
 
 use constant MYCONSTANT => 6;
 
+my $autoComplete = ' $my ';
+
 my $my_scalar = 1;
 my @my_array = (2,2);
 my $array_ref = [3,3];

@@ -10,11 +10,11 @@ import { getDocUri, activate } from './helper';
 suite('Should do completion', () => {
 	const docUri = getDocUri('mainTest.pl');
 
-	test('Completes JS/TS in txt file', async () => {
-		await testCompletion(docUri, new vscode.Position(0, 0), {
+	// Unfortunately, this test does not work yet
+	test('Test autocompletion', async () => {
+		await testCompletion(docUri, new vscode.Position(29, 23), {
 			items: [
-				{ label: 'JavaScript', kind: vscode.CompletionItemKind.Text },
-				{ label: 'TypeScript', kind: vscode.CompletionItemKind.Text }
+				{ label: '$my_scalar', kind: vscode.CompletionItemKind.Variable },
 			]
 		});
 	});
@@ -34,7 +34,7 @@ async function testCompletion(
 		position
 	)) as vscode.CompletionList;
 
-	assert.ok(actualCompletionList.items.length >= 2);
+	assert.ok(actualCompletionList.items.length == 1);
 	expectedCompletionList.items.forEach((expectedItem, i) => {
 		const actualItem = actualCompletionList.items[i];
 		assert.equal(actualItem.label, expectedItem.label);

@@ -22,4 +22,8 @@ sub duplicate_method_name {
     print "In MyObject duplicate_name\n";
 }
 
+
+my $genWarning;
+my $genWarning;
+
 1;

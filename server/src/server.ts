@@ -10,6 +10,7 @@ import {
     TextDocumentSyncKind,
     InitializeResult,
     Location,
+    WorkspaceFolder,
     CompletionItem,
     CompletionList,
 	TextDocumentPositionParams,
@@ -152,10 +153,23 @@ async function buildModCache(textDocument: TextDocument){
 async function dispatchForMods(textDocument: TextDocument) {
     // BIG TODO: Resolution of workspace settings? How to do? Maybe build a hash of all include paths.
     const settings = await getDocumentSettings(textDocument.uri);
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
+    const workspaceFolders = await getWorkspaceFoldersSafe(); 
     const newMods = await getAvailableMods(workspaceFolders, settings);
     availableMods.set('default', newMods);
     return;
+}
+
+async function getWorkspaceFoldersSafe (): Promise<WorkspaceFolder[]> {
+    try {
+        const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
+        if (!workspaceFolders){
+            return [];
+        } else {
+            return workspaceFolders;
+        }
+    } catch (error) {
+        return [];
+    }
 }
 
 async function getDocumentSettings(resource: string): Promise<NavigatorSettings> {
@@ -213,7 +227,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     
     const start = Date.now();
 
-    const workspaceFolders = await connection.workspace.getWorkspaceFolders(); 
+    const workspaceFolders = await getWorkspaceFoldersSafe(); 
     const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
 
@@ -335,6 +349,10 @@ connection.onDocumentRangeFormatting(params => {
     console.log(params);
     const editOut: TextEdit[] | undefined = formatRange(params, document, settings);
     return editOut;
+});
+
+process.on('unhandledRejection', function(reason, p){
+    console.log("Caught an unhandled Rejection at: Promise ", p, " reason: ", reason);
 });
 
 

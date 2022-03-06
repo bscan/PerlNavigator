@@ -7,6 +7,9 @@ import {
 	WorkspaceFolder
 } from 'vscode-languageserver-protocol';
 import { dirname, join } from 'path';
+import { tmpdir } from 'os';
+import { rmdirSync, mkdirSync, mkdtempSync, createReadStream, createWriteStream } from 'fs';
+import 'process'
 import Uri from 'vscode-uri';
 import { getIncPaths, async_execFile, nLog } from './utils';
 import { buildNav } from "./parseDocument";
@@ -63,8 +66,69 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     return {diags: diagnostics, perlDoc: perlDoc};
 }
 
+
+
+function getAssetsPath(): string {
+    extractAssetsIfNecessary();
+    let anyProcess = <any>process;
+    if (anyProcess.pkg) {
+        // When running inside of a pkg built executable, the assets
+        // are available via the snapshot filesystem.  That file
+        // system is only available through the node API, so the
+        // assets need to be extracted in order to be accessible by
+        // the perl command
+        return extractAssetsIfNecessary();
+    }
+
+    return dirname(__dirname);
+}
+
+let haveExtractedAssets = false;
+let pkgAssetPath: string;
+function extractAssetsIfNecessary(): string {
+
+    if (!haveExtractedAssets) {
+        pkgAssetPath = mkdtempSync(join(tmpdir(), 'perl-navigator'));
+        let assets : string[] = [
+            'src/perl/Inquisitor.pm',
+            'src/perl/lib_bs22/Class/Inspector.pm',
+            'src/perl/lib_bs22/Devel/Symdump.pm',
+            'src/perl/lib_bs22/Devel/Symdump/Export.pm',
+            'src/perl/lib_bs22/Inspectorito.pm',
+            'src/perl/lib_bs22/ModHunter.pl',
+            'src/perl/lib_bs22/SubUtilPP.pm',
+            'src/perl/lib_bs22/SourceStash.pm',
+            'src/perl/lib_bs22/pltags.pm',
+            'src/perl/Inquisitor.pm',
+            'src/perl/criticWrapper.pl',
+            'src/perl/defaultCriticProfile',
+            'src/perl/tidyWrapper.pl'
+        ];
+
+        assets.forEach(asset => {
+            let source = join('/snapshot/PerlNavigatorGit/server', asset);//join(dirname(__dirname), asset);
+            let dest = join(pkgAssetPath, asset);
+            mkdirSync(dirname(dest), { 'recursive': true }); // Create all parent folders
+            createReadStream(source).pipe(createWriteStream(dest));
+        });
+
+        registerTemporaryAssetPathCleanup(pkgAssetPath);
+        haveExtractedAssets = true;
+    }
+    return pkgAssetPath;
+}
+
+function registerTemporaryAssetPathCleanup(assetpath: string) {
+    process.addListener('exit', function () {;
+        if (haveExtractedAssets) {
+            rmdirSync(pkgAssetPath, { 'recursive': true }); // Create all parent folders
+        }
+    });
+}
+
 function getInquisitor(): string[]{
-    const inq_path = join(dirname(__dirname), 'src', 'perl');
+    extractAssetsIfNecessary();
+    const inq_path = join(getAssetsPath(), 'src', 'perl');
     let inq: string[] = ['-I', inq_path, '-MInquisitor'];
     return inq;
 }

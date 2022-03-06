@@ -163,5 +163,12 @@
 		"eslint": "^7.26.0",
 		"mocha": "^8.3.2",
 		"typescript": "^4.2.3"
-	}
+	},
+        "bin": "server/out/server.js",
+        "pkg": {
+                "scripts": "server/out/server.js",
+                "assets": "server/src/**/*",
+                "targets": [ "node14-linux-x64", "node14-macos-x64", "node14-win-x64" ],
+                "outputPath": "dist"
+        }
 }

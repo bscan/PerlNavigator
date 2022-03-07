@@ -25,7 +25,7 @@ import {
 } from 'vscode-languageserver-protocol';
 
 import Uri from 'vscode-uri';
-import { perlcompile, perlcritic } from "./diagnostics";
+import { perlcompile, perlcritic, cleanupTemporaryAssetPath } from "./diagnostics";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
@@ -349,6 +349,13 @@ connection.onDocumentRangeFormatting(params => {
     console.log(params);
     const editOut: TextEdit[] | undefined = formatRange(params, document, settings);
     return editOut;
+});
+
+connection.onShutdown((handler) => {
+    try {
+        cleanupTemporaryAssetPath();
+    } catch (error) {
+    }
 });
 
 process.on('unhandledRejection', function(reason, p){

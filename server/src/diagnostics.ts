@@ -112,18 +112,16 @@ function extractAssetsIfNecessary(): string {
             createReadStream(source).pipe(createWriteStream(dest));
         });
 
-        registerTemporaryAssetPathCleanup(pkgAssetPath);
         haveExtractedAssets = true;
     }
     return pkgAssetPath;
 }
 
-function registerTemporaryAssetPathCleanup(assetpath: string) {
-    process.addListener('exit', function () {;
-        if (haveExtractedAssets) {
-            rmdirSync(pkgAssetPath, { 'recursive': true }); // Create all parent folders
-        }
-    });
+export function cleanupTemporaryAssetPath() {
+    if (haveExtractedAssets) {
+        rmdirSync(pkgAssetPath, { 'recursive': true }); // Create all parent folders
+        haveExtractedAssets = false;
+    }
 }
 
 function getInquisitor(): string[]{

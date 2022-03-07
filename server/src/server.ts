@@ -25,7 +25,8 @@ import {
 } from 'vscode-languageserver-protocol';
 
 import Uri from 'vscode-uri';
-import { perlcompile, perlcritic, cleanupTemporaryAssetPath } from "./diagnostics";
+import { perlcompile, perlcritic } from "./diagnostics";
+import { cleanupTemporaryAssetPath } from "./assets";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
 import { NavigatorSettings, PerlDocument, PerlElem } from "./types";

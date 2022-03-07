@@ -12,7 +12,7 @@ import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
 import {  nLog } from "./utils";
 import { dirname, join } from 'path';
 import { execFileSync } from 'child_process';
-
+import { getPerlAssetsPath } from "./assets";
 
 
 export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings): TextEdit[] | undefined {
@@ -56,7 +56,7 @@ export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextD
 
 
 function perltidy(code: string, settings: NavigatorSettings): string | undefined {
-    const tidy_path = join(dirname(__dirname), 'src', 'perl', 'tidyWrapper.pl');
+    const tidy_path = join(getPerlAssetsPath(), 'tidyWrapper.pl');
     let tidyParams: string[] = [tidy_path].concat(getTidyProfile(settings));
 
     nLog("Now starting perltidy with: " + tidyParams.join(" "), settings);

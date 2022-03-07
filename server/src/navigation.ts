@@ -11,7 +11,7 @@ import Uri from 'vscode-uri';
 import { realpathSync, existsSync, realpath } from 'fs';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog } from "./utils";
 import { dirname, join } from 'path';
-
+import { getPerlAssetsPath } from "./assets";
 
 
 export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Location[] | undefined {
@@ -88,7 +88,7 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
        
     let perlParams: string[] = [];
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
-    const modHunterPath = join(dirname(__dirname), 'src', 'perl', 'lib_bs22', 'ModHunter.pl');
+    const modHunterPath = join(getPerlAssetsPath(), 'lib_bs22', 'ModHunter.pl');
     perlParams.push(modHunterPath);
     nLog("Starting to look for perl modules with " + perlParams.join(" "), settings);
 

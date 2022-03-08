@@ -1,0 +1,51 @@
+name: release
+on:
+  push:
+    tags:
+    - "[0-9]+.[0-9]+.[0-9]+"
+
+jobs:
+  create-release:
+    name: create-release
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.release.outputs.upload_url }}
+    steps:
+      - name: Get the release version from the tag
+        shell: bash
+        if: env.NAVIGATOR_VERSION == ''
+        run: |
+          # Apparently, this is the right way to get a tag name. Really?
+          #
+          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
+          echo "NAVIGATOR_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+          echo "version is: ${{ env.NAVIGATOR_VERSION }}"
+      - name: Create GitHub release
+        id: release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ env.NAVIGATOR_VERSION }}
+          release_name: ${{ env.NAVIGATOR_VERSION }}
+
+  build-release:
+
+    runs-on: ubuntu-latest
+    needs: [create-release]
+
+    steps:
+    - uses: actions/checkout@v2    
+    - name: Install NPM dependencies
+      run: npm install
+    - name: Build project assets
+      run: npm run build-binary     
+    - name: Upload linux binary
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: dist/perlnavigator-linux
+        asset_name: perlnavigator-linux
+        asset_content_type: application/octet-stream      

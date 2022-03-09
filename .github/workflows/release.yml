@@ -2,7 +2,7 @@ name: release
 on:
   push:
     tags:
-    - "v[0-9]+.[0-9]+.[0-9]+"
+      - 'v[0-9]+.*'
 
 jobs:
   create-release:
@@ -12,22 +12,16 @@ jobs:
       upload_url: ${{ steps.release.outputs.upload_url }}
     steps:
       - name: Get the release version from the tag
-        shell: bash
-        if: env.NAVIGATOR_VERSION == ''
-        run: |
-          # Apparently, this is the right way to get a tag name. Really?
-          #
-          # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
-          echo "NAVIGATOR_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-          echo "version is: ${{ env.NAVIGATOR_VERSION }}"
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#*/*/}
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ env.NAVIGATOR_VERSION }}
-          release_name: ${{ env.NAVIGATOR_VERSION }}
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+          release_name: Release ${{ steps.get_version.outputs.VERSION }}
 
   build-release:
 
@@ -39,13 +33,40 @@ jobs:
     - name: Install NPM dependencies
       run: npm install
     - name: Build project assets
-      run: npm run build-binary     
-    - name: Upload linux binary
+      run: npm run build-binary
+
+    - name: Compress Linux binary
+      run: mkdir perlnavigator-linux && cp -a dist/perlnavigator-linux perlnavigator-linux/perlnavigator && tar -czvf perlnavigator-linux.tar.gz perlnavigator-linux
+    - name: Upload Linux binary
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: dist/perlnavigator-linux
-        asset_name: perlnavigator-linux
+        asset_path: perlnavigator-linux.tar.gz
+        asset_name: perlnavigator-linux.tar.gz
+        asset_content_type: application/octet-stream      
+
+    - name: Compress MacOS binary
+      run: mkdir perlnavigator-macos && cp -a dist/perlnavigator-macos perlnavigator-macos/perlnavigator && tar -czvf perlnavigator-macos.tar.gz perlnavigator-macos
+    - name: Upload MacOS binary
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: perlnavigator-macos.tar.gz
+        asset_name: perlnavigator-macos.tar.gz
+        asset_content_type: application/octet-stream      
+
+    - name: Compress Windows binary
+      run: mkdir perlnavigator-win && cp -a dist/perlnavigator-win.exe perlnavigator-win/perlnavigator.exe && zip -r perlnavigator-win.zip perlnavigator-win
+    - name: Upload Windows binary
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: perlnavigator-win.zip
+        asset_name: perlnavigator-win.zip
         asset_content_type: application/octet-stream      

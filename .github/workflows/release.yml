@@ -36,37 +36,37 @@ jobs:
       run: npm run build-binary
 
     - name: Compress Linux binary
-      run: mkdir perlnavigator-linux && cp -a dist/perlnavigator-linux perlnavigator-linux/perlnavigator && tar -czvf perlnavigator-linux.tar.gz perlnavigator-linux
+      run: mkdir perlnavigator-linux-x86_64 && cp -a dist/perlnavigator-linux perlnavigator-linux-x86_64/perlnavigator && zip -r perlnavigator-linux-x86_64.zip perlnavigator-linux-x86_64
     - name: Upload Linux binary
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: perlnavigator-linux.tar.gz
-        asset_name: perlnavigator-linux.tar.gz
+        asset_path: perlnavigator-linux-x86_64.zip
+        asset_name: perlnavigator-linux-x86_64.zip
         asset_content_type: application/octet-stream      
 
     - name: Compress MacOS binary
-      run: mkdir perlnavigator-macos && cp -a dist/perlnavigator-macos perlnavigator-macos/perlnavigator && tar -czvf perlnavigator-macos.tar.gz perlnavigator-macos
+      run: mkdir perlnavigator-macos-x86_64 && cp -a dist/perlnavigator-macos perlnavigator-macos-x86_64/perlnavigator && zip -r perlnavigator-macos-x86_64.zip perlnavigator-macos-x86_64
     - name: Upload MacOS binary
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: perlnavigator-macos.tar.gz
-        asset_name: perlnavigator-macos.tar.gz
+        asset_path: perlnavigator-macos-x86_64.zip
+        asset_name: perlnavigator-macos-x86_64.zip
         asset_content_type: application/octet-stream      
 
     - name: Compress Windows binary
-      run: mkdir perlnavigator-win && cp -a dist/perlnavigator-win.exe perlnavigator-win/perlnavigator.exe && zip -r perlnavigator-win.zip perlnavigator-win
+      run: mkdir perlnavigator-win-x86_64 && cp -a dist/perlnavigator-win.exe perlnavigator-win-x86_64/perlnavigator.exe && zip -r perlnavigator-win-x86_64.zip perlnavigator-win-x86_64
     - name: Upload Windows binary
       uses: actions/upload-release-asset@v1.0.1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: perlnavigator-win.zip
-        asset_name: perlnavigator-win.zip
+        asset_path: perlnavigator-win-x86_64.zip
+        asset_name: perlnavigator-win-x86_64.zip
         asset_content_type: application/octet-stream      

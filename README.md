@@ -1,3 +1,5 @@
+For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
+
 # Perl Navigator Language Server
 Provides syntax checking, autocompletion, perlcritic, code navigation, hover for Perl.
 

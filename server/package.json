@@ -1,7 +1,7 @@
 {
 	"name": "perlnavigator-server",
 	"description": "Perl language server",
-	"version": "0.0.7",
+	"version": "0.2.8",
 	"author": "bscan",
 	"license": "MIT",
 	"engines": {
@@ -17,5 +17,12 @@
 		"vscode-uri": "^1.0.1",
 		"lru-cache": "^6.0.0"
 	},
-	"scripts": {}
+	"scripts": {},
+	"main": "./src/out/server.js",
+	"devDependencies": {},
+	"keywords": [
+		"perl",
+		"lsp",
+		"languageserver"
+	]
 }

@@ -105,7 +105,7 @@ ModHunter
 The mod hunter is for finding the list of importable modules. Not sure why this is so hard.
 ExtUtils doesn't work because it relies on packlists, and many modules (especially local in-house mods) don't have packlists.
 
-The FAQ lists some options https://perldoc.perl.org/perlfaq3#How-do-I-find-which-modules-are-installed-on-my-system-
+The FAQ lists some options https://perldoc.perl.org/perlfaq3#How-do-I-find-which-modules-are-installed-on-my-system?
 But one option is ExtUtils and the other gives filenames, not importable module names
 
 App::Module::Lister is close, but opens all of the files which would slow this down substantially and is more likely to throw file system errors

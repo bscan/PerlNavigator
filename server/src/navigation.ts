@@ -97,7 +97,7 @@ export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | nul
     let output: string;
     try {
         // This can be slow, especially if reading modules over a network or on windows. 
-        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 90000, maxBuffer: 3 * 1024 * 1024});
+        const out = await async_execFile(settings.perlPath, perlParams, {timeout: 90000, maxBuffer: 20 * 1024 * 1024});
         output = out.stdout;
         nLog("Success running mod hunter", settings);
     } catch(error: any) {

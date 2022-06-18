@@ -107,6 +107,7 @@ const defaultSettings: NavigatorSettings = {
     perltidyProfile: "",
     perlcriticProfile: "",
     perlcriticEnabled: true,
+    perltidyEnabled: true,
     severity5: "warning",
     severity4: "info",
     severity3: "hint",

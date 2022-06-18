@@ -13,6 +13,7 @@ export interface NavigatorSettings {
     enableWarnings: boolean;
     perlcriticProfile: string;
     perlcriticEnabled: boolean;
+    perltidyEnabled: boolean;
     perltidyProfile: string;
     severity5: string;
     severity4: string;

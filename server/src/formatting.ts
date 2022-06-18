@@ -56,6 +56,7 @@ export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextD
 
 
 function perltidy(code: string, settings: NavigatorSettings): string | undefined {
+    if(!settings.perltidyEnabled) return;
     const tidy_path = join(getPerlAssetsPath(), 'tidyWrapper.pl');
     let tidyParams: string[] = [tidy_path].concat(getTidyProfile(settings));
 

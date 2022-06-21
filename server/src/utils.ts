@@ -9,6 +9,7 @@ import {
     Position
 } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind } from "./types";
+import * as path from 'path';
 
 export const async_execFile = promisify(execFile);
 
@@ -30,6 +31,17 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
             includePaths = includePaths.concat(["-I", path]);
         }
     });
+
+    if(settings.includeLib){
+        // Add project root / lib for each workspace folder.
+        if (workspaceFolders) {
+            workspaceFolders.forEach(workspaceFolder => {
+                const rootPath = Uri.parse(workspaceFolder.uri).fsPath;
+                includePaths = includePaths.concat(["-I", path.join(rootPath, "lib")]);
+            });
+        }
+    }
+
     return includePaths;
 }
 

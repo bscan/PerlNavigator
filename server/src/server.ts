@@ -113,6 +113,7 @@ const defaultSettings: NavigatorSettings = {
     severity2: "hint",
     severity1: "hint",
     includePaths: [],
+    includeLib: true,
     logging: false, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
 };
 

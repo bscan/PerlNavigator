@@ -272,7 +272,10 @@ function getSortText(label: string): string {
         sortText = "3" + label;
     } else if(/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)){
         // Public methods / functions
-        sortText = "2" + label;
+        sortText = "2";
+        // Prioritize '->new'
+        if (/->new/.test(label)) { sortText += "1" }
+        sortText += label;
     } else {
         // Variables and regex mistakes
         sortText = "1" + label;

@@ -72,7 +72,24 @@ function getInquisitor(): string[]{
 
 function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): string {
     let code = textDocument.getText();
-    code = `local \$0; use lib_bs22::SourceStash; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); }; \$lib_bs22::SourceStash::filename = '${filePath}'; print "Setting file" . __FILE__; }\n# line 0 \"${filePath}\"\ndie('Not needed, but die for safety');\n` + code;
+
+    // module name regex stolen from https://metacpan.org/pod/Module::Runtime#$module_name_rx
+    const module_name_rx = /^\s*package[\s\n]+([A-Z_a-z][0-9A-Z_a-z]*(?:::[0-9A-Z_a-z]+)*)/gm;
+    let register_inc_path = '';
+    let module_name_match = module_name_rx.exec(code);
+    while (module_name_match != null) {
+        const module_name = module_name_match[1];
+        const inc_filename = module_name.replace(/::/g, '/') + '.pm';
+        // make sure the package found actually matches the filename
+        if (filePath.match('.*' + inc_filename)) {
+            register_inc_path = `\$INC{'${inc_filename}'} = '${filePath}';`;
+            break;
+        } else {
+            module_name_match = module_name_rx.exec(code);
+        }
+    }
+
+    code = `local \$0; use lib_bs22::SourceStash; BEGIN { \$0 = '${filePath}'; if (\$INC{'FindBin.pm'}) { FindBin->again(); }; \$lib_bs22::SourceStash::filename = '${filePath}'; print "Setting file" . __FILE__; ${register_inc_path} }\n# line 0 \"${filePath}\"\ndie('Not needed, but die for safety');\n` + code;
     return code;
 }
 

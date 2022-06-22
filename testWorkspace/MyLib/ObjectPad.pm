@@ -6,10 +6,16 @@ class MyLib::ObjectPad;
 
 has $x :param = 0;
 has $y :param = 0;
+has @foo;
+has %bar;
 
 method move ($dX, $dY) {
    $x += $dX;
    $y += $dY;
+}
+
+method $frob {
+   print "I'm a private method\n";
 }
 
 method describe () {

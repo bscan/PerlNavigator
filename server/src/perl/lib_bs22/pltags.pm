@@ -246,7 +246,8 @@ sub build_pltags {
         }
 
         # This is a sub declaration if the line starts with sub
-        elsif ($stmt =~ /^(sub|method)\s+([\w:]+)(\s+:method)?/) {
+        elsif ($stmt =~ /^(sub)\s+([\w:]+)(\s+:method)?/ or
+                $stmt =~ /^(method)\s+\$?([\w:]+)/) {
             my $subName = $2;
             my $kind = ($1 eq 'method' or $3) ? 'o' : 's';
             my $end_line = SubEndLine(\@codeClean, $i, $offset);
@@ -286,7 +287,7 @@ sub build_pltags {
             MakeTag("constant", "u", '', $file, $line_number, $package_name, \@tags);
         }
 
-        elsif ($stmt=~/^has(?:\s+|\()(?:["']|\$)?(\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
+        elsif ($stmt=~/^has(?:\s+|\()(?:["']|[\$@%])?(\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
             MakeTag($1, "f", '', $file, $line_number, $package_name, \@tags);
             # If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or $foo->attr, you need the full path.
             # Subs don't need this since we find them at compile time. We also find "d" types from imported packages in Inquisitor.pm

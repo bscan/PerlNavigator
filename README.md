@@ -87,6 +87,30 @@ Emacs requires lsp-mode. You can use something similar to the following configur
 :server-id 'perl-ls))
 ```
 
+### Neovim
+Neovim requires [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig). An optional, but highly recommended,
+plugin is [nvim-lsp-installer](https://github.com/williamboman/nvim-lsp-installer) which you can use to automatically
+install Perl Navigator.
+
+The simplest configuration is the following:
+```
+require'lspconfig'.perlnavigator.setup{}
+```
+A configuration with a number of options looks like:
+```
+require'lspconfig'.perlnavigator.setup{
+    settings = {
+      perlnavigator = {
+          perlPath = 'perl',
+          enableWarnings = true,
+          perltidyProfile = '',
+          perlcriticProfile = '',
+          perlcriticEnabled = true,
+      }
+    }
+}
+```
+
 ## Licenses / Acknowledgments
 The Perl Navigator is free software licensed under the MIT License. It has a number of bundled dependencies as well, all of which have their respective open source licenses included.
 This work is only possible due to Class::Inspector, Devel::Symdump, Perl::Critic, PPI, Sub::Util, Perl itself, Microsoft LSP libraries, and ideas from Perl::LanguageServer and PLS.

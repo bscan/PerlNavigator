@@ -45,6 +45,12 @@
 					"default": "",
 					"description": "Path to perl tidy profile (no aliases, .bat files or ~/)"
 				},
+				"perlnavigator.perltidyEnabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Enable perl tidy."
+				},
 				"perlnavigator.perlcriticProfile": {
 					"scope": "resource",
 					"type": "string",

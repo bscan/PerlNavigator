@@ -10,6 +10,8 @@ my @preloaded; # Check what's loaded before we pollute the namespace
 my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util Class::Inspector Encode Encode::Config Encode::Alias Encode::Encoding
         Encode::utf8 Encode::UTF_EBCDIC Encode::XS Encode::MIME bytes Storable File::Basename parent Encode::MIME::Name);
 
+# Mark warnings to detect difference between warnings and errors. Inspired by https://github.com/skaji/syntax-check-perl
+$SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };
 
 CHECK {
     if(!$ENV{'PERLNAVIGATORTEST'}){

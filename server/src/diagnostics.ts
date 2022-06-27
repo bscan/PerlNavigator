@@ -84,6 +84,12 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     const lineNum = localizeErrors(violation, filePath, perlDoc);
     if (typeof lineNum == 'undefined') return;
 
+    if( /=PerlWarning=/.test(violation) ){
+        // Downgrade severity for explicitly marked severities
+        severity = DiagnosticSeverity.Warning;
+        violation = violation.replace(/=PerlWarning=/g, ""); // Don't display the PerlWarnings
+    }
+
     diagnostics.push({
         severity: severity,
         range: {

@@ -7,7 +7,8 @@ no warnings;
 
 my @preloaded; # Check what's loaded before we pollute the namespace
 
-my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util );
+my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util Class::Inspector Encode Encode::Config Encode::Alias Encode::Encoding
+        Encode::utf8 Encode::UTF_EBCDIC Encode::XS Encode::MIME bytes Storable File::Basename parent Encode::MIME::Name);
 
 
 CHECK {
@@ -273,7 +274,7 @@ sub filter_modpacks {
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
     my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
-                      "Exporter","Inquisitor", "XSLoader","attributes", "warnings","strict","utf8", "constant","XSLoader", "Carp",
+                      "Exporter","Inquisitor", "XSLoader","attributes", "warnings","strict","utf8", "constant","XSLoader", "Carp", "Inspectorito", "SubUtilPP",
                       "base", "Config", "overloading", "Devel::Symdump", "vars", "Tie::Hash::NamedCapture", "Text::Balanced", "Filter::Util::Call", "IO::Poll", "IO::Seekable", "IO::Handle", 
                        "IO::File", "Symbol", "IO", "SelectSaver", "overload", "Filter::Simple", "SelfLoader", "PerlIO::Layer", "Text::Balanced::Extractor", "IO::Socket", @checkPreloaded);
 

@@ -34,32 +34,30 @@ Perl::Critic is not currently bundled and needs to be installed separately, but 
 
 
 ### Perl paths
-If you have a nonstandard install of Perl, please set the setting "perlnavigator.perlPath"
-You can also add additional include paths that will be added to the perl search path (@INC) via "perlnavigator.includePaths" 
+If you have a nonstandard install of Perl, please set the setting `perlnavigator.perlPath`
+You can also add additional include paths that will be added to the perl search path (@INC) via `perlnavigator.includePaths`
 
 
 ### Perl Critic Customization 
-You should specify a Perl::Critic profile via "perlnavigator.perlcriticProfile". If this is not set, it will check for "~./perlcriticrc".
+You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`. If this is not set, it will check for `~./perlcriticrc`.
 If that also does not exist, a default profile will be used. This default profile is not very strict.
-The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change "perlnavigator.severity1" through severity5. Allowable options are error, warning, info, and hint.
+The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change `perlnavigator.severity1` through severity5. Allowable options are error, warning, info, and hint.
 
 ### Perl Tidy Customization
-It is recommended to set "perlnavigator.perltidyProfile" if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
+It is recommended to set `perlnavigator.perltidyProfile` if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
 
 ## Installation For Other Editors
 Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
-```
+```sh
 git clone https://github.com/bscan/PerlNavigator
 cd PerlNavigator/
-npm install
-cd server/
-npm install
+npm run ci-all
 tsc
 ```
 
 ### Sublime Text
 Sublime Text requires the following minimum settings under LSP settings (modify depending on your install location and editor)
-```
+```json
 {
     "clients": {
         "perlnavigator": {
@@ -93,11 +91,11 @@ plugin is [nvim-lsp-installer](https://github.com/williamboman/nvim-lsp-installe
 install Perl Navigator.
 
 The simplest configuration is the following:
-```
+```lua
 require'lspconfig'.perlnavigator.setup{}
 ```
 A configuration with a number of options looks like:
-```
+```lua
 require'lspconfig'.perlnavigator.setup{
     settings = {
       perlnavigator = {

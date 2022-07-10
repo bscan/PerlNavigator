@@ -18,9 +18,8 @@ import { getPerlAssetsPath } from "./assets";
 export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings): TextEdit[] | undefined {
     const text = txtDoc.getText();
     const fixedSource = perltidy(text, settings);
-    const lines = text.split(/\r\n|\r|\n/).length;
     const start = { line: 0, character: 0 };
-    const end = { line: lines, character: 0 };
+    const end = { line: txtDoc.lineCount, character: 0 };
     const range = {start, end};
     if(fixedSource){
         let edits: TextEdit = {

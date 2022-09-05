@@ -72,6 +72,8 @@ sub resolve_profile {
         die("User specified Critic profile $profile not readable");
     }
 
+    return $ENV{'PERLCRITIC'} if $ENV{'PERLCRITIC'} && -r $ENV{'PERLCRITIC'};
+
     if ( my $home_dir = find_home_dir() ) {
         $profile = File::Spec->catfile( $home_dir, '.perlcriticrc' );
         return $profile if -f $profile;

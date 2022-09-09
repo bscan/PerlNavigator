@@ -3,10 +3,10 @@ severity=4
 program-extensions = .pl .t
 
 [TestingAndDebugging::RequireUseStrict]
-equivalent_modules = Modern::Perl Object::Pad common::sense
+equivalent_modules = Modern::Perl Moo Moose Object::Pad Test::Class::Moose Test2::V0 Test::Most common::sense
 
 [TestingAndDebugging::RequireUseWarnings]
-equivalent_modules = Modern::Perl Object::Pad common::sense
+equivalent_modules = Modern::Perl Moo Moose Object::Pad Test::Class::Moose Test2::V0 Test::Most common::sense
 
 # Gets confused with subroutine signatures
 [-Subroutines::ProhibitSubroutinePrototypes]

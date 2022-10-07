@@ -1,8 +1,7 @@
 use strict;
 use warnings;
-use Getopt::Long;
+use Getopt::Long qw( GetOptions );
 use utf8;
-use Unicode::Normalize qw(NFKD);
 use open qw(:std :utf8);
 
 if ( !eval{ require Perl::Tidy; 1} ){

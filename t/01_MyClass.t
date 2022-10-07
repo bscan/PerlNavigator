@@ -1,14 +1,14 @@
 use strict;
 use warnings;
-use Capture::Tiny qw(capture);
-use Test::More import => [qw(done_testing is like)];
+use Capture::Tiny qw( capture );
+use Test::More import => [qw( done_testing is )];
 
 # Need to pass some signal to inquistor to not run during its CHECK block. Alternatively, maybe we can check for the test harness environment variable?
 BEGIN { $ENV{'PERLNAVIGATORTEST'} = 1; }
 
-use FindBin qw($Bin);
+use FindBin qw( $Bin );
 use lib "$Bin/../server/src/perl";
-use Inquisitor;
+use Inquisitor ();
 
 
 my $testFile = File::Spec->rel2abs("$Bin/../testWorkspace/MyLib/MyClass.pm");

@@ -1,5 +1,5 @@
 use strict;
-use File::Find;
+use File::Find ();
 
 sub get_modules {
     # Clean up @INC

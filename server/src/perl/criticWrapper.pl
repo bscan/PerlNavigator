@@ -1,10 +1,10 @@
 use strict;
 use warnings;
-use Getopt::Long;
-use File::Spec;
-use File::Basename;
+use Getopt::Long qw( GetOptions );
+use File::Spec ();
+use File::Basename ();
 use utf8;
-use Unicode::Normalize qw(NFKD);
+use Unicode::Normalize qw( NFKD );
 use open qw(:std :utf8);
 
 my $sSource = do { local $/; <STDIN> };

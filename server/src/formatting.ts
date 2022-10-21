@@ -3,56 +3,79 @@ import {
     DocumentFormattingParams,
     TextEdit,
     DocumentRangeFormattingParams,
+    Position,
+    Range,
     WorkspaceFolder
 } from 'vscode-languageserver/node';
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
-import {  nLog } from "./utils";
+import {  async_execFile, getPerlimportsProfile, nLog } from "./utils";
 import { dirname, join } from 'path';
+import Uri from 'vscode-uri';
 import { execFileSync } from 'child_process';
 import { getPerlAssetsPath } from "./assets";
 
 
 export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings): TextEdit[] | undefined {
-    const text = txtDoc.getText();
-    const fixedSource = perltidy(text, settings);
-    const start = { line: 0, character: 0 };
-    const end = { line: txtDoc.lineCount, character: 0 };
-    const range = {start, end};
-    if(fixedSource){
-        let edits: TextEdit = {
-            range: range,
-            newText: fixedSource
-        };
-        return [edits];
-    } else {
-        return;
-    }
-} 
+    return maybeReturnEdits(
+        Range.create(
+            Position.create(0,0),
+            Position.create( txtDoc.lineCount, 0),
+        ),
+        txtDoc,
+        settings
+    )
+}
 
 export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings): TextEdit[] | undefined {
-
-    const start = { line: params.range.start.line, character: 0 };
     const offset = params.range.end.character > 0 ? 1 : 0;
-    const end = { line: params.range.end.line + offset, character: 0 };
-    const range = {start, end};
+
+    return maybeReturnEdits(
+        Range.create(
+            Position.create(params.range.start.line, 0),
+            Position.create(params.range.end.line + offset, 0)
+        ),
+        txtDoc,
+        settings
+    );
+}
+
+function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: NavigatorSettings): TextEdit[] | undefined {
     const text = txtDoc.getText(range);
+    if ( !text) {
+        return;
+    }
 
-    const fixedSource = perltidy(text, settings);
+    let formattedSource = perltidy(text, settings);
+    formattedSource = perlimports(txtDoc, formattedSource || text, settings);
 
-    if(fixedSource){
-        let edits: TextEdit = {
-            range: range,
-            newText: fixedSource
-        };
-        return [edits];
-    } else {
+    if (!formattedSource) {
+        return;
+    }
+
+    const edits: TextEdit = {
+        range: range,
+        newText: formattedSource
+    };
+    return [edits];
+}
+
+function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): string | undefined {
+    if(!settings.perlimportsTidyEnabled) return;
+    const importsPath = join(getPerlAssetsPath(), 'perlimportsWrapper.pl');
+    let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
+    cliParams = cliParams.concat(['--read-stdin', '--filename', Uri.parse(doc.uri).fsPath]);
+
+    try {
+        const output = execFileSync(settings.perlPath, cliParams, {timeout: 25000, input: code}).toString();
+        return output;
+    } catch(error: any) {
+        nLog("perlimports failed with unknown error: " + error, settings);
         return;
     }
 }
-
 
 function perltidy(code: string, settings: NavigatorSettings): string | undefined {
     if(!settings.perltidyEnabled) return;
@@ -79,7 +102,6 @@ function perltidy(code: string, settings: NavigatorSettings): string | undefined
         return;
     }
 }
-
 
 function getTidyProfile (settings: NavigatorSettings): string[] {
     let profileCmd: string[] = [];

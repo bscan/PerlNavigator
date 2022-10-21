@@ -39,6 +39,24 @@
 					"default": true,
 					"description": "Enable warnings using -Mwarnings command switch"
 				},
+				"perlnavigator.perlimportsLintEnabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Enable perlimports as a linter."
+				},
+				"perlnavigator.perlimportsTidyEnabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Enable perlimports as a tidier."
+				},
+				"perlnavigator.perlimportsProfile": {
+					"scope": "resource",
+					"type": "string",
+					"default": "",
+					"description": "Path to perlimports.toml (no aliases, .bat files or ~/)"
+				},
 				"perlnavigator.perltidyProfile": {
 					"scope": "resource",
 					"type": "string",

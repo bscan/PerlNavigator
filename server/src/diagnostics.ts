@@ -8,7 +8,7 @@ import {
 } from 'vscode-languageserver-protocol';
 import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
-import { getIncPaths, async_execFile, nLog } from './utils';
+import { getIncPaths, getPerlimportsProfile, async_execFile, nLog } from './utils';
 import { buildNav } from "./parseDocument";
 import { getPerlAssetsPath } from "./assets";
 
@@ -191,6 +191,37 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
     return diagnostics;
 }
 
+export async function perlimports(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
+    if(!settings.perlimportsLintEnabled) return [];
+    const importsPath = join(getPerlAssetsPath(), 'perlimportsWrapper.pl');
+    const cliParams = [importsPath, ...getPerlimportsProfile(settings), '--lint', '--json', '--filename', Uri.parse(textDocument.uri).fsPath];
+
+    nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
+
+    const diagnostics: Diagnostic[] = [];
+    let output: string;
+    try {
+        const process = async_execFile(settings.perlPath, cliParams, {timeout: 25000});
+        process?.child?.stdin?.on('error', (error: any) => {
+            nLog("perlimports Error Caught: " + error, settings);
+        });
+        process?.child?.stdin?.end();
+        const out = await process;
+        output = out.stdout;
+    } catch(error: any) {
+        nLog("perlimports failed: " + error, settings);
+        output = error.message;
+    }
+
+    // The first line will be an error message about perlimports failing.
+    // The last line may be blank.
+    output.split("\n").filter(v => v.startsWith('{')).forEach(violation => {
+        maybeAddPerlImportsDiag(violation, diagnostics, settings);
+    });
+
+    return diagnostics;
+}
+
 function getCriticProfile (workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): string[] {
     let profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
@@ -235,6 +266,24 @@ function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settin
         message: "Critic: " + message,
         source: 'perlnavigator'
     });
+}
+
+function maybeAddPerlImportsDiag(violation: string, diagnostics: Diagnostic[], settings: NavigatorSettings): void {
+    try {
+        const diag = JSON.parse(violation);
+        const loc = diag.location;
+        diagnostics.push({
+            message: `perlimports: ${diag.reason} \n\n ${diag.diff}`,
+            range: {
+                start: { line: Number(loc.start.line) - 1, character: Number(loc.start.column) - 1 },
+                end: { line: Number(loc.end.line) - 1, character: Number(loc.end.column) - 1 }
+            },
+            severity: DiagnosticSeverity.Warning,
+            source: 'perlnavigator'
+        })
+    } catch(error: any) {
+        nLog(`Could not parse JSON violation ${error}`, settings)
+    }
 }
 
 function getCriticDiagnosticSeverity(severity_num: string, settings: NavigatorSettings): DiagnosticSeverity | undefined {

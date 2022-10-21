@@ -203,4 +203,11 @@ export function nLog(message: string, settings: NavigatorSettings){
     }
 }
 
+export function getPerlimportsProfile (settings: NavigatorSettings): string[] {
+    const profileCmd: string[] = [];
+    if (settings.perlimportsProfile) {
+        profileCmd.push('--config-file', settings.perlimportsProfile);
+    }
+    return profileCmd;
+}
 

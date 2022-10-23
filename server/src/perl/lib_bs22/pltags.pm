@@ -129,7 +129,7 @@ sub build_pltags {
     my @code = split("\n", $code);
     my $n = scalar(@code);
     my @codeClean;
-
+    my $sActiveOO = {}; # Keep track of OO frameworks in use to keep down false alarms on field vs has vs attr
     # Loop through file
     for (my $i=0; $i<$n;$i++){
         $line_number++;
@@ -288,10 +288,26 @@ sub build_pltags {
         }
 
         elsif ($stmt=~/^has(?:\s+|\()["']?([\$@%]?\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
-            MakeTag($1, "f", '', $file, $line_number, $package_name, \@tags);
+            my $attr = $1;
+            my $type = $attr =~ /^\w/ ? 'f' : 'v'; # attr looks like a function, $attr is a variable.
+            # TODO: Define new type. Class $variables should probably be shown in the Outline view even though lexical variables are not
+            MakeTag($attr, $type, '', $file, $line_number, $package_name, \@tags);
             # If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or $foo->attr, you need the full path.
             # Subs don't need this since we find them at compile time. We also find "d" types from imported packages in Inquisitor.pm
-            MakeTag("${package_name}::$1", "d", '', $file, $line_number, $package_name, \@tags);
+            if ($type eq 'f'){
+                MakeTag("${package_name}::$attr", "d", '', $file, $line_number, $package_name, \@tags);
+            }
+        }
+
+        elsif ($sActiveOO->{"Object::Pad"} and $stmt=~/^field\s+([\$@%]\w+)\b/) { # Object::Pad field
+            my $attr = $1;
+            MakeTag($attr, "v", '', $file, $line_number, $package_name, \@tags);
+        }
+
+        elsif (($sActiveOO->{"Mars::Class"} or $sActiveOO->{"Venus::Class"}) and $stmt=~/^attr\s+["'](\w+)\b/) { # Mars attributes
+            my $attr = $1;
+            MakeTag($attr, "f", '', $file, $line_number, $package_name, \@tags);
+            MakeTag("${package_name}::$attr", "d", '', $file, $line_number, $package_name, \@tags);
         }
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 
@@ -299,7 +315,9 @@ sub build_pltags {
         } 
         
         elsif ($stmt=~/^use\s+([\w:]+)\b/) { # Keep track of explicit imports for filtering
-            MakeTag("$1", "u", '', $file, $line_number, $package_name, \@tags);
+            my $import = $1;
+            MakeTag("$import", "u", '', $file, $line_number, $package_name, \@tags);
+            $sActiveOO->{$import} = 1;
         }
 
     }

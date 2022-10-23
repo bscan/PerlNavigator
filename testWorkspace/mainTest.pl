@@ -22,6 +22,7 @@ use MyLib::ObjectPad;
 use MyLib::ClassAccessor;
 use MyLib::ClassTiny;
 use MyLib::ObjectTiny;
+use MyLib::MarsExample;
 
 use MySubClass;
 
@@ -132,6 +133,10 @@ my $dbh2 = MyLib::DBI->connect();
 
 my $padObj = MyLib::ObjectPad->new(x => 5, y => 10);
 $padObj->describe();
+$padObj->mutatorField = 10;
+$padObj->set_writerField(20);
+print($padObj->mutatorField);
+
 
 my $caObj = MyLib::ClassAccessor->new();
 my $caaObj = MyLib::ClassAccessorAntlers->new();
@@ -139,6 +144,10 @@ my $caaObj = MyLib::ClassAccessorAntlers->new();
 my $ctObj = MyLib::ClassTiny->new();
 
 my $otObj = MyLib::ObjectTiny->new();
+
+my $marsObj = MyLib::MarsExample->new(foo=>10);
+print $marsObj->foo(20);
+print $marsObj->foo;
 
 use attributes ();
 print "ObjectPad attributes: " . attributes::get(\&MyLib::ObjectPad::describe) . "\n";

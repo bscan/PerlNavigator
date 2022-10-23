@@ -9,6 +9,11 @@ has $y :param = 0;
 has @foo;
 has %bar;
 
+field $mutatorField: mutator;
+field $writerField: writer;
+
+my $qux = 10;
+
 method move ($dX, $dY) {
    $x += $dX;
    $y += $dY;

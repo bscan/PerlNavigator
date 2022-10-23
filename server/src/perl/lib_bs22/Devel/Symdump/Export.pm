@@ -1,7 +1,7 @@
 package Devel::Symdump::Export;
 require Devel::Symdump;
 require Exporter;
-use Carp;
+use Carp qw( confess );
 use strict;
 use vars qw(@ISA @EXPORT_OK $AUTOLOAD);
 @ISA=('Exporter');

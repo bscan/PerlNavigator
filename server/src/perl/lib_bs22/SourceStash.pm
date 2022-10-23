@@ -1,6 +1,6 @@
 package lib_bs22::SourceStash;
 use strict;
-use Filter::Simple;
+use Filter::Simple qw( FILTER );
 
 our $source = '';
 our $filename;

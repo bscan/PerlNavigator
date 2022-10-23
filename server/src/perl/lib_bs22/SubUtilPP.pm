@@ -2,7 +2,7 @@ package SubUtilPP;
 
 use strict;
 use warnings;
-use B;
+use B ();
 
 if ( !eval { require Sub::Util; Sub::Util->import('subname'); 1 } ){
     *subname = sub {

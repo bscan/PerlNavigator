@@ -11,7 +11,7 @@ package pltags;
 use strict;
 no warnings;
 use utf8;
-use Text::Balanced qw();
+use Text::Balanced ();
 
 use Exporter;
 our @ISA    = qw(Exporter);

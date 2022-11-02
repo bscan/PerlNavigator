@@ -5,15 +5,21 @@ use warnings;
 
 use Try::Tiny qw( catch try );
 
+sub clear_stdin_and_exit {
+    # Unclear if this is needed, but I've had issues on some versions of MacOS where STDIN needs to be cleared to function properly
+    my $sSource = do { local $/; <STDIN> };
+    exit(1);
+}
+
 if ( !eval { require App::perlimports::CLI; 1 } ) {
     print "\nUnable to run perlimports as it is not installed\n";
-    exit(0);
+    clear_stdin_and_exit();
 }
 
 my $min = 0.000049;
 if ( $App::perlimports::VERSION < $min ) {
     printf( "\nNeed at least version %f of perlimports\n", $min);
-    exit(0);
+    clear_stdin_and_exit();
 };
 
 my @args = @ARGV;

@@ -197,7 +197,7 @@ export async function perlimports(textDocument: TextDocument, workspaceFolders: 
     const cliParams = [importsPath, ...getPerlimportsProfile(settings), '--lint', '--json', '--filename', Uri.parse(textDocument.uri).fsPath];
 
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
-
+    const code = textDocument.getText();
     const diagnostics: Diagnostic[] = [];
     let output: string;
     try {
@@ -205,11 +205,12 @@ export async function perlimports(textDocument: TextDocument, workspaceFolders: 
         process?.child?.stdin?.on('error', (error: any) => {
             nLog("perlimports Error Caught: " + error, settings);
         });
+        process?.child?.stdin?.write(code);
         process?.child?.stdin?.end();
         const out = await process;
         output = out.stdout;
     } catch(error: any) {
-        nLog("perlimports failed: " + error, settings);
+        nLog("Attempted to run perlimports lint: " + error, settings);
         output = error.message;
     }
 

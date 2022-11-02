@@ -253,20 +253,27 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     // Perl critic things
     const diagCritic = await pCritic;
-    documentDiags.set(textDocument.uri, diagCritic); // May need to clear out old ones if a user changed their settings.
+    const diagImports = await pImports;
+    let newDiags: Diagnostic[] = [];
+
+
     if(settings.perlcriticEnabled){
-        const allNewDiags = perlOut.diags.concat(diagCritic);
+        newDiags = newDiags.concat(diagCritic);
         nLog("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds", settings);
+    }
+
+    if(settings.perlimportsLintEnabled){
+        newDiags = newDiags.concat(diagImports);
+        nLog(`perlimports Time: ${(Date.now() - start) / 1000} seconds`, settings);
+    }
+
+    documentDiags.set(textDocument.uri, newDiags); // May need to clear out old ones if a user changed their settings.
+
+    if(newDiags){
+        const allNewDiags = perlOut.diags.concat(newDiags);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
 
-    const diagImports = await pImports;
-    documentDiags.set(textDocument.uri, diagImports); // May need to clear out old ones if a user changed their settings.
-    if(settings.perlimportsTidyEnabled){
-        const allNewDiags = perlOut.diags.concat(diagImports);
-        nLog(`perlimports Time: ${Date.now() - start) / 1000} seconds`, settings);
-        sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
-    }
     return;
 }
 

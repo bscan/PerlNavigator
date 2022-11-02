@@ -48,16 +48,23 @@ function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: Navigat
         return;
     }
 
-    let formattedSource = perltidy(text, settings);
-    formattedSource = perlimports(txtDoc, formattedSource || text, settings);
+    let newSource: string = "";
+    const fixedImports = perlimports(txtDoc, text, settings);
+    if (fixedImports){
+        newSource = fixedImports; 
+    }
+    const tidedSource = perltidy(fixedImports || text, settings);
+    if (tidedSource){
+        newSource = tidedSource; 
+    }
 
-    if (!formattedSource) {
+    if (!newSource) { // If we failed on both tidy and imports
         return;
     }
 
     const edits: TextEdit = {
         range: range,
-        newText: formattedSource
+        newText: newSource
     };
     return [edits];
 }
@@ -66,13 +73,13 @@ function perlimports(doc: TextDocument, code: string, settings: NavigatorSetting
     if(!settings.perlimportsTidyEnabled) return;
     const importsPath = join(getPerlAssetsPath(), 'perlimportsWrapper.pl');
     let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
-    cliParams = cliParams.concat(['--read-stdin', '--filename', Uri.parse(doc.uri).fsPath]);
+    cliParams = cliParams.concat(['--filename', Uri.parse(doc.uri).fsPath]);
 
     try {
         const output = execFileSync(settings.perlPath, cliParams, {timeout: 25000, input: code}).toString();
         return output;
     } catch(error: any) {
-        nLog("perlimports failed with unknown error: " + error, settings);
+        nLog("Attempted to run perlimports tidy " + error.stdout, settings);
         return;
     }
 }

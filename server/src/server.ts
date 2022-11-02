@@ -25,7 +25,7 @@ import {
 } from 'vscode-languageserver-protocol';
 
 import Uri from 'vscode-uri';
-import { perlcompile, perlcritic } from "./diagnostics";
+import { perlcompile, perlcritic, perlimports } from "./diagnostics";
 import { cleanupTemporaryAssetPath } from "./assets";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
@@ -104,9 +104,12 @@ connection.onInitialized(() => {
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
     enableWarnings: true,
+    perlimportsProfile: "",
     perltidyProfile: "",
     perlcriticProfile: "",
     perlcriticEnabled: true,
+    perlimportsLintEnabled: true,
+    perlimportsTidyEnabled: true,
     perltidyEnabled: true,
     severity5: "warning",
     severity4: "info",
@@ -233,6 +236,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const workspaceFolders = await getWorkspaceFoldersSafe(); 
     const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
     const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
+    const pImports = perlimports(textDocument, workspaceFolders, settings); // Start perlimports
 
     let perlOut = await pCompile;
     nLog("Compilation Time: " + (Date.now() - start)/1000 + " seconds", settings);
@@ -253,6 +257,14 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     if(settings.perlcriticEnabled){
         const allNewDiags = perlOut.diags.concat(diagCritic);
         nLog("Perl Critic Time: " + (Date.now() - start)/1000 + " seconds", settings);
+        sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
+    }
+
+    const diagImports = await pImports;
+    documentDiags.set(textDocument.uri, diagImports); // May need to clear out old ones if a user changed their settings.
+    if(settings.perlimportsTidyEnabled){
+        const allNewDiags = perlOut.diags.concat(diagImports);
+        nLog(`perlimports Time: ${Date.now() - start) / 1000} seconds`, settings);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
     return;

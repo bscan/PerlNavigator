@@ -1,4 +1,3 @@
-For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
 
 # Perl Navigator Language Server
 Provides syntax checking, autocompletion, perlcritic, code navigation, hover for Perl.
@@ -16,6 +15,7 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 * Smart context-aware autocompletion and navigation
 * Code Navigation ("Go To Definition") anywhere, including to installed modules and compile-time dependencies
 * Code formatting via Perl::Tidy
+* Imports cleanup via perlimports 
 * Outline view
 * Hover for more details about objects, subs, and modules
 * Does not write any cache directories or temp files.
@@ -30,7 +30,7 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 ## Vscode Installation
 Install the VSCode extension and it should just work. All required dependencies are bundled with the extension. 
 Please file a bug report if the Perl Navigator does not work out of the box.
-Perl::Critic is not currently bundled and needs to be installed separately, but the remaining features (e.g. navigation, autocomplete, syntax check) do not require it.
+Perl::Critic and perlimports are not currently bundled and need to be installed independently, but the remaining features (e.g. navigation, autocomplete, syntax check) do not require it.
 
 
 ### Perl paths
@@ -45,6 +45,11 @@ The default severities are reasonable, (primarily used for coloring the squiggly
 
 ### Perl Tidy Customization
 It is recommended to set `perlnavigator.perltidyProfile` if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
+
+### Perlimports Customization
+Perlimports offers additional diagnostics when imports can be cleaned up. When perlimports is available "Format Document" and "Format Selection" will run perlimports in addition to perltidy.
+Perlimports can be customized with a profile using the `perlnavigator.perlimportsProfile`. The diagnostics (linting) can be toggled with `perlimportsLintEnabled`, and the tidying can be toggled with `perlimportsTidyEnabled`.
+Due to implementation limitations, perlimports requires a saved version of the file you are working on. If any results are unexpected, save the working file and try again.  
 
 ## Installation For Other Editors
 Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
@@ -109,6 +114,9 @@ require'lspconfig'.perlnavigator.setup{
 }
 ```
 
+## Raku / Other Projects
+For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
+
 ## Licenses / Acknowledgments
 The Perl Navigator is free software licensed under the MIT License. It has a number of bundled dependencies as well, all of which have their respective open source licenses included.
-This work is only possible due to Class::Inspector, Devel::Symdump, Perl::Critic, PPI, Sub::Util, Perl itself, Microsoft LSP libraries, and ideas from Perl::LanguageServer and PLS.
+This work is only possible due to Class::Inspector, Devel::Symdump, Perl::Critic, PPI, Perl::Tidy, perlimports, Sub::Util, Perl itself, Microsoft LSP libraries, and ideas from Perl::LanguageServer and PLS.

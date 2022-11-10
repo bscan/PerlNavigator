@@ -47,8 +47,9 @@ The default severities are reasonable, (primarily used for coloring the squiggly
 It is recommended to set `perlnavigator.perltidyProfile` if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
 
 ### Perlimports Customization
-Perlimports offers additional diagnostics when imports can be cleaned up. When perlimports is available "Format Document" and "Format Selection" will run perlimports in addition to perltidy.
-Perlimports can be customized with a profile using the `perlnavigator.perlimportsProfile`. The diagnostics (linting) can be toggled with `perlimportsLintEnabled`, and the tidying can be toggled with `perlimportsTidyEnabled`.
+Perlimports offers additional diagnostics when imports can be cleaned up. When perlimports is enabled, "Format Document" and "Format Selection" will run perlimports in addition to perltidy.
+By default, perlimports is not enabled, but the diagnostics (linting) can be enabled with `perlimportsLintEnabled`, and the tidying can be enabled with `perlimportsTidyEnabled`.
+Perlimports can be customized with a profile using the `perlnavigator.perlimportsProfile`. 
 Due to implementation limitations, perlimports requires a saved version of the file you are working on. If any results are unexpected, save the working file and try again.  
 
 ## Installation For Other Editors

@@ -42,13 +42,13 @@
 				"perlnavigator.perlimportsLintEnabled": {
 					"scope": "resource",
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"description": "Enable perlimports as a linter."
 				},
 				"perlnavigator.perlimportsTidyEnabled": {
 					"scope": "resource",
 					"type": "boolean",
-					"default": true,
+					"default": false,
 					"description": "Enable perlimports as a tidier."
 				},
 				"perlnavigator.perlimportsProfile": {

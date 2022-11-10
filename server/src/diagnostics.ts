@@ -210,7 +210,7 @@ export async function perlimports(textDocument: TextDocument, workspaceFolders: 
         const out = await process;
         output = out.stdout;
     } catch(error: any) {
-        nLog("Attempted to run perlimports lint: " + error, settings);
+        nLog("Attempted to run perlimports lint: " + error.stdout, settings);
         output = error.message;
     }
 

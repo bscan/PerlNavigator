@@ -176,7 +176,65 @@
 					"description": "Traces the communication between VS Code and the language server."
 				}
 			}
-		}
+		},
+		"grammars": [
+			{
+			  "injectTo": [
+				"source.perl"
+			  ],
+			  "scopeName": "source.perl.frameworks",
+			  "path": "./syntaxes/perl-scopes.json"
+			},
+			{
+			  "injectTo": [
+				"source.perl"
+			  ],
+			  "scopeName": "source.perl.package.moose",
+			  "path": "./syntaxes/moose.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.typehints",
+				"path": "./syntaxes/type-hints.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.objectpad",
+				"path": "./syntaxes/object-pad.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.moops",
+				"path": "./syntaxes/moops.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.zydeco",
+				"path": "./syntaxes/zydeco.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.mars",
+				"path": "./syntaxes/mars.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.async",
+				"path": "./syntaxes/async.json"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

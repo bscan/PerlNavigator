@@ -1,0 +1,28 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "async",
+    "scopeName": "source.perl.package.async",
+    "injectionSelector": "L:meta.async.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#async"
+        }
+    ],
+    "repository": {
+        "async": {
+            "patterns": [
+                {
+                    "match": "\\b(await)\\b",
+                    "name": "keyword.control.async"  
+                },
+                {
+                    "match": "\\b(async)\\b",
+                    "name": "storage.type.sub.async"  
+                }
+            ]
+        }
+    }
+}

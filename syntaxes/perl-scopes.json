@@ -1,0 +1,99 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "information_for_contributors": [
+    "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+  ],
+  "scopeName": "source.perl.frameworks",
+  "injectionSelector": "L:source.perl -comment -string -text",
+  "patterns": [
+    {
+      "include": "#scope_defs"
+    }
+  ],
+  "repository": {
+    "source": {
+      "patterns": [
+        {
+          "include": "$self"
+        },
+        {
+          "include": "source.perl"
+        }
+      ]
+    },
+    "scope_defs": {
+      "patterns": [
+        {
+          "name": "meta.moose.perl",
+          "begin": "(?<=use)\\s+(?:Moose|Mouse|Moo)(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "name": "meta.objectpad.perl",
+          "begin": "(?<=use)\\s+(?:Object::Pad)(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+            "name": "meta.typehints.perl",
+            "begin": "(?<=use)\\s+(?:Type::Hints)(?=[\\s;])",
+            "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+            "patterns": [
+              {
+                "include": "#source"
+              }
+            ]
+        },
+        {
+          "name": "meta.moops.perl",
+          "begin": "(?<=use)\\s+(?:Moops)(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "name": "meta.zydeco.perl",
+          "begin": "(?<=use)\\s+(?:Zydeco)(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "name": "meta.mars.perl",
+          "begin": "(?<=use)\\s+(?:Mars|Venus)(?=[\\s;:])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "name": "meta.async.perl",
+          "begin": "(?<=use)\\s+(?:Future::AsyncAwait|Mojo::AsyncAwait|Mojo::Base.*-async_await.*)(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

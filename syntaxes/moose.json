@@ -1,0 +1,75 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "information_for_contributors": [
+    "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope",
+    "Code used under MIT license from https://github.com/torrentalle/vscode-perl-moose"
+  ],
+  "name": "Moose",
+  "scopeName": "source.perl.package.moose",
+  "injectionSelector": "L:meta.moose.perl -comment -string -text",
+  "patterns": [
+    {
+      "include": "#moose"
+    }
+  ],
+  "repository": {
+    "moose": {
+      "patterns": [
+        {
+          "match": "\\s*(-meta_name)\\b",
+          "captures": {
+            "1": {
+              "name": "entity.other.attribute-name.moose.perl"
+            }
+          },
+          "name": "constant.language.type.modifier.moose.perl"
+        },
+        {
+          "match": "\\b(extends|with)\\b(?:([-a-zA-Z0-9_]+))?\\s*",
+          "captures": {
+            "1": {
+              "name": "keyword.control.import.moose.perl"
+            },
+            "2": {
+              "name": "entity.name.class.moose.perl"
+            }
+          },
+          "name": "keyword.control.moose.perl"
+        },
+        {
+          "match": "\\b(has)(?:\\s+(\\+|)([-a-zA-Z0-9_]+))?\\s*",
+          "captures": {
+            "1": {
+              "name": "keyword.other.attribute.moose.perl"
+            },
+            "2": {
+              "name": "storage.modifier.attribute.moose.perl"
+            },
+            "3": {
+              "name": "entity.other.attribute-name.moose.perl"
+            }
+          }
+        },
+        {
+            "match": "\\b(auto_deref|builder|clearer|coerce|default|documentation|does|handles|init_arg|is|isa|lazy|lazy_build|metaclass|predicate|reader|required|role_attribute|traits|trigger|weak_ref|writer)\\s*(?==>)",
+            "name": "constant.language.has.key.moose.perl"  
+        },
+        {
+          "match": "\\b(before|after|around|override|augment)(?:\\s+([-a-zA-Z0-9_]+))?",
+          "captures": {
+            "1": {
+              "name": "keyword.other.attribute.moose.perl"
+            },
+            "2": {
+              "name": "entity.name.function.perl"
+            }
+          }
+        },
+        {
+          "match": "\\b(blessed|confess|inner|meta|super)\\b",
+          "name": "support.function.moose.perl"
+        }
+      ]
+    }
+  }
+}

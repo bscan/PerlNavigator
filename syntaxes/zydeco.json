@@ -1,0 +1,110 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "zydeco",
+    "scopeName": "source.perl.package.zydeco",
+    "injectionSelector": "L:meta.zydeco.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#zydeco"
+        }
+    ],
+    "repository": {
+        "zydeco": {
+            "patterns": [
+                {
+                    "match": "\\b(has|field|param|requires|constant|include)\\s+(?:(\\+?\\$?[\\w]+!?)|\\{)\\s*",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.zydeco.perl"
+                        },
+                        "2": {
+                            "name": "variable.other.readwrite.global.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b((?:abstract\\s+)?class|role|interface)\\s+([\\w:]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.zydeco"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class.zydeco"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(extends|with)\\b\\s+(?:([\\w::\\?]+))?(?:\\s*,\\s*([\\w::\\?]+))?(?=[\\s;\\b,\\(])",
+                    "captures": {
+                      "1": {
+                        "name": "keyword.control.import.zydeco.perl"
+                      },
+                      "2": {
+                        "name": "entity.name.class.zydeco.perl"
+                      },
+                      "3": {
+                        "name": "entity.name.class.zydeco.perl"
+                      }
+                    },
+                    "name": "keyword.control.zydeco.perl"
+                  },
+                  {
+                    "match": "\\b(toolkit)\\b\\s+(?:([\\w::]+))?\\b",
+                    "captures": {
+                      "1": {
+                        "name": "keyword.control.import.zydeco.perl"
+                      },
+                      "2": {
+                        "name": "entity.name.class.zydeco.perl"
+                      }
+                    },
+                    "name": "keyword.control.zydeco.perl"
+                  },
+                {
+                    "match": "\\b((?:multi\\s+)?(?:method|symmethod|factory))\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b((?:multi\\s+)?(?:method|symmethod))\\s+(\\$[\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "variable.other.method"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(before|around|after)\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(accessor|builder|clearer|coerce|default|does|is|isa|predicate|required|trigger|type)\\s*(?==>)",
+                    "name": "constant.language.has.key.zydeco.perl"  
+                },
+                {
+                    "match": "\\b(coerce|begin|end|type_name|version|authority|overload|before_apply|after_apply)\\b",
+                    "name": "support.function.moose.perl"
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,69 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "moops",
+    "scopeName": "source.perl.package.moops",
+    "injectionSelector": "L:meta.moops.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#moops"
+        }
+    ],
+    "repository": {
+        "moops": {
+            "patterns": [
+                {
+                    "match": "\\b(has)(?:([\\w]+))?\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.moops.perl"
+                        },
+                        "2": {
+                            "name": "variable.other.readwrite.global.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(class|role)\\s+([\\w:]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.moops"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class.moops"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(extends|with)\\b\\s+(?:([\\w::]+))?\\b",
+                    "captures": {
+                      "1": {
+                        "name": "keyword.control.import.moops.perl"
+                      },
+                      "2": {
+                        "name": "entity.name.class.moops.perl"
+                      }
+                    },
+                    "name": "keyword.control.moops.perl"
+                  },
+                {
+                    "match": "\\b(method)\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(accessor|builder|clearer|coerce|default|does|is|isa|predicate|required|trigger)\\s*(?==>)",
+                    "name": "constant.language.has.key.moops.perl"  
+                }
+            ]
+        }
+    }
+}

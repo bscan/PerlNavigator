@@ -1,0 +1,131 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope",
+        "Code used under MIT license from https://github.com/torrentalle/vscode-perl-typehints"
+    ],
+    "name": "typehints",
+    "scopeName": "source.perl.package.typehints",
+    "injectionSelector": "L:meta.typehints.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#typehints"
+        },
+        {
+            "include": "#letblocks"
+        },
+        {
+            "include": "#defblocks"
+        }
+    ],
+    "repository": {
+        "typehints": {
+            "patterns": [
+                {
+                    "match": "\\b(has|private|public|readonly|lazy|protected)\\s+(\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?\\s*(?=[;=])",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.typehints.perl"
+                        },
+                        "2": {
+                            "name": "entity.other.attribute-name.typehints.perl"
+                        },
+                        "3": {
+                            "name": "support.type.typehints.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(class)\\s+(\\w+)\\b(?:\\s+(extends)\\s+(\\w+)\\b)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.typehints.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class"
+                        },
+                        "3": {
+                            "name": "storage.modifier.typehints.perl"
+                        },
+                        "4": {
+                            "name": "entity.name.type.class"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(let)\\s+([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.typehints.perl"
+                        },
+                        "2": {
+                            "name": "variable.other.readwrite.global.perl"
+                        },
+                        "3": {
+                            "name": "support.type.typehints.perl"
+                        }
+                    }
+                }
+            ]
+        },
+        "letblocks": {
+            "name": "let.block.typehint",
+            "begin": "\\b(let)\\s+\\(",
+            "beginCaptures": {
+                "0": {
+                    "name": "keyword.other.attribute.typehints.perl"
+                }
+            },
+            "end": "\\)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.block.ts"
+                }
+            },
+            "patterns": [
+                {
+                    "match": "([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "captures": {
+                        "1": {
+                            "name": "variable.other.readwrite.global.perl"
+                        },
+                        "2": {
+                            "name": "support.type.typehints.perl"
+                        }
+                    }
+                }
+            ]
+        },
+        "defblocks": {
+            "name": "def.block.typehint",
+            "begin": "\\b(def)\\s+(\\w+)\\s*\\(",
+            "beginCaptures": {
+                "1": {
+                    "name": "storage.type.sub.perl"
+                },
+                "2": {
+                    "name": "entity.name.function.perl"
+                }
+            },
+            "end": "\\)",
+            "endCaptures": {
+                "0": {
+                    "name": "punctuation.definition.block.ts"
+                }
+            },
+            "patterns": [
+                {
+                    "match": "([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "captures": {
+                        "1": {
+                            "name": "variable.other.readwrite.global.perl"
+                        },
+                        "2": {
+                            "name": "support.type.typehints.perl"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

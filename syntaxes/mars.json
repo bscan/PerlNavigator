@@ -1,0 +1,61 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "mars",
+    "scopeName": "source.perl.package.mars",
+    "injectionSelector": "L:meta.mars.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#mars"
+        }
+    ],
+    "repository": {
+        "mars": {
+            "patterns": [
+                {
+                    "match": "\\b(attr)\\s+['\"](\\w+)['\"]\\s*\\;",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.mars.perl"
+                        },
+                        "2": {
+                            "name": "variable.other.readwrite.global.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(class|role|base|mixin|with|test|from)\\s+['\"]?(\\w+)['\"]?(?=[\\s;\\(\\{])",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.mars"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class.mars"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(method)\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(accessor|builder|clearer|coerce|default|does|is|isa|predicate|required|trigger)\\s*(?==>)",
+                    "name": "constant.language.has.key.mars.perl"  
+                },
+                {
+                    "match": "\\b(true|false)\\b",
+                    "name": "support.function.mars.perl"
+                }
+            ]
+        }
+    }
+}

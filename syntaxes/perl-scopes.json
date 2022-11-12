@@ -46,7 +46,6 @@
         {
             "name": "meta.typehints.perl",
             "begin": "(?<=use)\\s+(?:Type::Hints)(?=[\\s;])",
-            "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
             "patterns": [
               {
                 "include": "#source"
@@ -66,7 +65,6 @@
         {
           "name": "meta.zydeco.perl",
           "begin": "(?<=use)\\s+(?:Zydeco)(?=[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
           "patterns": [
             {
               "include": "#source"

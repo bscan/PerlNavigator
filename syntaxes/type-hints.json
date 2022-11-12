@@ -22,7 +22,7 @@
         "typehints": {
             "patterns": [
                 {
-                    "match": "\\b(has|private|public|readonly|lazy|protected)\\s+(\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?\\s*(?=[;=])",
+                    "match": "\\b(has|private|public|readonly|lazy|protected|initvar)\\s+(\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?\\s*(?=[;=])",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.typehints.perl"
@@ -53,7 +53,7 @@
                     }
                 },
                 {
-                    "match": "\\b(let)\\s+([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "match": "\\b(let)\\s+([\\$\\@\\%]\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.typehints.perl"
@@ -84,7 +84,7 @@
             },
             "patterns": [
                 {
-                    "match": "([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "match": "([\\$\\@\\%]\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
                     "captures": {
                         "1": {
                             "name": "variable.other.readwrite.global.perl"
@@ -107,15 +107,18 @@
                     "name": "entity.name.function.perl"
                 }
             },
-            "end": "\\)",
+            "end": "\\)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
             "endCaptures": {
                 "0": {
                     "name": "punctuation.definition.block.ts"
+                },
+                "1": {
+                    "name": "support.type.typehints.perl"
                 }
             },
             "patterns": [
                 {
-                    "match": "([\\$\\@\\%]\\w+)\\s*(?::([\\s\\|\\w:\\[\\]]+))?",
+                    "match": "([\\$\\@\\%]\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
                     "captures": {
                         "1": {
                             "name": "variable.other.readwrite.global.perl"

@@ -18,8 +18,7 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 * Imports cleanup via perlimports 
 * Outline view
 * Hover for more details about objects, subs, and modules
-* Does not write any cache directories or temp files.
-* Works well with single files and large multi-folder workspaces
+* Syntax highlighting for Object::Pad, Moose, Zydeco, etc.
 * Support for Classes including Moo/Moose style classes
 
 ## Visual Studio Code Demo

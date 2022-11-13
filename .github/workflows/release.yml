@@ -70,13 +70,17 @@ jobs:
         asset_path: perlnavigator-win-x86_64.zip
         asset_name: perlnavigator-win-x86_64.zip
         asset_content_type: application/octet-stream      
-
-    - name: Publish to NPM
-      uses: actions/setup-node@v3
+  
+  publish-release:
+    needs: [create-release]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
       with:
         node-version: '16.x'
         registry-url: 'https://registry.npmjs.org'
-      run: npm ci
-      run: npm publish
+    - run: npm ci
+    - run: npm publish
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

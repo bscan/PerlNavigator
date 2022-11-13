@@ -21,7 +21,7 @@
                             "name": "keyword.other.attribute.zydeco.perl"
                         },
                         "2": {
-                            "name": "variable.other.readwrite.global.perl"
+                            "name": "variable.other.readwrite.zydeco.perl"
                         }
                     }
                 },
@@ -29,7 +29,7 @@
                     "match": "\\b((?:abstract\\s+)?class|role|interface)\\s+([\\w:]+)\\b",
                     "captures": {
                         "1": {
-                            "name": "keyword.control.zydeco"
+                            "name": "storage.type.class.zydeco"
                         },
                         "2": {
                             "name": "entity.name.type.class.zydeco"

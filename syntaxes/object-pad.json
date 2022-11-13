@@ -21,7 +21,7 @@
                             "name": "keyword.other.attribute.objectpad.perl"
                         },
                         "2": {
-                            "name": "variable.other.readwrite.global.perl"
+                            "name": "variable.other.readwrite.objectpad.perl"
                         }
                     }
                 },

@@ -21,7 +21,7 @@
                             "name": "keyword.other.attribute.moops.perl"
                         },
                         "2": {
-                            "name": "variable.other.readwrite.global.perl"
+                            "name": "variable.other.readwrite.moops.perl"
                         }
                     }
                 },

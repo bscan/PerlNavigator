@@ -90,6 +90,15 @@
               "include": "#source"
             }
           ]
+        },
+        {
+          "name": "meta.funcparams.perl",
+          "begin": "(?<=use)\\s+(?:Function::Parameters)(?=[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
         }
       ]
     }

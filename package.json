@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.3.7",
+	"version": "0.3.8",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -233,6 +233,13 @@
 				],
 				"scopeName": "source.perl.package.async",
 				"path": "./syntaxes/async.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.funcparams",
+				"path": "./syntaxes/funcparams.json"
 			}
 		]
 	},

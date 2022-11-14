@@ -247,14 +247,16 @@ sub build_pltags {
 
         # This is a sub declaration if the line starts with sub
         elsif ($stmt =~ /^(sub)\s+([\w:]+)(\s+:method)?/ or
-                $stmt =~ /^(method)\s+\$?([\w:]+)/) {
+                $stmt =~ /^(method)\s+\$?([\w:]+)/ or
+                ($sActiveOO->{"Function::Parameters"} and $stmt =~ /^(fun)\s+([\w:]+)/ )
+                ) {
             my $subName = $2;
             my $kind = ($1 eq 'method' or $3) ? 'o' : 's';
             my $end_line = SubEndLine(\@codeClean, $i, $offset);
             MakeTag($subName, $kind, '', $file, "$line_number;$end_line", $package_name, \@tags);
 
             # Match the after the sub declaration and before the start of the actual sub for signatures
-            if($stmt =~ /^sub\s+[\w:]+([^{]*)/){
+            if($stmt =~ /^(?:sub|fun|method)\s+[\w:]+([^{]*)/){
                 my @vars = ($1 =~ /([\$\@\%][\w:]+)\b/g);
 
                 # Define subrountine signatures, but exclude prototypes

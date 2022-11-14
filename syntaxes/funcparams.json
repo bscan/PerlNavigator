@@ -1,0 +1,31 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension."
+    ],
+    "name": "funcparams",
+    "scopeName": "source.perl.package.funcparams",
+    "injectionSelector": "L:meta.funcparams.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#funcparams"
+        }
+    ],
+    "repository": {
+        "funcparams": {
+            "patterns": [
+                {
+                    "match": "\\b(method|fun)\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

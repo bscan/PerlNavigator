@@ -196,8 +196,8 @@
 				"injectTo": [
 				  "source.perl"
 				],
-				"scopeName": "source.perl.package.typehints",
-				"path": "./syntaxes/type-hints.json"
+				"scopeName": "source.perl.package.dataclass",
+				"path": "./syntaxes/dataclass.json"
 			},
 			{
 				"injectTo": [

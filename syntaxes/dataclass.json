@@ -1,15 +1,11 @@
 {
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
-    "information_for_contributors": [
-        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope",
-        "Code used under MIT license from https://github.com/torrentalle/vscode-perl-typehints"
-    ],
-    "name": "typehints",
-    "scopeName": "source.perl.package.typehints",
-    "injectionSelector": "L:meta.typehints.perl -comment -string -text",
+    "name": "dataclass",
+    "scopeName": "source.perl.package.dataclass",
+    "injectionSelector": "L:meta.dataclass.perl -comment -string -text",
     "patterns": [
         {
-            "include": "#typehints"
+            "include": "#dataclass"
         },
         {
             "include": "#letblocks"
@@ -19,19 +15,19 @@
         }
     ],
     "repository": {
-        "typehints": {
+        "dataclass": {
             "patterns": [
                 {
                     "match": "\\b(has|private|public|readonly|lazy|protected|initvar)\\s+(\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?\\s*(?=[;=])",
                     "captures": {
                         "1": {
-                            "name": "keyword.other.attribute.typehints.perl"
+                            "name": "keyword.other.attribute.dataclass.perl"
                         },
                         "2": {
-                            "name": "entity.other.attribute-name.typehints.perl"
+                            "name": "entity.other.attribute-name.dataclass.perl"
                         },
                         "3": {
-                            "name": "support.type.typehints.perl"
+                            "name": "support.type.dataclass.perl"
                         }
                     }
                 },
@@ -39,13 +35,13 @@
                     "match": "\\b(class)\\s+(\\w+)\\b(?:\\s+(extends)\\s+(\\w+)\\b)?",
                     "captures": {
                         "1": {
-                            "name": "keyword.other.attribute.typehints.perl"
+                            "name": "keyword.other.attribute.dataclass.perl"
                         },
                         "2": {
                             "name": "entity.name.type.class"
                         },
                         "3": {
-                            "name": "storage.modifier.typehints.perl"
+                            "name": "storage.modifier.dataclass.perl"
                         },
                         "4": {
                             "name": "entity.name.type.class"
@@ -56,13 +52,13 @@
                     "match": "\\b(let)\\s+([\\$\\@\\%]\\w+)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
                     "captures": {
                         "1": {
-                            "name": "keyword.other.attribute.typehints.perl"
+                            "name": "keyword.other.attribute.dataclass.perl"
                         },
                         "2": {
                             "name": "variable.other.readwrite.global.perl"
                         },
                         "3": {
-                            "name": "support.type.typehints.perl"
+                            "name": "support.type.dataclass.perl"
                         }
                     }
                 }
@@ -73,7 +69,7 @@
             "begin": "\\b(let)\\s+\\(",
             "beginCaptures": {
                 "0": {
-                    "name": "keyword.other.attribute.typehints.perl"
+                    "name": "keyword.other.attribute.dataclass.perl"
                 }
             },
             "end": "\\)",
@@ -90,21 +86,27 @@
                             "name": "variable.other.readwrite.global.perl"
                         },
                         "2": {
-                            "name": "support.type.typehints.perl"
+                            "name": "support.type.dataclass.perl"
                         }
                     }
                 }
             ]
-        },
+        }, 
         "defblocks": {
             "name": "def.block.typehint",
-            "begin": "\\b(def)\\s+(\\w+)\\s*\\(",
+            "begin": "\\b(?:(def)\\s+(\\w+)|(set|get)\\s+(\\w+))\\s*\\(",
             "beginCaptures": {
                 "1": {
                     "name": "storage.type.sub.perl"
                 },
                 "2": {
                     "name": "entity.name.function.perl"
+                },
+                "3": {
+                    "name": "storage.type.sub.perl"
+                },
+                "4": {
+                    "name": "variable.other.property.perl"
                 }
             },
             "end": "\\)\\s*(?::(\\s*\\{[\\s\\|\\w:\\[\\],]+\\}|[\\s\\|\\w:\\[\\]]+))?",
@@ -113,7 +115,7 @@
                     "name": "punctuation.definition.block.ts"
                 },
                 "1": {
-                    "name": "support.type.typehints.perl"
+                    "name": "support.type.dataclass.perl"
                 }
             },
             "patterns": [
@@ -124,7 +126,7 @@
                             "name": "variable.other.readwrite.global.perl"
                         },
                         "2": {
-                            "name": "support.type.typehints.perl"
+                            "name": "support.type.dataclass.perl"
                         }
                     }
                 }

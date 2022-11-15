@@ -25,7 +25,7 @@
       "patterns": [
         {
           "name": "meta.moose.perl",
-          "begin": "(?<=use)\\s+(?:Moose|Mouse|Moo)(?=[\\s;])",
+          "begin": "(?<=use)\\s+(?:Moose|Mouse|Moo)(?=[\\s;]|::)",
           "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
           "patterns": [
             {
@@ -44,8 +44,8 @@
           ]
         },
         {
-            "name": "meta.typehints.perl",
-            "begin": "(?<=use)\\s+(?:Type::Hints)(?=[\\s;])",
+            "name": "meta.dataclass.perl",
+            "begin": "(?<=use)\\s+(?:Data::Class)(?=[\\s;])",
             "patterns": [
               {
                 "include": "#source"

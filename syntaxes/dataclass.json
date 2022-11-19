@@ -32,10 +32,18 @@
                     }
                 },
                 {
-                    "match": "\\b(class)\\s+(\\w+)\\b(?:\\s+(extends)\\s+(\\w+)\\b)?",
+                    "match": "\\b(private|public|protected)\\s+(?=(?:sub|def)\\s)",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.dataclass.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(class)\\s+(\\w+)\\b(?:\\s+(extends)\\s+(\\w+)\\b)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.dataclass"
                         },
                         "2": {
                             "name": "entity.name.type.class"

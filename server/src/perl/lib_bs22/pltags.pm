@@ -148,7 +148,7 @@ sub build_pltags {
 
         # Statement will be line with comments, whitespace and POD trimmed
         my $stmt;
-        ($stmt = $line) =~ s/#.*//;
+        ($stmt = $line) =~ s/^\s*#.*//;
         $stmt =~ s/^\s*//;
         $stmt =~ s/\s*$//;
 
@@ -206,8 +206,8 @@ sub build_pltags {
             MakeTag($2, "v", '', $file, $line_number, $package_name, \@tags);
         }
 
-        # Lexical match variables if(my ($foo, $bar) ~= )
-        elsif ( $stmt =~ /^(?:\}\s*elsif|if|unless|while|until|for)\s*\(\s*my\b(.*)$/) {
+        # Lexical match variables if(my ($foo, $bar) ~= ). Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
+        elsif ( $stmt =~ /^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/) {
             # Remove any assignment piece
             $stmt =~ s/\s*=.*//;
             my @vars = ($stmt =~ /([\$\@\%][\w]+)\b/g);

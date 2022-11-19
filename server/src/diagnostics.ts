@@ -56,7 +56,7 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
         }
     }
 
-    const perlDoc = await buildNav(stdout);
+    const perlDoc = await buildNav(stdout, filePath, textDocument.uri);
 
     output.split("\n").forEach(violation => {
         maybeAddCompDiag(violation, severity, diagnostics, filePath, perlDoc);

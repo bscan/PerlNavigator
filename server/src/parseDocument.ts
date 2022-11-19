@@ -2,7 +2,7 @@
 import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind} from "./types";
 
 
-export async function buildNav(stdout: string): Promise<PerlDocument> {
+export async function buildNav(stdout: string, filePath: string, fileuri: string): Promise<PerlDocument> {
 
     stdout = stdout.replace(/\r/g, ""); // Windows 
 
@@ -10,7 +10,9 @@ export async function buildNav(stdout: string): Promise<PerlDocument> {
             elems: new Map(),
             canonicalElems: new Map(),
             imported: new Map(),
-            parents: new Map()
+            parents: new Map(),
+            filePath: filePath,
+            uri: fileuri,
         };
 
     stdout.split("\n").forEach(perl_elem => {

@@ -52,6 +52,8 @@ export interface PerlDocument {
     canonicalElems: Map<string, PerlElem>;
     imported: Map<string, number>;
     parents: Map<string, string>;
+    filePath: string;
+    uri: string;
 }
 
 export interface CompilationResults {

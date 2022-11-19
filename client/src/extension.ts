@@ -38,7 +38,10 @@ export function activate(context: ExtensionContext) {
 	// Options to control the language client
 	const clientOptions: LanguageClientOptions = {
 		// Register the server for perl documents
-		documentSelector: [{ scheme: 'file', language: 'perl' }],
+		documentSelector: [
+			{ scheme: 'file', language: 'perl' },
+			{ scheme: 'untitled', language: 'perl' }
+		],
 		synchronize: {
 			configurationSection: 'perlnavigator',
 			// Notify the server about file changes to '.clientrc files contained in the workspace

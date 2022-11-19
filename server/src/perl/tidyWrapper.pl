@@ -16,13 +16,14 @@ my $source = do { local $/; <STDIN> };
 die("Did not pass any source via stdin") if !defined($source);
 die("PerlTidy profile not readable") if ($profile and !-f $profile); # Profie may be undef
 
-my ($destination, $stderr, $argv);
+my ($destination, $stderr, $formatErrors, $argv);
 
 my $error_flag = Perl::Tidy::perltidy(
     argv        => $argv,
     source      => \$source,
     destination => \$destination,
     stderr      => \$stderr,
+    errorfile   => \$formatErrors, # Important to make sure the user's workspace is not polluted with .ERR files
     perltidyrc  => $profile,
 );
 

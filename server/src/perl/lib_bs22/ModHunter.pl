@@ -84,6 +84,10 @@ sub myuniq {
 # my $start = Time::HiRes::time();
 my $modsFound = get_modules();
 
+# Generally, having keywords like "if" provide hover or definitions as a module is more confusing than helpful.
+my @modsToSkip = ('if', 'open', 'sort');
+delete $modsFound->{$_} foreach @modsToSkip;
+
 print "Dumping Mods\n";
 
 foreach my $mod (keys %$modsFound){

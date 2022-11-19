@@ -33,9 +33,16 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
         const elemResolved: PerlElem | undefined = resolveElemForNav(perlDoc, elem, symbol);
         if(!elemResolved) return;
 
-        // TODO: make this whole thing async
-        if(!existsSync(elemResolved.file)) return; // Make sure the file exists and hasn't been deleted.
-        let uri =  Uri.file(realpathSync(elemResolved.file)).toString(); // Resolve symlinks
+        let uri: string;
+        if(perlDoc.filePath !== elemResolved.file){ // TODO Compare URI instead
+            // If sending to a different file, let's make sure it exists and clean up the path
+            if(!existsSync(elemResolved.file)) return; // Make sure the file exists and hasn't been deleted.
+            uri =  Uri.file(realpathSync(elemResolved.file)).toString(); // Resolve symlinks
+        } else {
+            // Sending to current file (including untitled files)
+            uri = perlDoc.uri;
+        }
+
         const newLoc: Location = {
             uri: uri,
             range: { 

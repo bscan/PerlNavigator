@@ -38,7 +38,7 @@ You can also add additional include paths that will be added to the perl search 
 
 
 ### Perl Critic Customization 
-You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`. If this is not set, it will check for `~./perlcriticrc`.
+You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`. You can use `$workspaceFolder` as a place holder here. If perlcriticProfile is not set, it will check for `~./perlcriticrc`.
 If that also does not exist, a default profile will be used. This default profile is not very strict.
 The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change `perlnavigator.severity1` through severity5. Allowable options are error, warning, info, and hint.
 

@@ -33,8 +33,10 @@ Perl::Critic and perlimports are not currently bundled and need to be installed 
 
 
 ### Perl paths
-If you have a nonstandard install of Perl, please set the setting `perlnavigator.perlPath`
-You can also add additional include paths that will be added to the perl search path (@INC) via `perlnavigator.includePaths`
+If you have a nonstandard install of Perl, please set the setting `perlnavigator.perlPath`.
+The subfolder ./lib will be added to your path automatically.
+You can also add additional include paths that will be added to the perl search path (@INC) via `perlnavigator.includePaths`.
+You can use $workspaceFolder in includePaths which will be replaced by the full folder path. If you have a multi-root workspace, each folder will be added to the path. 
 
 
 ### Perl Critic Customization 

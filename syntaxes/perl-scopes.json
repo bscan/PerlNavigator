@@ -83,7 +83,7 @@
         },
         {
           "name": "meta.async.perl",
-          "begin": "(?<=use)\\s+(?:Future::AsyncAwait|Mojo::AsyncAwait|Mojo::Base.*-async_await.*)(?=[\\s;])",
+          "begin": "(?<=use)\\s+(?:\\w+::AsyncAwait|Mojo::Base.*-async_await.*)(?=[\\s;])",
           "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
           "patterns": [
             {

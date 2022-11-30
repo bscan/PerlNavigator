@@ -354,22 +354,26 @@ connection.onWorkspaceSymbol(params => {
 });
 
 
-connection.onDocumentFormatting(params => {
+connection.onDocumentFormatting(async params => {
     let document = documents.get(params.textDocument.uri);
     let settings = documentSettings.get(params.textDocument.uri); 
+    const workspaceFolders = await getWorkspaceFoldersSafe(); 
+
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings);
+    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings, workspaceFolders);
     return editOut;
 });
 
 
-connection.onDocumentRangeFormatting(params => {
+connection.onDocumentRangeFormatting(async params => {
     let document = documents.get(params.textDocument.uri);
     let settings = documentSettings.get(params.textDocument.uri); 
+    const workspaceFolders = await getWorkspaceFoldersSafe(); 
+
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatRange(params, document, settings);
+    const editOut: TextEdit[] | undefined = formatRange(params, document, settings, workspaceFolders);
     return editOut;
 });
 

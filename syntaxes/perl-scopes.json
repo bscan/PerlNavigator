@@ -99,6 +99,15 @@
               "include": "#source"
             }
           ]
+        },
+        {
+          "name": "meta.dios.perl",
+          "begin": "(?<=use)\\s+(?:Dios)(?=[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
         }
       ]
     }

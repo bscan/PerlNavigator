@@ -240,6 +240,13 @@
 				],
 				"scopeName": "source.perl.package.funcparams",
 				"path": "./syntaxes/funcparams.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.dios",
+				"path": "./syntaxes/dios.json"
 			}
 		]
 	},

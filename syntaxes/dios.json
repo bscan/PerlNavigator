@@ -1,0 +1,69 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "dios",
+    "scopeName": "source.perl.package.dios",
+    "injectionSelector": "L:meta.dios.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#dios"
+        }
+    ],
+    "repository": {
+        "dios": {
+            "patterns": [
+                {
+                    "match": "\\b(has|shared|lex)(?:\\s+(\\w+))?\\s+([$@%][!.]?[\\w]+)\\b(?:\\s+is\\s+(rw|ro|req))?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.dios.perl"
+                        },
+                        "2": {
+                            "name": "storage.type.dios"
+                        },
+                        "3": {
+                            "name": "variable.other.readwrite.dios.perl"
+                        },
+                        "4": {
+                            "name": "storage.type.dios"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(class)\\s+(\\w+)\\b(?:\\s+(is)\\s+(\\w+)\\b)?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.dios"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class"
+                        },
+                        "3": {
+                            "name": "storage.modifier.dios.perl"
+                        },
+                        "4": {
+                            "name": "entity.name.type.class"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b((?:multi\\s+)?(?:method|submethod|func))\\s+([\\w]+)\\b",
+                    "captures": {
+                        "1": {
+                            "name": "storage.type.sub.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(accessor|builder|clearer|coerce|default|does|is|isa|predicate|required|trigger)\\s*(?==>)",
+                    "name": "constant.language.has.key.dios.perl"  
+                }
+            ]
+        }
+    }
+}

@@ -287,7 +287,7 @@ function sendDiags(params: PublishDiagnosticsParams): void{
 }
 
 
-connection.onDidChangeConfiguration(change => {
+connection.onDidChangeConfiguration(async change => {
     if (hasConfigurationCapability) {
         // Reset all cached document settings
         documentSettings.clear();
@@ -295,9 +295,14 @@ connection.onDidChangeConfiguration(change => {
         globalSettings = { ...defaultSettings, ...change?.settings?.perlnavigator };
     }
 
-    rebuildModCache();
-    // Pretty rare occurence, and can slow things down. Revalidate all open text documents
-    // documents.all().forEach(validatePerlDocument);
+    if(change?.settings?.perlnavigator){
+        // Despite what it looks like, this fires on all settings changes, not just Navigator
+        await rebuildModCache();
+        for (const doc of documents.all()) {
+            // sequential changes
+            await validatePerlDocument(doc);
+        };
+    }
 });
 
 

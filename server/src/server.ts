@@ -16,7 +16,7 @@ import {
 	TextDocumentPositionParams,
     TextEdit
 } from 'vscode-languageserver/node';
-
+import { basename } from 'path';
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
@@ -34,7 +34,7 @@ import { getHover } from "./hover";
 import { getCompletions } from './completion';
 import { formatDoc, formatRange } from "./formatting";
 import { nLog } from './utils';
-
+import { startProgress, endProgress } from './progress';
 var LRU = require("lru-cache");
 // Create a connection for the server, using Node's IPC as a transport.
 // Also include all preview / proposed LSP features.
@@ -119,6 +119,7 @@ const defaultSettings: NavigatorSettings = {
     includePaths: [],
     includeLib: true,
     logging: false, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
+    enableProgress: false,
 };
 
 let globalSettings: NavigatorSettings = defaultSettings;
@@ -227,9 +228,15 @@ documents.onDidChangeContent(change => {
 
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
+
+    const filePath = Uri.parse(textDocument.uri).fsPath;
+    const fileName = basename(filePath);
+
     const settings = await getDocumentSettings(textDocument.uri);
     nLog("Found settings", settings);
-    const filePath = Uri.parse(textDocument.uri).fsPath;
+
+    const progressToken = navSymbols.has(textDocument.uri) ? null : startProgress(connection, `Initializing ${fileName}`, settings);
+
     
     const start = Date.now();
 
@@ -241,8 +248,11 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     let perlOut = await pCompile;
     nLog("Compilation Time: " + (Date.now() - start)/1000 + " seconds", settings);
     let oldCriticDiags = documentDiags.get(textDocument.uri);
-    if(!perlOut) return;
-    let mixOldAndNew = perlOut.diags;
+    if(!perlOut){
+        endProgress(connection, progressToken);
+        return;
+    }
+        let mixOldAndNew = perlOut.diags;
     if(oldCriticDiags && settings.perlcriticEnabled) {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic. TODO: async wait if it's not that long.
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
@@ -273,7 +283,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
         const allNewDiags = perlOut.diags.concat(newDiags);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
-
+    endProgress(connection, progressToken);
     return;
 }
 
@@ -366,7 +376,7 @@ connection.onDocumentFormatting(async params => {
 
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings, workspaceFolders);
+    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
 
@@ -378,7 +388,7 @@ connection.onDocumentRangeFormatting(async params => {
 
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatRange(params, document, settings, workspaceFolders);
+    const editOut: TextEdit[] | undefined = formatRange(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
 

@@ -26,6 +26,7 @@ export interface NavigatorSettings {
     includePaths: string[];
     includeLib: boolean;
     logging: boolean;
+    enableProgress: boolean;
 }
 
 

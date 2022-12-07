@@ -16,9 +16,10 @@ import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
 import { execFileSync } from 'child_process';
 import { getPerlAssetsPath } from "./assets";
+import { startProgress, endProgress } from './progress';
+import { Connection } from 'vscode-languageserver/node';
 
-
-export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): TextEdit[] | undefined {
+export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
     return maybeReturnEdits(
         Range.create(
             Position.create(0,0),
@@ -26,11 +27,12 @@ export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument
         ),
         txtDoc,
         settings,
-        workspaceFolders
+        workspaceFolders,
+        connection
     )
 }
 
-export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): TextEdit[] | undefined {
+export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
     const offset = params.range.end.character > 0 ? 1 : 0;
 
     return maybeReturnEdits(
@@ -40,16 +42,18 @@ export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextD
         ),
         txtDoc,
         settings,
-        workspaceFolders
+        workspaceFolders,
+        connection
     );
 }
 
-function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): TextEdit[] | undefined {
+function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
     const text = txtDoc.getText(range);
     if ( !text) {
         return;
     }
 
+    const progressToken = startProgress(connection, 'Formatting doc', settings);
     let newSource: string = "";
     const fixedImports = perlimports(txtDoc, text, settings);
     if (fixedImports){
@@ -59,6 +63,7 @@ function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: Navigat
     if (tidedSource){
         newSource = tidedSource; 
     }
+    endProgress(connection, progressToken);
 
     if (!newSource) { // If we failed on both tidy and imports
         return;

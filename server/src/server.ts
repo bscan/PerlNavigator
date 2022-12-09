@@ -235,7 +235,7 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const settings = await getDocumentSettings(textDocument.uri);
     nLog("Found settings", settings);
 
-    const progressToken = navSymbols.has(textDocument.uri) ? null : startProgress(connection, `Initializing ${fileName}`, settings);
+    const progressToken = navSymbols.has(textDocument.uri) ? null : await startProgress(connection, `Initializing ${fileName}`, settings);
 
     
     const start = Date.now();
@@ -376,7 +376,7 @@ connection.onDocumentFormatting(async params => {
 
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatDoc(params, document, settings, workspaceFolders, connection);
+    const editOut: TextEdit[] | undefined = await formatDoc(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
 
@@ -388,7 +388,7 @@ connection.onDocumentRangeFormatting(async params => {
 
     if(!document || !settings) return;
     console.log(params);
-    const editOut: TextEdit[] | undefined = formatRange(params, document, settings, workspaceFolders, connection);
+    const editOut: TextEdit[] | undefined = await formatRange(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
 

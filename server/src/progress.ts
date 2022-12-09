@@ -9,14 +9,14 @@ import { nanoid } from "nanoid/non-secure";
 
 
 
-export function startProgress( connection: Connection, title: string, settings: NavigatorSettings ): string | null {
+export async function startProgress( connection: Connection, title: string, settings: NavigatorSettings ): Promise<string | null> {
     
     if(!settings.enableProgress) {
         return null
     }
     const progressToken = nanoid();
 
-    connection.sendRequest("window/workDoneProgress/create", {
+    await connection.sendRequest("window/workDoneProgress/create", {
         token: progressToken,
       });
 

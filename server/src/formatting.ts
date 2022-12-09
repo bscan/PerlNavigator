@@ -19,8 +19,8 @@ import { getPerlAssetsPath } from "./assets";
 import { startProgress, endProgress } from './progress';
 import { Connection } from 'vscode-languageserver/node';
 
-export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
-    return maybeReturnEdits(
+export async function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): Promise<TextEdit[] | undefined> {
+    return await maybeReturnEdits(
         Range.create(
             Position.create(0,0),
             Position.create( txtDoc.lineCount, 0),
@@ -32,10 +32,10 @@ export function formatDoc(params: DocumentFormattingParams, txtDoc: TextDocument
     )
 }
 
-export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
+export async function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): Promise<TextEdit[] | undefined> {
     const offset = params.range.end.character > 0 ? 1 : 0;
 
-    return maybeReturnEdits(
+    return await maybeReturnEdits(
         Range.create(
             Position.create(params.range.start.line, 0),
             Position.create(params.range.end.line + offset, 0)
@@ -47,13 +47,13 @@ export function formatRange(params: DocumentRangeFormattingParams, txtDoc: TextD
     );
 }
 
-function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): TextEdit[] | undefined {
+async function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null, connection: Connection): Promise<TextEdit[] | undefined> {
     const text = txtDoc.getText(range);
     if ( !text) {
         return;
     }
 
-    const progressToken = startProgress(connection, 'Formatting doc', settings);
+    const progressToken = await startProgress(connection, 'Formatting doc', settings);
     let newSource: string = "";
     const fixedImports = perlimports(txtDoc, text, settings);
     if (fixedImports){

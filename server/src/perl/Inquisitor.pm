@@ -212,7 +212,7 @@ sub dump_inherited_to_main {
     my $methods = Inspectorito->local_methods( $package );
     foreach my $name (@$methods){
         next if $name =~ /^(F_|O_|L_)/; # The unhelpful C compiled things
-        if (my $codeRef = $package->can($name)) {
+        if (my $codeRef = UNIVERSAL::can($package, $name) ) {
             my $iRes = maybe_print_sub_info("${package}::${name}", $name, $codeRef, $package, 'i');
         }
     }
@@ -254,7 +254,7 @@ sub dump_subs_from_packages {
 
         foreach my $name (@$methods){
             next if $name =~ /^(F_|O_|L_)/; # The unhelpful C compiled things
-            if (my $codeRef = $mod->can($name)) {
+            if (my $codeRef = UNIVERSAL::can($mod, $name) ) {
                 # TODO: Differentiate functions vs methods. Methods come from here, but so do functions. Perl mixes the two definitions anyway.
                 my $iRes = maybe_print_sub_info("${mod}::${name}", '', $codeRef);
                 $pkgCount += $iRes;

@@ -11,6 +11,10 @@ use constant imported_constant => "I'm an imported constant";
 
 our $our_variable = "The World is ours";
 
+sub can {
+    exists $_[0]->{$_[1]};
+}
+
 sub exported_sub {
     print "In Dir::NamedPackage, sub exported_sub\n";
 }

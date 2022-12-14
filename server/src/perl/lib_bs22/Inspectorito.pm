@@ -64,7 +64,7 @@ sub local_methods {
             keys %{"${namespace}::"};
         
         foreach my $func ( @functions ) {
-            if (my $codeRef = $namespace->can($func)) {
+            if (my $codeRef = UNIVERSAL::can($namespace, $func) ) {
                 my $source = SubUtilPP::subname( $codeRef );
                 my $pack = $1 if($source =~ m/^(.+)::.*?$/);
                 next unless defined($pack) and $namespace eq $pack;

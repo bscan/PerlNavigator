@@ -116,6 +116,23 @@ require'lspconfig'.perlnavigator.setup{
 }
 ```
 
+### coc.nvim
+
+`:CocConfig`
+
+```json
+"languageserver": {
+  "perlnavigator": {
+    "command": "node",
+    "args": [
+      "/path/to/PerlNavigator/server/out/server.js",
+      "--stdio"
+    ],
+    "filetypes": ["perl"]
+  }
+}
+```
+
 ## Raku / Other Projects
 For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
 

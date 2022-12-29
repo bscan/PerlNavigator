@@ -90,11 +90,6 @@ connection.onInitialized(() => {
         // Register for all configuration changes.
         connection.client.register(DidChangeConfigurationNotification.type, undefined);
     }
-    if (hasWorkspaceFolderCapability) {
-        connection.workspace.onDidChangeWorkspaceFolders(_event => {
-            // connection.console.log('Workspace folder change event received.');
-        });
-    }
 });
 
 

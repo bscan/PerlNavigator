@@ -92,6 +92,16 @@
           ]
         },
         {
+          "name": "meta.trycatch.perl",
+          "begin": "(?<=use)\\s+(?:Syntax::Keyword::Try|Feature::Compat::Try|Syntax::Feature::Try|Try::Tiny|TryCatch|Try|feature\\s+'try')(?=[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
           "name": "meta.funcparams.perl",
           "begin": "(?<=use)\\s+(?:Function::Parameters)(?=[\\s;])",
           "patterns": [

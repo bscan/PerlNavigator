@@ -245,6 +245,13 @@
 				"injectTo": [
 				  "source.perl"
 				],
+				"scopeName": "source.perl.package.trycatch",
+				"path": "./syntaxes/trycatch.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
 				"scopeName": "source.perl.package.dios",
 				"path": "./syntaxes/dios.json"
 			}

@@ -1,0 +1,32 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+    ],
+    "name": "trycatch",
+    "scopeName": "source.perl.package.trycatch",
+    "injectionSelector": "L:meta.trycatch.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#trycatch"
+        }
+    ],
+    "repository": {
+        "trycatch": {
+            "patterns": [
+                {
+                    "match": "\\b(try)\\b",
+                    "name": "keyword.control.trycatch.try"  
+                },
+                {
+                    "match": "\\b(catch)\\b",
+                    "name": "keyword.control.trycatch.catch"  
+                },
+                {
+                    "match": "\\b(finally)\\b",
+                    "name": "keyword.control.trycatch.finally"  
+                }
+            ]
+        }
+    }
+}

@@ -155,6 +155,25 @@ require'lspconfig'.perlnavigator.setup{
 }
 ```
 
+### Kate 
+For the Kate editor, you'll need to `Configure Kate -> LSP Client` and add a config to the `User Server Settings`. The following is an example config (this example uses the release binaries).
+```json
+{
+  "servers":{
+    "perl": {
+      "command": ["d:\\Applications\\perlnavigator.exe", "--stdio"],
+      "url": "https://github.com/bscan/PerlNavigator",
+      "highlightingModeRegex": "^Perl$",
+      "settings": {
+        "perlnavigator": {
+          "perlPath": "perl",
+        }
+      }
+    }
+  }
+}
+```
+
 ## Raku / Other Projects
 For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
 

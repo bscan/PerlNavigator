@@ -79,8 +79,30 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
 ![gif of Navigator in sublime](https://raw.githubusercontent.com/bscan/PerlNavigator/main/images/Sublime.gif)
 
 ### Emacs
-Emacs requires lsp-mode. You can use something similar to the following configuration. 
+You can use perl navigator with either lsp-mode or eglot. Eglot is built-in starting with emacs version 29.
+
+#### Emacs eglot
+The following is a sample configuration file to use the navigator with emacs and a custom perl location.
+This config uses company-mode, but is not required.
+``` lisp
+ (setq-default eglot-workspace-configuration
+                '((:perlnavigator . (:perlPath
+                              "/path/to/perl"
+                              :enableWarnings t))))
+
+(with-eval-after-load 'eglot
+  (add-to-list 'eglot-server-programs
+               `((cperl-mode perl-mode) . ("/path/to/perlnavigator", "--stdio"))))
+
+(global-company-mode)
+
+(add-hook 'cperl-mode-hook 'eglot-ensure)
+(add-hook 'perl-mode-hook 'eglot-ensure)
 ```
+
+#### Emacs lsp-mode
+You can also use lsp-mode with emacs if you prefer. You can use something similar to the following configuration. Additional details [here](https://emacs-lsp.github.io/lsp-mode/page/lsp-perlnavigator/) 
+``` lisp
   (require 'lsp-mode)
 (add-to-list 'lsp-language-id-configuration '(perl-mode . "perl"))
 (add-to-list 'lsp-language-id-configuration '(cperl-mode . "perl"))

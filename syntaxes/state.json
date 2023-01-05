@@ -1,0 +1,21 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "state",
+    "scopeName": "source.perl.package.state",
+    "injectionSelector": "L:meta.state.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#state"
+        }
+    ],
+    "repository": {
+        "state": {
+            "patterns": [
+                {
+                    "match": "\\b(state)\\b",
+                    "name": "storage.type.sub.state"  
+                }
+            ]
+        }
+    }
+}

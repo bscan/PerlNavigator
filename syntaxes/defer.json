@@ -1,0 +1,21 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "defer",
+    "scopeName": "source.perl.package.defer",
+    "injectionSelector": "L:meta.defer.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#defer"
+        }
+    ],
+    "repository": {
+        "defer": {
+            "patterns": [
+                {
+                    "match": "\\b(defer)\\s*(?=\\{)",
+                    "name": "keyword.control.defer"  
+                }
+            ]
+        }
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "v536",
+    "scopeName": "source.perl.package.v536",
+    "injectionSelector": "L:meta.v536.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "source.perl.package.state#state"
+        },
+        {
+            "include": "source.perl.package.isa#isa"
+        }
+    ]
+}

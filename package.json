@@ -289,6 +289,13 @@
 				],
 				"scopeName": "source.perl.package.dios",
 				"path": "./syntaxes/dios.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.match",
+				"path": "./syntaxes/match.json"
 			}
 		]
 	},

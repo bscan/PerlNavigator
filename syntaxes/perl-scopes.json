@@ -155,6 +155,16 @@
           ]
         },
         {
+          "name": "meta.match.perl",
+          "begin": "(?<=use)\\s+(?=(?:Syntax::Keyword::Match)[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s)",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
           "name": "meta.funcparams.perl",
           "begin": "(?<=use)\\s+(?:Function::Parameters)(?=[\\s;])",
           "patterns": [

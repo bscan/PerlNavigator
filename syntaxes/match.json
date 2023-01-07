@@ -1,0 +1,22 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "match",
+    "scopeName": "source.perl.package.match",
+    "injectionSelector": "L:meta.match.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#match"
+        }
+    ],
+    "repository": {
+        "match": {
+            "patterns": [
+                {
+                    "comment": "No need for case and default, the default grammar highlights them",
+                    "match": "\\b(match)\\s*(?=\\()",
+                    "name": "keyword.control.match"  
+                }
+            ]
+        }
+    }
+}

@@ -370,7 +370,6 @@ connection.onDocumentFormatting(async params => {
     const workspaceFolders = await getWorkspaceFoldersSafe(); 
 
     if(!document || !settings) return;
-    console.log(params);
     const editOut: TextEdit[] | undefined = await formatDoc(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
@@ -382,7 +381,6 @@ connection.onDocumentRangeFormatting(async params => {
     const workspaceFolders = await getWorkspaceFoldersSafe(); 
 
     if(!document || !settings) return;
-    console.log(params);
     const editOut: TextEdit[] | undefined = await formatRange(params, document, settings, workspaceFolders, connection);
     return editOut;
 });

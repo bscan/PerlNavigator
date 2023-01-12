@@ -107,8 +107,7 @@ function perltidy(code: string, settings: NavigatorSettings, workspaceFolders: W
         nLog(error, settings);
         return;
     }
-    console.log("Ran tidy:");
-    console.log(output);
+
     let pieces = output.split('ee4ffa34-a14f-4609-b2e4-bf23565f3262');
     if (pieces.length > 1){
         return pieces[1];

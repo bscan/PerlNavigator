@@ -79,8 +79,9 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
 
         return symbols;
     }).catch((reason)=>{
-        console.log("Failed in getSymbols");
-        console.log(reason);
+        // TODO: Add logging back, but detect STDIO mode first
+        // console.log("Failed in getSymbols");
+        //console.log(reason);
         return [];
     });
 }

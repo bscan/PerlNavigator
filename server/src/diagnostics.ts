@@ -98,8 +98,10 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     violation = violation.replace(/\r/g, ""); // Clean up for Windows
     violation = violation.replace(/, <STDIN> line 1\.$/g, ""); // Remove our stdin nonsense
 
-    const lineNum = localizeErrors(violation, filePath, perlDoc);
-    if (typeof lineNum == 'undefined') return;
+    let output = localizeErrors(violation, filePath, perlDoc);
+    if (typeof output == 'undefined') return;
+    const lineNum = output.lineNum;
+    violation = output.violation;
 
     if( /=PerlWarning=/.test(violation) ){
         // Downgrade severity for explicitly marked severities
@@ -119,36 +121,39 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
 }
 
 
-function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocument): number | void {
+function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocument): {violation:string, lineNum:number} | void {
 
     if(/Too late to run CHECK block/.test(violation)) return;
 
-    let match = /at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
+    let match = /^(.+)at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
 
     if(match){
-        if(match[1] == filePath){
-            return +match[2] - 1;
+        if(match[2] == filePath){
+            violation = match[1];
+            const lineNum = +match[3] - 1;
+            return {violation, lineNum};
         } else {
             // The error/warnings must be in an imported library (possibly indirectly imported).
-            let importLine = 0; // If indirectly imported
-            const importFileName = match[1].replace('.pm', '').replace(/[\\\/]/g, "::");
+            let lineNum = 0; // If indirectly imported
+            const importFileName = match[2].replace('.pm', '').replace(/[\\\/]/g, "::");
             perlDoc.imported.forEach((line, mod) => {
                 // importFileName could be something like usr::lib::perl::dir::Foo::Bar
                 if (importFileName.endsWith(mod)){
-                    importLine = line;
+                    lineNum = line;
                 }
             })
-            return importLine; 
+            return {violation, lineNum}
         }
     }
     
     match = /\s+is not exported by the ([\w:]+) module$/i.exec(violation);
     if(match){
-        let importLine = perlDoc.imported.get(match[1])
-        if(typeof importLine != 'undefined'){
-            return importLine;
+        let lineNum = perlDoc.imported.get(match[2]);
+        if(typeof lineNum != 'undefined'){
+            return {violation, lineNum};
         } else {
-            return 0;
+            lineNum = 0;
+            return {violation, lineNum};
         }
     }
     return;

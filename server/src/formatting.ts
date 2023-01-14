@@ -55,11 +55,11 @@ async function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: N
 
     const progressToken = await startProgress(connection, 'Formatting doc', settings);
     let newSource: string = "";
-    const fixedImports = perlimports(txtDoc, text, settings);
+    const fixedImports = await perlimports(txtDoc, text, settings);
     if (fixedImports){
         newSource = fixedImports; 
     }
-    const tidedSource = perltidy(fixedImports || text, settings, workspaceFolders);
+    const tidedSource = await perltidy(fixedImports || text, settings, workspaceFolders);
     if (tidedSource){
         newSource = tidedSource; 
     }
@@ -76,22 +76,30 @@ async function maybeReturnEdits (range: Range, txtDoc: TextDocument, settings: N
     return [edits];
 }
 
-function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): string | undefined {
+async function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): Promise<string | undefined> {
     if(!settings.perlimportsTidyEnabled) return;
     const importsPath = join(getPerlAssetsPath(), 'perlimportsWrapper.pl');
     let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
     cliParams = cliParams.concat(['--filename', Uri.parse(doc.uri).fsPath]);
+    nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
 
     try {
-        const output = execFileSync(settings.perlPath, cliParams, {timeout: 25000, input: code}).toString();
-        return output;
+        const process = async_execFile(settings.perlPath, cliParams, {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
+        process?.child?.stdin?.on('error', (error: any) => { 
+            nLog("perlImports Error Caught: ", settings);
+            nLog(error, settings);
+        });
+        process?.child?.stdin?.write(code);
+        process?.child?.stdin?.end();
+        const out = await process;
+        return out.stdout;
     } catch(error: any) {
         nLog("Attempted to run perlimports tidy " + error.stdout, settings);
         return;
     }
 }
 
-function perltidy(code: string, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): string | undefined {
+async function perltidy(code: string, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): Promise<string | undefined> {
     if(!settings.perltidyEnabled) return;
     const tidy_path = join(getPerlAssetsPath(), 'tidyWrapper.pl');
     let tidyParams: string[] = [tidy_path].concat(getTidyProfile(workspaceFolders, settings));
@@ -100,8 +108,15 @@ function perltidy(code: string, settings: NavigatorSettings, workspaceFolders: W
 
     let output: string | Buffer;
     try {
-        output = execFileSync(settings.perlPath, tidyParams, {timeout: 25000, input: code});
-        output = output.toString();
+        const process = async_execFile(settings.perlPath, tidyParams, {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
+        process?.child?.stdin?.on('error', (error: any) => { 
+            nLog("PerlTidy Error Caught: ", settings);
+            nLog(error, settings);
+        });
+        process?.child?.stdin?.write(code);
+        process?.child?.stdin?.end();
+        const out = await process;
+        output = out.stdout;
     } catch(error: any) {
         nLog("Perltidy failed with unknown error", settings);
         nLog(error, settings);

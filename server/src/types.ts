@@ -13,6 +13,10 @@ export interface NavigatorSettings {
     enableWarnings: boolean;
     perlcriticProfile: string;
     perlcriticEnabled: boolean;
+    perlcriticSeverity: undefined | number;
+    perlcriticTheme: undefined | string;
+    perlcriticExclude: undefined | string;
+    perlcriticInclude: undefined | string;
     perlimportsLintEnabled: boolean;
     perlimportsTidyEnabled: boolean;
     perlimportsProfile: string;

@@ -81,6 +81,26 @@
 					"default": true,
 					"description": "Enable perl critic."
 				},
+				"perlnavigator.perlcriticSeverity": {
+					"scope": "resource",
+					"type": "number",
+					"description": "Override severity level for perl critic (normally in profile)"
+				},
+				"perlnavigator.perlcriticTheme": {
+					"scope": "resource",
+					"type": "string",
+					"description": "Override theme for perl critic (normally in profile)"
+				},
+				"perlnavigator.perlcriticExclude": {
+					"scope": "resource",
+					"type": "string",
+					"description": "Regex pattern with policies to exclude for perl critic (normally in profile)"
+				},
+				"perlnavigator.perlcriticInclude": {
+					"scope": "resource",
+					"type": "string",
+					"description": "Regex pattern with policies to include for perl critic (normally in profile)"
+				},
 				"perlnavigator.severity5": {
 					"scope": "resource",
 					"type": "string",

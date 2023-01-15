@@ -168,6 +168,12 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
     let criticParams: string[] = [critic_path].concat(getCriticProfile(workspaceFolders, settings));
     criticParams = criticParams.concat(['--file', Uri.parse(textDocument.uri).fsPath]);
 
+    // Add any extra params from settings
+    if(settings.perlcriticSeverity) criticParams = criticParams.concat(['--severity', settings.perlcriticSeverity.toString()]);
+    if(settings.perlcriticTheme) criticParams = criticParams.concat(['--theme', settings.perlcriticTheme]);
+    if(settings.perlcriticExclude) criticParams = criticParams.concat(['--exclude', settings.perlcriticExclude]);
+    if(settings.perlcriticInclude) criticParams = criticParams.concat(['--include', settings.perlcriticInclude]);
+
     nLog("Now starting perlcritic with: " + criticParams.join(" "), settings);
     const code = textDocument.getText();
     const diagnostics: Diagnostic[] = [];

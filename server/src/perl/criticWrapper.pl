@@ -14,14 +14,15 @@ if ( !eval{ require PPI; require Perl::Critic; 1} ){
     # Quit early is fine, but needs to happen after fully reading STDIN due to a pipe issue on MacOS.
     exit(0);
 }
-=head
 
-my $foo =2;
-=cut
-
-my ($file, $profile);
-GetOptions ("file=s"    => \$file,
-            "profile=s" => \$profile);
+my ($file, $profile, $severity, $theme, $exclude, $include);
+GetOptions ("file=s"     => \$file,
+            "profile=s"  => \$profile,
+            "severity=s" => \$severity,
+            "theme=s"    => \$theme,
+            "exclude=s"  => \$exclude,
+            "include=s"  => \$include,
+            );
 
 die("Did not pass any source via stdin") if !defined($sSource);
 
@@ -36,7 +37,10 @@ my $doc = PPI::Document->new( \$sSource);
 
 $doc->{filename} = $file;
 
-my $critic = Perl::Critic->new( -profile => $profile);
+my $exclude_ref = $exclude ? [$exclude] : [] ;
+my $include_ref = $include ? [$include] : [] ;
+
+my $critic = Perl::Critic->new( -profile => $profile, -severity => $severity, -theme => $theme, -exclude => $exclude_ref, -include => $include_ref);
 Perl::Critic::Violation::set_format("%s~|~%l~|~%c~|~%m~|~%p~||~");
 
 my @violations = $critic->critique($doc);

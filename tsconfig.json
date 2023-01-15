@@ -16,6 +16,7 @@
 	],
 	"references": [
 		{ "path": "./client" },
-		{ "path": "./server" }
+		{ "path": "./server" },
+		{ "path": "./browser-ext" }
 	]
 }

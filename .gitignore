@@ -1,5 +1,6 @@
 client/out
 server/out
+browser-ext/out
 node_modules
 client/server
 .vscode-test

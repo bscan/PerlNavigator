@@ -280,6 +280,13 @@
 				"injectTo": [
 				  "source.perl"
 				],
+				"scopeName": "source.perl.package.dynamically",
+				"path": "./syntaxes/dynamically.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
 				"scopeName": "source.perl.package.funcparams",
 				"path": "./syntaxes/funcparams.json"
 			},

@@ -1,0 +1,21 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "dynamically",
+    "scopeName": "source.perl.package.dynamically",
+    "injectionSelector": "L:meta.dynamically.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#dynamically"
+        }
+    ],
+    "repository": {
+        "dynamically": {
+            "patterns": [
+                {
+                    "match": "\\b(dynamically)\\s(?=\\s*[\\@\\$\\%])",
+                    "name": "keyword.control.dynamically"  
+                }
+            ]
+        }
+    }
+}

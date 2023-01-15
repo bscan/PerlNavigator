@@ -26,7 +26,7 @@
         {
           "name": "meta.moose.perl",
           "begin": "(?<=use)\\s+(?:Moose|Mouse|Moo)(?=[\\s;]|::)",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -37,7 +37,7 @@
           "comment": "This matches feature bundle 5.10 to 5.35",
           "name": "meta.v510.perl",
           "begin": "(?<=use)\\s+(?=(?:v?5\\.0?(?:[1-2][0-9]|3[0-5])(?:\\.\\d+)?|feature\\s+[\"']:5\\.(?:[1-2][0-9]|3[0-5])[\"'])[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -48,7 +48,7 @@
           "comment": "This matches from 5.36 and up",
           "name": "meta.v536.perl",
           "begin": "(?<=use)\\s+(?=(?:v?5\\.0?(?:3[6-9]|4[0-9])(?:\\.\\d+)?|feature\\s+[\"']:5\\.(?:3[6-9]|4[0-9])[\"'])[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -59,7 +59,7 @@
           "comment": "TODO: Currently, these regexes do not allow for multiple features in 'feature qw(class try)' since the first one consumes it.",
           "name": "meta.objectpad.perl",
           "begin": "(?<=use)\\s+(?=(?:Object::Pad|feature\\s.*class.*|experimental\\s.*class.*|Feature::Compat::Class)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -78,7 +78,7 @@
         {
           "name": "meta.moops.perl",
           "begin": "(?<=use)\\s+(?:Moops)(?=[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -97,7 +97,7 @@
         {
           "name": "meta.mars.perl",
           "begin": "(?<=use)\\s+(?:Mars|Venus)(?=[\\s;:])",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -107,7 +107,7 @@
         {
           "name": "meta.async.perl",
           "begin": "(?<=use)\\s+(?=(?:\\w+::AsyncAwait|Mojo::Base.*-async_await.*)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s|no\\s+\\1[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -117,7 +117,7 @@
         {
           "name": "meta.trycatch.perl",
           "begin": "(?<=use)\\s+(?=(?:Syntax::Keyword::Try|Feature::Compat::Try|Syntax::Feature::Try|Try::Tiny|TryCatch|Try|feature\\s.*try.*|experimental\\s.*try.*)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -127,7 +127,17 @@
         {
           "name": "meta.defer.perl",
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bdefer\\b.*|Syntax::Keyword::Defer)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
+        },
+        {
+          "name": "meta.dynamically.perl",
+          "begin": "(?<=use)\\s+(?=Syntax::Keyword::Dynamically[\\s;])",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -137,7 +147,7 @@
         {
           "name": "meta.isa.perl",
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bisa\\b.*)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -147,7 +157,7 @@
         {
           "name": "meta.state.perl",
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bstate\\b.*)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"
@@ -157,7 +167,7 @@
         {
           "name": "meta.match.perl",
           "begin": "(?<=use)\\s+(?=(?:Syntax::Keyword::Match)[\\s;])",
-          "end": "(\\b)(?=^\\s*package\\s)",
+          "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
               "include": "#source"

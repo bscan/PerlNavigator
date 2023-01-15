@@ -30,6 +30,7 @@ $profile = resolve_profile($profile);
 # Do not check for readability of the source $file since we never actually read it. Only checking the name for policy violations.
 print "Perlcritic on $file and using profile $profile \n";
 $sSource =~ s/([^\x00-\x7F])/AsciiReplacementChar($1)/ge;
+$sSource = adjustForKeywords($sSource);
 
 my $doc = PPI::Document->new( \$sSource);
 
@@ -45,7 +46,18 @@ foreach my $viol (@violations){
     print "$viol\n";
 }
 
+sub adjustForKeywords {
+    # PPI can't handle Keywords like `async` or `method`. This is a couple of hacks to make it work.
+    $sSource = shift;
 
+    # Change `async sub` to `sub`
+    $sSource =~ s/^\s*async sub\s/ sub /gm;
+
+    # Change `method` to `sub`, unless it's private like `method $foo``
+    $sSource =~ s/^\s*method\s(?=\s*\w)/ sub /gm;
+
+    return $sSource;
+}
 
 sub AsciiReplacementChar {
     # Tries to find ascii replacements for non-ascii characters.

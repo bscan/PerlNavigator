@@ -252,9 +252,9 @@ function cleanCode(textDocument: TextDocument): String[] {
         }
         
         // Statement will be line with comments, whitespace and POD trimmed
-        stmt.replace(/^\s*#.*/, "");
-        stmt.replace(/^\s*/, "");
-        stmt.replace(/\s*$/, "");
+        stmt = stmt.replace(/^\s*#.*/, "");
+        stmt = stmt.replace(/^\s*/, "");
+        stmt = stmt.replace(/\s*$/, "");
         codeClean.push(stmt);
     }
     return codeClean;

@@ -72,10 +72,11 @@ documents.onDidSave(change => {
 });
 
 documents.onDidChangeContent(change => {
-    // VSCode sends a firehose of change events. Only check after it's been quiet for 1 second.
+    // VSCode sends a firehose of change events.
+    // Only check after it's been quiet for 0.25 seconds (web mode is faster because it doesn't recompile).
     const timer = timers.get(change.document.uri)
     if(timer) clearTimeout(timer);
-    const newTimer: ReturnType<typeof setTimeout> = setTimeout(function(){ validatePerlDocument(change.document)}, 1000);
+    const newTimer: ReturnType<typeof setTimeout> = setTimeout(function(){ validatePerlDocument(change.document)}, 250);
     timers.set(change.document.uri, newTimer);
 });
 

@@ -18,8 +18,7 @@ export function activate(context: ExtensionContext) {
 	 * and could be shared with a regular (Node) extension
 	 */
 	const documentSelector = [
-		{ scheme: 'file', language: 'perl' },
-		{ scheme: 'untitled', language: 'perl' }
+		{ language: 'perl' },
 	]
 
 	// Options to control the language client

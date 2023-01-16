@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.5.1 2022-01-16
+- Adding features to web extension: outline view, hover, completion, go-to definition (currently all within same file)
+
+
 ## 0.5.0 2022-01-15
 - First version of web extension for vscode.dev. Extremely limited feature set in webmode
 - Fixed file display in syntax errors

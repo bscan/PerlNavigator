@@ -82,7 +82,7 @@ documents.onDidChangeContent(change => {
 
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
-	console.log("Rebuilding symbols for " + textDocument.uri + "");
+	// console.log("Rebuilding symbols for " + textDocument.uri + "");
     const perlDoc = await buildNav(textDocument);
     navSymbols.set(textDocument.uri, perlDoc);
     return;
@@ -91,13 +91,11 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
 
 connection.onDocumentSymbol(params => {
-	console.log("Navigator: Getting document symbols");
     return getSymbols(navSymbols, params.textDocument.uri);
 });
 
 // This handler provides the initial list of the completion items.
 connection.onCompletion((params: TextDocumentPositionParams): CompletionList | undefined => {
-	console.log("Navigator: Getting completion results");
 
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
@@ -113,8 +111,6 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
 
 
 connection.onHover(params => {
-	console.log("Trying to hover");
-	console.log(params.position);
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
     if(!document || !perlDoc) return;
@@ -124,14 +120,10 @@ connection.onHover(params => {
 
 
 connection.onDefinition(params => {
-	console.log("Navigator: Getting definition results");
-
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
 	if(!document || !perlDoc) return;
 
     let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document);
-    console.log("Got definition results");
-    console.log(locOut);
     return locOut;
 });

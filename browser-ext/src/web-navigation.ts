@@ -15,16 +15,14 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     
     let position = params.position
     const symbol = getSymbol(position, txtDoc);
-    console.log("Trying to get defintion for symbol: " + symbol);
+
     if(!symbol) return;
 
     const foundElems = lookupSymbol(perlDoc, symbol, position.line);
-    console.log("Found elements" + foundElems.length);
 
     if(foundElems.length == 0){
         return;
     }
-    console.log("Still here");
 
     let locationsFound: Location[] = [];
     

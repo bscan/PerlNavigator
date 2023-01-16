@@ -24,6 +24,8 @@ export async function buildNav(textDocument: TextDocument): Promise<PerlDocument
 
 function MakeElem(name: string, type: PerlSymbolKind | 'u' | '1' | '2', typeDetail: string, file: string, pack:string, line:number, perlDoc: PerlDocument) : void{
 
+    if(!name) return; // Don't store empty names (shouldn't happen)
+
     if (type == '1'){
         // This object is only intended as the canonicalLookup, not for anything else.
         return;
@@ -122,7 +124,7 @@ function buildPlTags(textDocument: TextDocument, perlDoc: PerlDocument) {
             if (match[1]) {
                 MakeElem(match[1], PerlSymbolKind.Label, '', file, package_name, line_number, perlDoc);
             }
-            MakeElem(match[1], PerlSymbolKind.LocalVar, '', file, package_name, line_number, perlDoc);
+            MakeElem(match[2], PerlSymbolKind.LocalVar, '', file, package_name, line_number, perlDoc);
         }
 
         // Lexical match variables if(my ($foo, $bar) ~= ). Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;

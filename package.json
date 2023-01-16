@@ -344,7 +344,8 @@
 		"clean": "rm -rf ./node-modules ./server/node-modules ./client/node-modules",
 		"foo": "(cd client && npm ci && cd ../); (cd server && npm c )",
 		"test": "sh ./scripts/e2e.sh",
-		"build-binary": "tsc -b && pkg ."
+		"build-binary": "tsc -b && pkg .",
+		"open-in-browser": "vscode-test-web --browser=none --extensionDevelopmentPath=. ."
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.1",
@@ -352,6 +353,7 @@
 		"@typescript-eslint/eslint-plugin": "^4.23.0",
 		"@typescript-eslint/parser": "^4.23.0",
 		"@types/webpack-env": "^1.16.0",
+		"@vscode/test-web": "*",
 		"eslint": "^7.26.0",
 		"mocha": "^10.1.0",
 		"pkg": "^5.5.2",

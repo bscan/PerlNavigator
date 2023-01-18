@@ -55,10 +55,10 @@ sub adjustForKeywords {
     $sSource = shift;
 
     # Change `async sub` to `sub`
-    $sSource =~ s/^\s*async\s+sub\s/ sub /gm;
+    $sSource =~ s/^\h*async\h+sub\h/ sub /gm;
 
     # Change `method` to `sub`, unless it's private like `method $foo``
-    $sSource =~ s/^\s*method\s(?=\s*\w)/ sub /gm;
+    $sSource =~ s/^\h*method\h(?=\h*\w)/ sub /gm;
 
     return $sSource;
 }

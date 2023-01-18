@@ -70,7 +70,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     if(knownObject){
         const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
         if(targetVar){
-            qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.type);
+            qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.typeDetail);
             bKnownObj = true;
         }
     }
@@ -151,15 +151,16 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let documentation: MarkupContent | undefined = undefined;
     let docs: string[] = [];
 
-    if (elem.type.length > 1 || ( ["v", "c"].includes(elem.type) && lookupName == '$self')) {
+
+    if ( ["v", "c"].includes(elem.type) && ( elem.typeDetail.length > 1 || lookupName == '$self')) {
         // We either know the object type, or it's $self
         kind = CompletionItemKind.Variable;
-        if(elem.type.length > 1 ){
-            detail = `${lookupName}: ${elem.type}`;
-        } else if (lookupName == '$self') {
+        if (lookupName == '$self') {
             // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
             detail = `${lookupName}: ${elem.package}`; 
-        }
+        } else if(elem.typeDetail.length > 1 ){
+            detail = `${lookupName}: ${elem.typeDetail}`;
+        } 
     } else if(elem.type == PerlSymbolKind.LocalVar){ 
         kind = CompletionItemKind.Variable;
     } else if(elem.type == PerlSymbolKind.ImportedVar){ 

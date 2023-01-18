@@ -1,7 +1,7 @@
 {
 	"name": "perlnavigator-server",
 	"description": "Perl language server",
-	"version": "0.5.0",
+	"version": "0.5.4",
 	"author": "bscan",
 	"license": "MIT",
 	"engines": {

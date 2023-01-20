@@ -1,21 +1,21 @@
 # Changelog
 
-## 0.5.1 2022-01-16
+## 0.5.1 2023-01-16
 - Adding features to web extension: outline view, hover, completion, go-to definition (currently all within same file)
 
 
-## 0.5.0 2022-01-15
+## 0.5.0 2023-01-15
 - First version of web extension for vscode.dev. Extremely limited feature set in webmode
 - Fixed file display in syntax errors
 - Perlcritic configuration options in settings (e.g. severity)
 - Fix perl critic for async and method by adjusting code prior to PPI
 
 
-## 0.4.9 2022-01-14
+## 0.4.9 2023-01-14
 - Make perltidy and critic run fully async to help with progress messages
 
 
-## 0.4.7 2022-01-07
+## 0.4.7 2023-01-07
 - Syntax highlighting for feature 'class', version strings, state, isa, try/catch
 
 

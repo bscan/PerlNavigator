@@ -13,7 +13,7 @@
             "patterns": [
                 {
                     "match": "\\b(dynamically)\\s(?=\\s*[\\@\\$\\%])",
-                    "name": "keyword.control.dynamically"  
+                    "name": "storage.type.dynamically"
                 }
             ]
         }

@@ -116,14 +116,15 @@ You can also use lsp-mode with emacs if you prefer. You can use something simila
 
 ### Neovim
 Neovim requires [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig). An optional, but highly recommended,
-plugin is [nvim-lsp-installer](https://github.com/williamboman/nvim-lsp-installer) which you can use to automatically
+set of plugins is [mason](https://github.com/williamboman/mason.nvim) and 
+[mason-lspconfig](https://github.com/williamboman/mason-lspconfig.nvim) which you can use to automatically
 install Perl Navigator.
 
 The simplest configuration is the following:
 ```lua
 require'lspconfig'.perlnavigator.setup{}
 ```
-A configuration with a number of options looks like:
+A configuration with a number of options set looks like:
 ```lua
 require'lspconfig'.perlnavigator.setup{
     settings = {

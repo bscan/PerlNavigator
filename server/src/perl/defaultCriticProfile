@@ -31,9 +31,9 @@ allow = vars subs refs
 
 [-Subroutines::RequireFinalReturn]
 
-# Object::Pad documentation has use Object::Pad as the first line of the module
+# Object::Pad documentation has use Object::Pad as the first line of the module.
 [Modules::RequireExplicitPackage]
-allow_import_of = Object::Pad feature Feature::Compat::Class
+allow_import_of = Object::Pad feature Feature::Compat::Class experimental
 
 # Not a default policy, but these exemptions are useful. I'm sure many others exist as well. 
 [Subroutines::ProhibitCallsToUndeclaredSubs]

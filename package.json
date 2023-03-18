@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.5.4",
+	"version": "0.5.5",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",

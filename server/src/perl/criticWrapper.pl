@@ -56,23 +56,23 @@ sub adjustForKeywords {
 
     $sSource = shift;
 
-    # Change `async sub` to `sub`
-    $sSource =~ s/^\h*async\h+sub\h/ sub /gm;
+    # Change `async sub` to `sub`, and keep the word sub aligned where the line started. Also supports method and multi
+    $sSource =~ s/^(\h*)(?:async\h+)?(?:multi\h+)?(?:method|sub)\h(?=\h*\w)/${1}sub /gm;
 
-    # Change `method` to `sub`, unless it's private like `method $foo`
-    $sSource =~ s/^\h*method\h(?=\h*\w)/ sub /gm;
+    # Another possible alignment. This was an attempt at keeping the name aligned.
+    # $sSource =~ s/^(\h*)((?:async\h+)?)(method|sub)\h(?=\h*\w)/"$1" . (" " x (length($2) + length($3) - 3)) . "sub "/gme;
 
     if ($sSource =~ /^use\h+(?:Object::Pad|feature\h.*class.*|experimental\h.*class.*|Feature::Compat::Class)[\h;]/m){
         # Object::Pad or the new corinna. Eventually needs to be updated with use v.?? when it becomes part of a feature bundle
 
         # classes become packages (which they are) to support RequireExplicitPackage and RequireFilenameMatchesPackage
-        $sSource =~ s/^\h*class\h(?=\h*\w)/ package /gm;
+        $sSource =~ s/^(\h*)class\h(?=\h*\w)/${1}package /gm;
 
         # ADJUST blocks and similar are not processed correctly since they aren't recognized. Important for Modules::RequireEndWithOne
         $sSource =~ s/^(\h*)(ADJUST|ADJUST\h+:params|ADJUSTPARAMS|BUILD)(?=\h*\s?(\{|\())/${1}sub $2/gm;
 
-        # Change private sigil'd methods to be underscore
-        $sSource =~ s/^\h*method\h+\$(?=\w)/ sub _/gm;
+        # Change private sigil'd methods to regular subs. Single underscore would get caught by Subroutines::ProhibitUnusedPrivateSubroutines
+        $sSource =~ s/^(\h*)method\h+\$(?=\w)/${1}sub /gm;
     }
 
     return $sSource;

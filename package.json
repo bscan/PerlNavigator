@@ -21,7 +21,7 @@
 	"activationEvents": [
 		"onLanguage:perl"
 	],
-	"main": "./client/out/extension",
+	"main": "./client/dist/clientMain",
 	"browser": "./client/dist/browserClientMain",
 	"contributes": {
 		"configuration": {
@@ -341,7 +341,7 @@
 		]
 	},
 	"scripts": {
-		"vscode:prepublish": "npm run compile",
+		"vscode:prepublish": "npm run package",
 		"compile": "tsc -b",
 		"watch": "tsc -b -w",
 		"web-compile": "export NODE_OPTIONS=--openssl-legacy-provider; webpack",
@@ -376,9 +376,9 @@
 		"ts-loader": "^9.3.0",
 		"path-browserify": "^1.0.1"
 	},
-	"bin": "server/out/server.js",
+	"bin": "server/dist/serverMain.js",
 	"pkg": {
-		"scripts": "server/out/server.js",
+		"scripts": "server/dist/serverMain.js",
 		"assets": "server/src/**/*",
 		"targets": [
 			"node16-linux-x64",

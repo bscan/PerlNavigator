@@ -14,6 +14,103 @@
 const path = require('path');
 
 /** @type WebpackConfig */
+const clientConfig = {
+	context: path.join(__dirname, 'client'),
+	target: 'node', // web extensions run in a webworker context
+	entry: {
+		clientMain: './src/extension.ts',
+	},
+	output: {
+		filename: '[name].js',
+		path: path.join(__dirname, 'client', 'dist'),
+		libraryTarget: 'commonjs',
+	},
+	resolve: {
+		mainFields: ['module', 'main'],
+		extensions: ['.ts', '.js'], // support ts-files and js-files
+		alias: {},
+		fallback: {
+			// path: require.resolve('path-browserify'),
+			path: false,
+			process: false,
+			os: false,
+			fs: false,
+			child_process: false,
+			util: false
+		},
+	},
+	module: {
+		rules: [
+			{
+				test: /\.ts$/,
+				exclude: /node_modules/,
+				use: [
+					{
+						loader: 'ts-loader',
+					},
+				],
+			},
+		],
+	},
+	externals: {
+		vscode: 'commonjs vscode', // ignored because it doesn't exist
+	},
+	performance: {
+		hints: false,
+	},
+	devtool: 'source-map',
+};
+
+/** @type WebpackConfig */
+const serverConfig = {
+	context: path.join(__dirname, 'server'),
+	target: 'node', // web extensions run in a webworker context
+	entry: {
+		serverMain: './src/server.ts',
+	},
+	output: {
+		filename: '[name].js',
+		path: path.join(__dirname, 'server', 'dist'),
+		libraryTarget: 'var',
+		library: 'serverExportVar',
+	},
+	resolve: {
+		mainFields: ['module', 'main'],
+		extensions: ['.ts', '.js'], // support ts-files and js-files
+		alias: {},
+		fallback: {
+			//path: require.resolve("path-browserify")
+			path: false,
+			process: false,
+			os: false,
+			fs: false,
+			child_process: false,
+			util: false
+		},
+	},
+	module: {
+		rules: [
+			{
+				test: /\.ts$/,
+				exclude: /node_modules/,
+				use: [
+					{
+						loader: 'ts-loader',
+					},
+				],
+			},
+		],
+	},
+	externals: {
+		vscode: 'commonjs vscode', // ignored because it doesn't exist
+	},
+	performance: {
+		hints: false,
+	},
+	devtool: 'source-map',
+};
+
+/** @type WebpackConfig */
 const browserClientConfig = {
 	context: path.join(__dirname, 'client'),
 	mode: 'none',
@@ -100,4 +197,4 @@ const browserServerConfig = {
 	devtool: 'source-map',
 };
 
-module.exports = [browserClientConfig, browserServerConfig];
+module.exports = [browserClientConfig, browserServerConfig, clientConfig, serverConfig];

@@ -17,7 +17,7 @@ import {
 } from 'vscode-languageserver-textdocument';
 
 export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<CompilationResults | void> {
-    let perlParams: string[] = ["-c"];
+    let perlParams: string[] = [...settings.perlParams, "-c"];
     const filePath = Uri.parse(textDocument.uri).fsPath;
 
     if(settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
@@ -165,7 +165,7 @@ function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocum
 export async function perlcritic(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if(!settings.perlcriticEnabled) return []; 
     const critic_path = join(getPerlAssetsPath(), 'criticWrapper.pl');
-    let criticParams: string[] = [critic_path].concat(getCriticProfile(workspaceFolders, settings));
+    let criticParams: string[] = [...settings.perlParams, critic_path].concat(getCriticProfile(workspaceFolders, settings));
     criticParams = criticParams.concat(['--file', Uri.parse(textDocument.uri).fsPath]);
 
     // Add any extra params from settings
@@ -205,7 +205,7 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
 export async function perlimports(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if(!settings.perlimportsLintEnabled) return [];
     const importsPath = join(getPerlAssetsPath(), 'perlimportsWrapper.pl');
-    const cliParams = [importsPath, ...getPerlimportsProfile(settings), '--lint', '--json', '--filename', Uri.parse(textDocument.uri).fsPath];
+    const cliParams = [...settings.perlParams, importsPath, ...getPerlimportsProfile(settings), '--lint', '--json', '--filename', Uri.parse(textDocument.uri).fsPath];
 
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
     const code = textDocument.getText();

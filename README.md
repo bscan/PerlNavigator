@@ -59,7 +59,8 @@ Currently, this is not yet packaged for other editors but you can build from sou
 git clone https://github.com/bscan/PerlNavigator
 cd PerlNavigator/
 npm run ci-all
-tsc
+cd server/
+npx tsc
 ```
 
 ### Sublime Text

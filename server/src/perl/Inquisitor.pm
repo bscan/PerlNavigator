@@ -184,7 +184,7 @@ sub dump_vars_to_main {
     no strict 'refs'; ## no critic
     my $fullPackage = "${package}::";
 
-    foreach my $thing (keys %$fullPackage) {
+    foreach my $thing (sort keys %$fullPackage) {
         next if $thing =~ /^_</;           # Remove all filenames
         next if $thing =~ /([\0-\x1F])/;   # Perl built-ins come with non-printable control characters
 
@@ -289,6 +289,23 @@ sub filter_modpacks {
 
     foreach (@preloaded) { $filter{$_} = 0 }; 
     my @filtered = grep { !$filter{$_} and $_ !~ $filter_regex and $_ !~ $private} @$modpacks;
+
+    # Sort by depth and then alphabetically. The assumption is that more nested things are less important.
+    # Also, consistent sorting makes debugging easier.
+    @filtered = sort {
+        my $depth_a = $a =~ tr/:://;
+        my $depth_b = $b =~ tr/:://;
+
+        # First, sort by depth
+        if ($depth_a != $depth_b) {
+            return $depth_a <=> $depth_b;
+        }
+
+        # Second, sort alphabetically
+        return $a cmp $b;
+    } @filtered;
+
+
     return \@filtered;
 }
 

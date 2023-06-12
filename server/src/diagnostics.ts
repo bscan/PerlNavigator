@@ -61,7 +61,10 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     output.split("\n").forEach(violation => {
         maybeAddCompDiag(violation, severity, diagnostics, filePath, perlDoc);
     });
-    return {diags: diagnostics, perlDoc: perlDoc};
+
+    // If a base object throws a warning multiple times, we want to deduplicate it to declutter the problems tab.
+    const uniq_diagnostics = Array.from(new Set(diagnostics.map(diag => JSON.stringify(diag)))).map(str => JSON.parse(str));
+    return {diags: uniq_diagnostics, perlDoc: perlDoc};
 }
 
 function getInquisitor(): string[]{

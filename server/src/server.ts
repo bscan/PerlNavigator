@@ -397,7 +397,7 @@ connection.onShutdown((handler) => {
 });
 
 process.on('unhandledRejection', function(reason, p){
-    console.log("Caught an unhandled Rejection at: Promise ", p, " reason: ", reason);
+    console.error("Caught an unhandled Rejection at: Promise ", p, " reason: ", reason);
 });
 
 

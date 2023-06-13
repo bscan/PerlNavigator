@@ -208,7 +208,7 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
 export function nLog(message: string, settings: NavigatorSettings){
     // TODO: Remove resource level settings and just use a global logging setting?
     if(settings.logging){
-        console.log(message);
+        console.error(message);
     }
 }
 

@@ -51,7 +51,17 @@ It is recommended to set `perlnavigator.perltidyProfile` if you would like custo
 Perlimports offers additional diagnostics when imports can be cleaned up. When perlimports is enabled, "Format Document" and "Format Selection" will run perlimports in addition to perltidy.
 By default, perlimports is not enabled, but the diagnostics (linting) can be enabled with `perlimportsLintEnabled`, and the tidying can be enabled with `perlimportsTidyEnabled`.
 Perlimports can be customized with a profile using the `perlnavigator.perlimportsProfile`. 
-Due to implementation limitations, perlimports requires a saved version of the file you are working on. If any results are unexpected, save the working file and try again.  
+Due to implementation limitations, perlimports requires a saved version of the file you are working on. If any results are unexpected, save the working file and try again.
+
+## Building For VSCode/VSCodium
+In addition to node.js and npm you will have to install [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce), a tool for packaging (among other things) extensions in the .vsix format used by both VSCode and VSCodium by running the following:
+```sh
+git clone https://github.com/bscan/PerlNavigator
+cd PerlNavigator/
+npm install -g @vscode/vsce
+vsce package
+```
+At this point all that's left to do is install the resulting .vsix file (located in the current directory) in VSCode or VSCodium by navigating to the Extensions pane and choosing "Install from VSIX...".
 
 ## Installation For Other Editors
 Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
@@ -182,3 +192,4 @@ For those interested in a Raku language server, check out: https://github.com/bs
 ## Licenses / Acknowledgments
 The Perl Navigator is free software licensed under the MIT License. It has a number of bundled dependencies as well, all of which have their respective open source licenses included.
 This work is only possible due to Class::Inspector, Devel::Symdump, Perl::Critic, PPI, Perl::Tidy, perlimports, Sub::Util, Perl itself, Microsoft LSP libraries, and ideas from Perl::LanguageServer and PLS.
+

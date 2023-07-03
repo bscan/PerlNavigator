@@ -65,6 +65,9 @@ sub adjustForKeywords {
     if ($sSource =~ /^use\h+(?:Object::Pad|feature\h.*class.*|experimental\h.*class.*|Feature::Compat::Class)[\h;]/m){
         # Object::Pad or the new corinna. Eventually needs to be updated with use v.?? when it becomes part of a feature bundle
 
+        # Remove :isa statements since they trip Subroutines::ProhibitCallsToUndeclaredSubs. This regex is less robust (e.g. version declaration), so we'll remove "class" in a seperate one.
+        $sSource =~ s/^(\h*class\h+[\w:]+\h+):\h*isa\(\h*[\w:]+\h*\)/$1/gm;
+
         # classes become packages (which they are) to support RequireExplicitPackage and RequireFilenameMatchesPackage
         $sSource =~ s/^(\h*)class\h(?=\h*\w)/${1}package /gm;
 

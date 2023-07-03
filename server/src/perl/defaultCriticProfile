@@ -37,4 +37,4 @@ allow_import_of = Object::Pad feature Feature::Compat::Class experimental
 
 # Not a default policy, but these exemptions are useful. I'm sure many others exist as well. 
 [Subroutines::ProhibitCallsToUndeclaredSubs]
-exempt_subs = Object::Pad::class Object::Pad::field Object::Pad::role Object::Pad::has feature::field feature::class Future::AsyncAwait::await Future::AsyncAwait::async feature::try feature::catch Feature::Compat::Try::try Feature::Compat::Try::catch
+exempt_subs = Object::Pad::class Object::Pad::field Object::Pad::role Object::Pad::has Object::Pad::param Object::Pad::reader Object::Pad::writer Object::Pad::mutator Object::Pad::accessor experimental::field experimental::class experimental::param feature::field feature::class feature::param Future::AsyncAwait::await Future::AsyncAwait::async feature::try feature::catch Feature::Compat::Try::try Feature::Compat::Try::catch

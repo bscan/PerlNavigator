@@ -1,7 +1,7 @@
 {
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "information_for_contributors": [
-        "To modify the grammar, simply update the JSON run the extension. This file detects scope (e.g. is Moo active) and the individual files define the syntax of the scope"
+        "This file provides highlighting for Object::Pad and the new 5.38 feature class"
     ],
     "name": "objectpad",
     "scopeName": "source.perl.package.objectpad",
@@ -26,7 +26,27 @@
                     }
                 },
                 {
-                    "match": "\\b(class|role)\\s+([\\w:]+)\\b",
+                    "match": "\\b(class)\\s+([\\w:]+)\\b(?:\\s+(\\d+(?:\\.\\d+)?))?(?:\\s+:(isa|does|repr)\\(\\s*([\\w:]+)\\s*\\))?",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.control.objectpad"
+                        },
+                        "2": {
+                            "name": "entity.name.type.class.objectpad"
+                        },
+                        "3": {
+                            "name": "constant.numeric.objectpad"
+                        },
+                        "4": {
+                            "name": "constant.language.objectpad"
+                        },
+                        "5": {
+                            "name": "entity.name.type.class.objectpad"
+                        }
+                    }
+                },
+                {
+                    "match": "\\b(role)\\s+([\\w:]+)\\b",
                     "captures": {
                         "1": {
                             "name": "keyword.control.objectpad"

@@ -84,7 +84,7 @@ async function perlimports(doc: TextDocument, code: string, settings: NavigatorS
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
 
     try {
-        const process = async_execFile(settings.perlPath, cliParams, {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
+        const process = async_execFile(settings.perlPath, settings.perlParams.concat(cliParams), {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
         process?.child?.stdin?.on('error', (error: any) => { 
             nLog("perlImports Error Caught: ", settings);
             nLog(error, settings);
@@ -108,7 +108,7 @@ async function perltidy(code: string, settings: NavigatorSettings, workspaceFold
 
     let output: string | Buffer;
     try {
-        const process = async_execFile(settings.perlPath, tidyParams, {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
+        const process = async_execFile(settings.perlPath, settings.perlParams.concat(tidyParams), {timeout: 25000, maxBuffer: 20 * 1024 * 1024});
         process?.child?.stdin?.on('error', (error: any) => { 
             nLog("PerlTidy Error Caught: ", settings);
             nLog(error, settings);

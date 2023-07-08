@@ -34,6 +34,12 @@
 					"default": "perl",
 					"description": "Full path to the perl executable (no aliases, .bat files or ~/)"
 				},
+				"perlnavigator.perlParams": {
+					"scope": "resource",
+					"type": "array",
+					"default": [],
+					"description": "Pass miscellaneous command line arguments to pass to the perl executable"
+				},
 				"perlnavigator.enableWarnings": {
 					"scope": "resource",
 					"type": "boolean",

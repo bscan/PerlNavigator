@@ -10,6 +10,7 @@ import {
 
 export interface NavigatorSettings {
     perlPath: string;
+    perlParams: string[];
     enableWarnings: boolean;
     perlcriticProfile: string;
     perlcriticEnabled: boolean;

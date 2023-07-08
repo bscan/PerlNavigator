@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.5.8 2023-07-08
+- Better support for use feature 'class': improved navigation, syntax highlighting fixes, critic on :param, critic on :isa()
+- Fix "blinking" of diagnostics from multiple simulatenous runs
+- Navigate to main::foo style functions
+- Support for one configuration of AUTOLOAD function
+- Moo/Moose syntax highlighting bug
+
+
+## 0.5.8 2023-07-08
+- Allow logging from editors other than vscode
+
+
+## 0.5.5 2023-03-18
+- Get perlcritic working on Object::Pad and the new class feature;
+
+
 ## 0.5.1 2023-01-16
 - Adding features to web extension: outline view, hover, completion, go-to definition (currently all within same file)
 

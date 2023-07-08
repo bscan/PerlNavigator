@@ -15,13 +15,19 @@
         "objectpad": {
             "patterns": [
                 {
-                    "match": "\\b(has|field)\\s+([\\$\\@\\%]\\w+)\\b",
+                    "match": "\\b(has|field)\\s+([\\$\\@\\%]\\w+)\\b(?:\\s+:(param)(?:\\(\\s*(\\w+)\\s*\\)|\\b))?",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.objectpad.perl"
                         },
                         "2": {
                             "name": "variable.other.readwrite.objectpad.perl"
+                        },
+                        "3": {
+                            "name": "constant.language.objectpad"
+                        },
+                        "4": {
+                            "name": "entity.name.function.perl"
                         }
                     }
                 },

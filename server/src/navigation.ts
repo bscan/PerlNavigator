@@ -59,16 +59,46 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
 function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: string): PerlElem | undefined {
     
     if(elem.file && !badFile(elem.file)){
-        // Have file and is good.
+
+        console.log(`Looking up: ${elem.file} AND ${perlDoc.filePath} and ${symbol} AND ${elem.type} and ${elem.line}`);
+        if(perlDoc.filePath == elem.file  && symbol.includes('->')){
+            // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
+            const method = symbol.split('->').pop();
+            if(method){ // Shouldn't this always be defined? Double check
+                const found = perlDoc.elems.get(method);
+
+                if(found){
+                    if(elem.line == 0 && elem.type == 'x'){
+                        if(found[0].file == perlDoc.filePath) return found[0];
+                    } else if (elem.line > 0 && elem.type == 't') {
+                        // Solve the off-by-one error at least for these. Eventually, you could consult a tagger for this step.
+                        
+                        for (let potentialElem of found) {
+                            if(Math.abs(potentialElem.line - elem.line) <= 1){
+                                return potentialElem;
+                            }
+                        };
+                    }
+                }
+            }
+            // Otherwise give-up
+        }
+
+        // Normal path; file is good
         return elem;
     } else{
         // Try looking it up by package instead of file.
         // Happens with XS subs and Moo subs
+        console.log(`Do I have a package: ${elem.package}`);
         if(elem.package){
             const elemResolved = perlDoc.elems.get(elem.package);
-
-            if(elemResolved?.length && elemResolved[0].file && !badFile(elem.file)){
-                return elemResolved[0];
+            console.log(`Found package: ${elem.package}`);
+            if(elemResolved){
+                for (let potentialElem of elemResolved) {
+                    if(potentialElem.file && !badFile(potentialElem.file)){
+                        return potentialElem;
+                    }
+                };
             }
         }
 
@@ -88,7 +118,7 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
 
 
 function badFile (file: string){
-    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm)$/.test(file);
+    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c)$/.test(file);
 }
 
 export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {

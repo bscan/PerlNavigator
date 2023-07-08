@@ -110,6 +110,7 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
 function findRecent (found: PerlElem[], line: number){
     let best = found[0];
     for (var i = 0; i < found.length; i++){
+        // TODO: is this flawed because not all lookups are in the same file?
         // Find the most recently declared variable. Modules and Packages are both declared at line 0, so Package is tiebreaker (better navigation; modules can be faked by Moose) 
         if( (found[i].line > best.line && found[i].line <= line) || (found[i].line == best.line && found[i].type == PerlSymbolKind.Package)  ){
             best = found[i];
@@ -178,6 +179,8 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
     
 
     qSymbol = qSymbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
+    qSymbol = qSymbol.replace(/^main::(\w+)$/g, "$1"); // main::foo is just tagged as foo
+
     found = perlDoc.elems.get(qSymbol);
     if(found?.length) return [found[0]];
 
@@ -185,9 +188,14 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
     // Launching to the wrong explicitly stated module is a bad experience, and common with "require'd" modules 
         const method = qSymbol.split('::').pop();
         if(method){
-            // Perhaps the method is within our current scope, or explictly imported. 
+            // Perhaps the method is within our current scope, explictly imported, or an inherited method (dumper by Inquisitor) 
             found = perlDoc.elems.get(method);
             if(found?.length) return [found[0]];
+
+            // Autoloaded are lower priority than inherited, but higher than random hunting
+            const foundAuto = perlDoc.autoloads.get(method);
+            if(foundAuto) return [foundAuto];
+
             // Haven't found the method yet, let's check if anything could be a possible match since you don't know the object type
             let foundElems: PerlElem[] = [];
             perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {

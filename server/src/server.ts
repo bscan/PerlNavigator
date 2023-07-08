@@ -129,6 +129,9 @@ const documentSettings: Map<string, NavigatorSettings> = new Map();
 // Store recent critic diags to prevent blinking of diagnostics
 const documentDiags: Map<string, Diagnostic[]> = new Map();
 
+// Store recent compilation diags to prevent old diagnostics from resurfacing
+const documentCompDiags: Map<string, Diagnostic[]> = new Map();
+
 // My ballpark estimate is that 350k symbols will be about 35MB. Huge map, but a reasonable limit. 
 const navSymbols = new LRU({max: 350000, length: function (value:PerlDocument , key:string) { return value.elems.size }});
 
@@ -201,6 +204,7 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
 documents.onDidClose(e => {
     documentSettings.delete(e.document.uri);
     documentDiags.delete(e.document.uri);
+    documentCompDiags.delete(e.document.uri);
     navSymbols.del(e.document.uri);
     connection.sendDiagnostics({ uri: e.document.uri, diagnostics: [] });
 });
@@ -248,10 +252,13 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     nLog("Compilation Time: " + (Date.now() - start)/1000 + " seconds", settings);
     let oldCriticDiags = documentDiags.get(textDocument.uri);
     if(!perlOut){
+        documentCompDiags.delete(textDocument.uri);
         endProgress(connection, progressToken);
         return;
     }
-        let mixOldAndNew = perlOut.diags;
+    documentCompDiags.set(textDocument.uri, perlOut.diags);
+
+    let mixOldAndNew = perlOut.diags;
     if(oldCriticDiags && settings.perlcriticEnabled) {
         // Resend old critic diags to avoid overall file "blinking" in between receiving compilation and critic. TODO: async wait if it's not that long.
         mixOldAndNew = perlOut.diags.concat(oldCriticDiags);
@@ -278,8 +285,11 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
     documentDiags.set(textDocument.uri, newDiags); // May need to clear out old ones if a user changed their settings.
 
+    let compDiags = documentCompDiags.get(textDocument.uri);
+    compDiags = compDiags ?? [];
+
     if(newDiags){
-        const allNewDiags = perlOut.diags.concat(newDiags);
+        const allNewDiags = compDiags.concat(newDiags);
         sendDiags({ uri: textDocument.uri, diagnostics: allNewDiags });
     }
     endProgress(connection, progressToken);

@@ -178,9 +178,9 @@ sub build_pltags {
         # line, or if this line starts with my or local
         elsif (   $var_continues
             or ($stmt =~ /^(?:my|our|local|state)\b/)) {
-            # The declaration continues if the line does not end with ;
-            $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
-            
+            # The declaration continues if the line does not contain ; (comments trip this up for now, so the ; may not be at the end)
+            $var_continues = ($stmt !~ /;/ and $stmt !~ /[\)\=\}\{]/);
+
             # Remove my or local from statement, if present
             $stmt =~ s/^(my|our|local|state)\s+//;
 
@@ -191,7 +191,7 @@ sub build_pltags {
             $stmt =~ s/\s*\}.*//;
 
             # Now find all variable names, i.e. "words" preceded by $, @ or %
-            my @vars = ($stmt =~ /([\$\@\%][\w:]+)\b/g);
+            my @vars = ($stmt =~ /([\$\@\%][\w]+)\b/g);
 
             foreach my $var (@vars) {
                 MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
@@ -288,7 +288,9 @@ sub build_pltags {
             MakeTag("constant", "u", '', $file, $line_number, $package_name, \@tags);
         }
 
-        elsif ($stmt=~/^has(?:\s+|\()["']?([\$@%]?\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
+
+        # TODO: Explicitly split Moo, Moose, Object::Pad, and Corinnna
+        elsif ($stmt=~/^(?:has|field)(?:\s+|\()["']?([\$@%]?\w+)\b/) { # Moo/Moose/Object::Pad/Moops/Corinna attributes
             my $attr = $1;
             my $type = $attr =~ /^\w/ ? 'f' : 'v'; # attr looks like a function, $attr is a variable.
             # TODO: Define new type. Class $variables should probably be shown in the Outline view even though lexical variables are not
@@ -300,10 +302,10 @@ sub build_pltags {
             }
         }
 
-        elsif ($sActiveOO->{"Object::Pad"} and $stmt=~/^field\s+([\$@%]\w+)\b/) { # Object::Pad field
-            my $attr = $1;
-            MakeTag($attr, "v", '', $file, $line_number, $package_name, \@tags);
-        }
+        # elsif ($sActiveOO->{"Object::Pad"} and $stmt=~/^field\s+([\$@%]\w+)\b/) { # Object::Pad field
+        #     my $attr = $1;
+        #     MakeTag($attr, "v", '', $file, $line_number, $package_name, \@tags);
+        # }
 
         elsif (($sActiveOO->{"Mars::Class"} or $sActiveOO->{"Venus::Class"}) and $stmt=~/^attr\s+["'](\w+)\b/) { # Mars attributes
             my $attr = $1;
@@ -319,6 +321,11 @@ sub build_pltags {
             my $import = $1;
             MakeTag("$import", "u", '', $file, $line_number, $package_name, \@tags);
             $sActiveOO->{$import} = 1;
+        }
+
+        elsif ($stmt=~/^\$self\->\{\s*_(\w+)\s*\}\s*=/) { # Common paradigm is for autoloaders to basically just point to the class variable
+            my $variable = $1;
+            MakeTag("get_$variable", "3", '', $file, $line_number, $package_name, \@tags);
         }
 
     }

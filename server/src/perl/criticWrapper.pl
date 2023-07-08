@@ -76,6 +76,9 @@ sub adjustForKeywords {
 
         # Change private sigil'd methods to regular subs. Single underscore would get caught by Subroutines::ProhibitUnusedPrivateSubroutines
         $sSource =~ s/^(\h*)method\h+\$(?=\w)/${1}sub /gm;
+
+        # Remove param(name) from source, since they get confused for subs as well.
+        $sSource =~ s/^(\h*field\h+[\$\@\%]\w+\s+):param\(\s*\w+\s*\)/${1}/gm;
     }
 
     return $sSource;

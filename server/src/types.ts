@@ -55,6 +55,7 @@ export interface PerlImport {
 export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
     canonicalElems: Map<string, PerlElem>;
+    autoloads: Map<string, PerlElem>;
     imported: Map<string, number>;
     parents: Map<string, string>;
     filePath: string;

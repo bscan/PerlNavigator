@@ -139,12 +139,18 @@ sub resolve_file {
     if ($meta->START->isa('B::COP')){
         $file = $meta->START->file;
         $line = $meta->START->line - 2;
-    } elsif ($meta->GV->isa('B::GV')){
-        if($meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/){
-            # If something comes from XSAccessor or Accessor, it's an attribute (e.g. Moo, ClassAccessor), but we don't know where in the Moo class it's defined.
-            $subType = 'd';
+    } elsif ($meta->GV->isa('B::GV') and $meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/){
+        # If something comes from XSAccessor or Accessor, it's an attribute (e.g. Moo, ClassAccessor), but we don't know where in the Moo class it's defined.
+        $subType = 'd';
+    } elsif(UNIVERSAL::can($meta, 'FILE')){
+        # Happens for Corinna methods
+        my $testFile = $meta->FILE;
+
+        if( $testFile !~ /Inquisitor\.pm/ ){
+            # Are constants and other preprocessing things showing up in the inquistor???
+            $file = $testFile;
         }
-    } 
+    }
 
     # Moose (but not Moo) attributes return this for a file.
     if ($file =~ /^accessor [\w:]+ \(defined at ([\w\\\/\.\s]+) line (\d+)\)$/){
@@ -275,7 +281,7 @@ sub filter_modpacks {
 
     # Some of these things I've imported in here, some are just piles of C code.
     # We'll still nav to modules and find anything explictly imported so we can be aggressive at removing these. 
-    my @to_remove = ("Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
+    my @to_remove = ("if", "Cwd", "B", "main","version","POSIX","Fcntl","Errno","Socket", "DynaLoader","CORE","utf8","UNIVERSAL","PerlIO","re","Internals","strict","mro","Regexp",
                       "Exporter","Inquisitor", "XSLoader","attributes", "warnings","strict","utf8", "constant","XSLoader", "Carp", "Inspectorito", "SubUtilPP",
                       "base", "Config", "overloading", "Devel::Symdump", "vars", "Tie::Hash::NamedCapture", "Text::Balanced", "Filter::Util::Call", "IO::Poll", "IO::Seekable", "IO::Handle", 
                        "IO::File", "Symbol", "IO", "SelectSaver", "overload", "Filter::Simple", "SelfLoader", "PerlIO::Layer", "Text::Balanced::Extractor", "IO::Socket", @checkPreloaded);

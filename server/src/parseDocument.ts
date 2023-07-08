@@ -9,6 +9,7 @@ export async function buildNav(stdout: string, filePath: string, fileuri: string
     let perlDoc: PerlDocument = {
             elems: new Map(),
             canonicalElems: new Map(),
+            autoloads: new Map(),
             imported: new Map(),
             parents: new Map(),
             filePath: filePath,
@@ -78,8 +79,14 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     if (type == '1'){
         // This object is only intended as the canonicalLookup, not for anything else.
+        // This doesn't do anything until fancy object types are moved into the typeDetail field
         return;
     }
+
+    if (type == '3'){
+        perlDoc.autoloads.set(name, newElem);
+        return; // Don't store it as an element
+    } 
 
     addVal(perlDoc.elems, name, newElem);
 

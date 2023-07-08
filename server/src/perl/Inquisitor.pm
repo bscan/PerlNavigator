@@ -108,7 +108,10 @@ sub maybe_print_sub_info {
         return 0 if $file =~ /([\0-\x1F])/ or $pack =~ /([\0-\x1F])/;
         return 0 if $file =~ /(Moo.pm|Exporter.pm)$/; # Objects pollute the namespace, many things have exporter
 
-        if (($file and $file ne $0) or ($pack and $pack ne $sSkipPackage)) { # pltags will find everything in $0 / currentpackage, so only include new information. 
+        if (($file and $file ne $0) or ($pack and $pack ne $sSkipPackage)) {
+            # pltags will find everything in $0 / currentpackage, so only include new information.
+            # Note: the above IF is breaking $self-> for Object::Pad for things that exist in current package.
+            # Basically `field $writerField: writer;` is generating `set_writerField` which is then skipped.
             print_tag($sDisplayName || $sFullPath, $subType, $subname, $file, $pack, $line, '') ;
             return 1;
         }

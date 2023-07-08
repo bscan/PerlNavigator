@@ -98,6 +98,7 @@ connection.onInitialized(() => {
 // The "real" default settings are in the top-level package.json
 const defaultSettings: NavigatorSettings = {
     perlPath: "perl",
+    perlParams: [],
     enableWarnings: true,
     perlimportsProfile: "",
     perltidyProfile: "",

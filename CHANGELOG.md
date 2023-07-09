@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.9 2023-07-09
+- Support for perlParams which helps with Carton, Docker, Carmel support, etc. Thanks @marlencrabapple https://github.com/bscan/PerlNavigator/pull/68
+
 ## 0.5.8 2023-07-08
 - Better support for use feature 'class': improved navigation, syntax highlighting fixes, critic on :param, critic on :isa()
 - Fix "blinking" of diagnostics from multiple simulatenous runs

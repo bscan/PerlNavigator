@@ -60,7 +60,6 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
     
     if(elem.file && !badFile(elem.file)){
 
-        console.log(`Looking up: ${elem.file} AND ${perlDoc.filePath} and ${symbol} AND ${elem.type} and ${elem.line}`);
         if(perlDoc.filePath == elem.file  && symbol.includes('->')){
             // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
             const method = symbol.split('->').pop();
@@ -89,10 +88,8 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
     } else{
         // Try looking it up by package instead of file.
         // Happens with XS subs and Moo subs
-        console.log(`Do I have a package: ${elem.package}`);
         if(elem.package){
             const elemResolved = perlDoc.elems.get(elem.package);
-            console.log(`Found package: ${elem.package}`);
             if(elemResolved){
                 for (let potentialElem of elemResolved) {
                     if(potentialElem.file && !badFile(potentialElem.file)){

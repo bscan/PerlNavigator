@@ -152,18 +152,30 @@ require'lspconfig'.perlnavigator.setup{
 
 ### coc.nvim
 
-`:CocConfig`
+The configuration can be added directly to coc-settings (`:CocConfig`) like the following:
 
 ```json
-"languageserver": {
-  "perlnavigator": {
-    "command": "node",
-    "args": [
-      "/path/to/PerlNavigator/server/out/server.js",
-      "--stdio"
-    ],
-    "filetypes": ["perl"]
+{
+  "languageserver": {
+    "perlnavigator": {
+      "command": "node",
+      "args": [
+        "/path/to/PerlNavigator/server/out/server.js",
+        "--stdio"
+      ],
+      "filetypes": ["perl"]
+    }
   }
+}
+```
+
+Or the [coc-perl](https://github.com/perl-ide/coc-perl) client extension can be used, simplifying overall configuration.
+A simple configuration to enable PerlNavigator, after installing coc-perl (`:CocInstall coc-perl`), looks like:
+
+```json
+{
+  "perl.navigator.enable": true,
+  "perl.navigator.serverPath": "/path/to/PerlNavigator/server/out/server.js"
 }
 ```
 

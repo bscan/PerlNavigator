@@ -20,6 +20,9 @@
 	},
 	"scripts": {},
 	"main": "./src/out/server.js",
+	"bin": {
+		"perlnavigator": "./bin/perlnavigator"
+	},
 	"devDependencies": {},
 	"keywords": [
 		"perl",

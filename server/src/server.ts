@@ -36,7 +36,13 @@ import { formatDoc, formatRange } from "./formatting";
 import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
 var LRU = require("lru-cache");
-// Create a connection for the server, using Node's IPC as a transport.
+
+// It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
+if (process.argv.length <= 2) {
+    process.argv.push('--stdio');
+}
+
+// Create a connection for the server
 // Also include all preview / proposed LSP features.
 const connection = createConnection(ProposedFeatures.all);
 

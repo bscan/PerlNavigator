@@ -68,6 +68,8 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
         desc = `(attribute) ${symbol}`;
     } else if (elem.type == 'e'){ 
         desc = `(phase) ${symbol}`;
+    } else if (elem.type == 'g' || elem.type == 'j'){ 
+        // You cant go-to or hover on a route or outline only sub.
     } else {
         // We should never get here
         desc = `Unknown: ${symbol}`;

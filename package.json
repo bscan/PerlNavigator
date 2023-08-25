@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.6.0",
+	"version": "0.6.1",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -330,6 +330,13 @@
 				],
 				"scopeName": "source.perl.package.match",
 				"path": "./syntaxes/match.json"
+			},
+			{
+				"injectTo": [
+				  "source.perl"
+				],
+				"scopeName": "source.perl.package.dancer",
+				"path": "./syntaxes/dancer.json"
 			}
 		]
 	},

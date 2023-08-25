@@ -39,7 +39,7 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
             
             elements.forEach(element => {
                 let kind: SymbolKind;
-                if (element.type == PerlSymbolKind.LocalSub){
+                if (element.type == PerlSymbolKind.LocalSub || element.type == PerlSymbolKind.OutlineOnlySub){
                     kind = SymbolKind.Function;
                 } else if (element.type == PerlSymbolKind.LocalMethod){
                     kind = SymbolKind.Method;
@@ -57,6 +57,8 @@ export function getSymbols (navSymbols: any, uri: string ): Promise<SymbolInform
                     kind = SymbolKind.Event;
                 } else if (element.type == PerlSymbolKind.Constant){
                     kind = SymbolKind.Constant;
+                } else if (element.type == PerlSymbolKind.HttpRoute){
+                    kind = SymbolKind.Interface;
                 } else {
                     return;
                 }

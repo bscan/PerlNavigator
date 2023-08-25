@@ -226,7 +226,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
         kind = CompletionItemKind.Interface;
     } else if (elem.type == PerlSymbolKind.Field || elem.type == PerlSymbolKind.PathedField){
         kind = CompletionItemKind.Field;
-    } else if (elem.type == PerlSymbolKind.Phaser){
+    } else if (elem.type == PerlSymbolKind.Phaser || elem.type == PerlSymbolKind.HttpRoute || elem.type == PerlSymbolKind.OutlineOnlySub){
         return [];
     } else {        // A sign that something needs fixing. Everything should've been enumerated. 
         kind = CompletionItemKind.Property;

@@ -1,0 +1,47 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "information_for_contributors": [
+        "This provides keywords for Dancer and Dancer2, with a focus on Dancer2"
+    ],
+    "name": "dancer",
+    "scopeName": "source.perl.package.dancer",
+    "injectionSelector": "L:meta.dancer.perl -comment -string -text",
+    "patterns": [
+        {
+            "include": "#dancer"
+        }
+    ],
+    "repository": {
+        "dancer": {
+            "patterns": [
+                {
+                    "match": "^\\s*\\b(hook)\\s+(\\w+)\\s+(?==>\\s*sub\\b)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.dancer.perl"
+                        },
+                        "2": {
+                            "name": "entity.name.function.dancer.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "^\\s*\\b(get|any|post|put|delete|hook)(?=.*=>\\s*sub\\b)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.dancer.perl"
+                        }
+                    }
+                },
+                {
+                    "match": "^\\s*\\b(set)\\s+(?=['\"]\\w+['\"]\\s*=>)",
+                    "captures": {
+                        "1": {
+                            "name": "keyword.other.attribute.dancer.perl"
+                        }
+                    }
+                }
+            ]
+        }
+    }
+}

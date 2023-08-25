@@ -90,9 +90,11 @@ export enum PerlSymbolKind {
     Constant     = "n",
     Label        = "l",
     Phaser       = "e",
-    Canonical    = "1",
+    Canonical    = "1", // 2 and 3 are also reserved
     // UseStatement = "u" . Reserved: used in pltags, but removed before symbol assignment.
     ImportedVar  = "c",
     ImportedHash = "h",
+    HttpRoute    = "g",
+    OutlineOnlySub = "j"
 }
 

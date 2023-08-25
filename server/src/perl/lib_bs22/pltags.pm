@@ -323,8 +323,22 @@ sub build_pltags {
             $sActiveOO->{$import} = 1;
         }
 
-        elsif ($stmt=~/^\$self\->\{\s*_(\w+)\s*\}\s*=/) { # Common paradigm is for autoloaders to basically just point to the class variable
-            my $variable = $1;
+        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
+            $stmt=~/^(?:get|any|post|put|delete)\s+(?:[\s\w,\[\]'"]+=>\h*)?(['"])(\/[\w\/:\-]*)\1\s*=>\s*sub/) { # Routing paths
+            my $route = $2;
+            my $end_line = SubEndLine(\@codeClean, $i, $offset);
+            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        }
+
+        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
+            $stmt=~/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/) { # Hooks
+            my $hook = $2;
+            my $end_line = SubEndLine(\@codeClean, $i, $offset);
+            MakeTag($hook, "j", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        }
+
+        elsif ($stmt=~/^\$self\->\{\s*(['"]|)_(\w+)\1\s*\}\s*=/) { # Common paradigm is for autoloaders to basically just point to the class variable
+            my $variable = $2;
             MakeTag("get_$variable", "3", '', $file, $line_number, $package_name, \@tags);
         }
 

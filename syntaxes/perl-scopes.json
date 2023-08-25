@@ -181,6 +181,15 @@
               "include": "#source"
             }
           ]
+        },
+        {
+          "name": "meta.dancer.perl",
+          "begin": "(?<=use)\\s+(?:Dancer2?)(?=[\\s;])",
+          "patterns": [
+            {
+              "include": "#source"
+            }
+          ]
         }
       ]
     }

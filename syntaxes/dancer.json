@@ -15,7 +15,7 @@
         "dancer": {
             "patterns": [
                 {
-                    "match": "^\\s*\\b(hook)\\s+(\\w+)\\s+(?==>\\s*sub\\b)",
+                    "match": "^\\s*\\b(hook)\\s+(\\w+)\\s+(?=sub\\b)",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.dancer.perl"
@@ -26,7 +26,7 @@
                     }
                 },
                 {
-                    "match": "^\\s*\\b(get|any|post|put|delete|hook)(?=.*=>\\s*sub\\b)",
+                    "match": "^\\s*\\b(get|any|post|put|patch|delete|del|options|ajax|before_route)(?=.*=>\\s*sub\\b)",
                     "captures": {
                         "1": {
                             "name": "keyword.other.attribute.dancer.perl"

@@ -109,6 +109,7 @@ sub CleanForBalanced {
     # $input =~ s@\s//(\n|\s)@ ||$1@g; 
     $input =~ s/[^\x00-\x7F]/ /g;
     $input =~ s/->@\*/ /g;
+    $input =~ s/qr\{[^\}]+\}/ /g;
 
     # A different approach to keep around; Remove everything except the bare minimum. Will do bracket matching and anything that impacts the interpretation of those brackets (e.g. regex, quotes, comments).
     #$input =~ s/[^\{\}#\\\/"'`]/ /g;
@@ -324,14 +325,32 @@ sub build_pltags {
         }
 
         elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(?:get|any|post|put|delete)\s+(?:[\s\w,\[\]'"]+=>\h*)?(['"])(\/[\w\/:\-]*)\1\s*=>\s*sub/) { # Routing paths
-            my $route = $2;
+            $stmt=~/^(?:any|before\_route)\s+\[([^\]]+)\]\s+(?:=>\h*)?(['"])([^\2]+)\2\s*=>\s*sub/) { # Multiple request routing paths
+            my $requests = $1;
+            if ($requests) {
+                $requests =~ s/['"\s\n]+//g;
+            }
+            my $route = "$requests $3";
             my $end_line = SubEndLine(\@codeClean, $i, $offset);
             MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
         }
 
         elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/) { # Hooks
+            $stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(?:[\s\w,\[\]'"]+=>\h*)?(['"])([^\2]+)\2\s*=>\s*sub/) { # Routing paths
+            my $route = "$1 $3";
+            my $end_line = SubEndLine(\@codeClean, $i, $offset);
+            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        }
+
+        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
+            $stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(qr\{[^\}]+\})\s+\s*=>\s*sub/) { # Regexp routing paths
+            my $route = "$1 $2";
+            my $end_line = SubEndLine(\@codeClean, $i, $offset);
+            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        }
+
+        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
+            $stmt=~/^(?:hook)\s+(['"]|)(\w+)\1\s*(?:=>)?\s*sub/) { # Hooks
             my $hook = $2;
             my $end_line = SubEndLine(\@codeClean, $i, $offset);
             MakeTag($hook, "j", '', $file, "$line_number;$end_line", $package_name, \@tags);

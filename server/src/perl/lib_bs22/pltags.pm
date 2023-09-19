@@ -20,34 +20,50 @@ our @EXPORT_OK = qw(build_pltags);
 # Global variables
 my $VERSION = "2.4";    # pltags version
 
+sub new {
+    my $class = shift;
+    my $self = {};
+    bless $self, $class;
+    return $self;
+}
+
 # Create a tag file line and push it on the list of found tags
 sub MakeTag {
     my (
+        $self,
         $tag,           # Tag name
         $type,          # Type of tag
         $typeDetails,   # Additional details on type
-        $file,          # File in which tag appears
         $line_number,
-        $package_name,  
-        $tagsRef,        # Existing tags
     ) = @_;             # Line in which tag appears
 
     # Only process tag if not empty
     if ($tag) {
  
+        my $package_name = $self->{package};
+        my $file = $self->{file}; 
         # Create a tag line
         my $tagline = "$tag\t$type\t$typeDetails\t$file\t$package_name\t$line_number\t";
 
         # Push it on the stack
-        push(@$tagsRef, $tagline);
+        push(@{$self->{tags}}, $tagline);
     }
 }
 
-sub SubEndLine {
-    my ($paCode, $line_num, $offset) = @_;
+sub _sub_end_line {
+    my ($self, $line_num, $first_line_regex) = @_;
+
+    my $paCode = $self->{code_for_balanced};
+    my $offset = $self->{offset};
     my $end = $#$paCode - $line_num > 700 ? $line_num + 700 : $#$paCode;    # Limit to 700 line subroutines for speed. Will still display otherwise, but won't have depth
     # Contains workaraound for https://rt.cpan.org/Public/Bug/Display.html?id=78313
-    my $toInpect = join("\n", map { CleanForBalanced($_) } @{$paCode}[$line_num..$end]);            # All code from sub { through end of file
+    my $smallCopy = [ @{$paCode}[$line_num..$end] ];
+
+    if($first_line_regex){
+        $smallCopy->[0] =~ s/$first_line_regex//;
+    }
+
+    my $toInpect = join("\n", @$smallCopy);            # All code from sub { through end of file
     my ($extracted, undef, $prefix) = Text::Balanced::extract_codeblock($toInpect, '{', '(?s).*?(?=[{;])'); # Will ignore up to start of sub, and then match through to the end
     return $line_num - $offset + 1 if (!$extracted);  # if we didn't find the end, mark the end at the beginning. 
     $extracted = $prefix . $extracted; 
@@ -59,10 +75,13 @@ sub SubEndLine {
 # package foo; contents
 # package { contents }
 # { package foo; contents } 
-sub PackageEndLine  {
-    my ($paCode, $line_num, $offset) = @_;
+sub _package_end_line  {
+    my ($self, $line_num) = @_;
+    my $paCode = $self->{code_for_balanced};
+    my $offset = $self->{offset};
+
     my $end = $#$paCode - $line_num > 1200 ? $line_num + 1200 : $#$paCode;  # Limit to 1200 line subroutines for speed
-    my @smallCopy = map { CleanForBalanced($_) } @{$paCode}[$line_num..$end];
+    my @smallCopy = @{$paCode}[$line_num..$end];
     my $toInpect = join("\n", @smallCopy);                       # Maybe we're already in a scope, so look for the end of it. 
     my $prefixRg = undef;
     if ($paCode->[$line_num] =~ /package[^#]+;/){ # Single line package definition.
@@ -110,31 +129,27 @@ sub CleanForBalanced {
     $input =~ s/[^\x00-\x7F]/ /g;
     $input =~ s/->@\*/ /g;
 
-    # only for Dancer methods
-    if ($input =~ /^(get|any|post|put|patch|delete|del|options|ajax|before_route)/) {
-        $input =~ s/qr\{[^\}]+\}/ /g;
-    }
-    
-    # A different approach to keep around; Remove everything except the bare minimum. Will do bracket matching and anything that impacts the interpretation of those brackets (e.g. regex, quotes, comments).
-    #$input =~ s/[^\{\}#\\\/"'`]/ /g;
-
     return $input;
 }
 
-sub build_pltags {
 
-    my ($code, $offset, $file) = @_;
-    my @tags = ();      # List of produced tags
-    my @packages = ();    # List of discovered packages
+sub _init_file {
+    my ($self, $code, $offset, $file) = @_;
 
-    my $package_name  = "";
-    my $var_continues = 0;
+    $self->{tags}     = [];      # List of produced tags
+    $self->{packages} = [];    # List of discovered packages
+    $self->{file}     = $file;
+
+    $self->{package_name}  = "";
+    $self->{offset} = $offset;
+
     my $line_number = -$offset;
         
     my @code = split("\n", $code);
     my $n = scalar(@code);
     my @codeClean;
-    my $sActiveOO = {}; # Keep track of OO frameworks in use to keep down false alarms on field vs has vs attr
+    $self->{active} = {}; # Keep track of frameworks in use to keep down false alarms on field vs has vs attr
+
     # Loop through file
     for (my $i=0; $i<$n;$i++){
         $line_number++;
@@ -148,7 +163,7 @@ sub build_pltags {
         last if ($line =~ /^(__END__|__DATA__)\s*$/); 
 
         if ($line =~ /#.*(\$\w+) isa ([\w:]+)\b/){
-            MakeTag($1, $2, '1', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($1, $2, '1', $line_number);
         }
 
         # Statement will be line with comments, whitespace and POD trimmed
@@ -160,12 +175,25 @@ sub build_pltags {
         push @codeClean, $stmt;
     }
 
-    $line_number = -$offset;
+    $self->{code_for_balanced} = [ map { CleanForBalanced($_) } @codeClean ];
+    return \@codeClean;
+}
+
+
+sub build_pltags {
+    my ($self, $code, $offset, $file) = @_;
+    
+    my $codeClean = $self->_init_file($code, $offset, $file);
+
+    my $var_continues = 0;
+    my $line_number = -$offset;
+    my $n = scalar(@$codeClean);
+
     for (my $i=0; $i<$n;$i++){
         $line_number++;
 
-        my $stmt = $codeClean[$i];
-
+        my $stmt = $codeClean->[$i];
+        
         # Nothing left? Never mind.
         next unless ($stmt);
 
@@ -176,7 +204,7 @@ sub build_pltags {
             $stmt =~ /^(?:my|our|local|state)\s+(\$\w+)\s*\=\s*new (\w[\w\:]+)\s*(?:\((?!.*\)\->)|;)/) {
             my ($varName, $objName) = ($1, $2);
             $objName .= "::db" if ($objName =~ /\bDBI$/);
-            MakeTag($varName, $objName, '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($varName, $objName, '', $line_number);
             $var_continues = 0; # We skipped ahead of the line here.
         }
         # This is a variable declaration if one was started on the previous
@@ -199,16 +227,16 @@ sub build_pltags {
             my @vars = ($stmt =~ /([\$\@\%][\w]+)\b/g);
 
             foreach my $var (@vars) {
-                MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
+                $self->MakeTag($var, "v", '', $line_number);
             }
         }
 
         # Lexical loop variables, potentially with labels in front. foreach my $foo
         elsif ( $stmt =~ /^(?:(\w+)\s*:(?!\:))?\s*(?:for|foreach)\s+my\s+(\$[\w]+)\b/) {
             if ($1){
-                MakeTag($1, "l", '', $file, $line_number, $package_name, \@tags) 
+                $self->MakeTag($1, "l", '', $line_number); 
             }
-            MakeTag($2, "v", '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($2, "v", '', $line_number);
         }
 
         # Lexical match variables if(my ($foo, $bar) ~= ). Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
@@ -217,27 +245,30 @@ sub build_pltags {
             $stmt =~ s/\s*=.*//;
             my @vars = ($stmt =~ /([\$\@\%][\w]+)\b/g);
             foreach my $var (@vars) {
-                MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
+                $self->MakeTag($var, "v", '', $line_number);
             }
         }
 
         # This is a package declaration if the line starts with package
         elsif ($stmt =~ /^package\s+([\w:]+)/) {
             # Get name of the package
-            $package_name = $1;
-            my $end_line = PackageEndLine(\@codeClean, $i, $offset);
-            MakeTag($package_name, "p", '', $file, "$line_number;$end_line", $package_name, \@tags);
-            push(@packages, $package_name);
+            my $package_name = $1;
+            $self->{package_name} = $package_name;
+            my $end_line = $self->_package_end_line($i);
+            $self->MakeTag($package_name, "p", '', "$line_number;$end_line");
+            push(@{$self->{packages}}, $package_name);
         }
 
         # This is a class decoration for Object::Pad, Corinna, or Moops 
         elsif ($stmt =~ /^class\s+([\w:]+)/) {
             # Get name of the package
             my $class_name = $1;
+            $self->{package_name} = $class_name;
 
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($class_name, "a", '', $file, "$line_number;$end_line", $package_name, \@tags);
-            push(@packages, $package_name);
+            # TODO: Change to _package_end_line to better support unbracketed classes
+            my $end_line = $self->_sub_end_line($i);
+            $self->MakeTag($class_name, "a", '', "$line_number;$end_line");
+            push(@{$self->{packages}}, $class_name);
         }
         
         # This is a role decoration for Object::Pad, Corinna, or Moops 
@@ -245,21 +276,22 @@ sub build_pltags {
             # Get name of the package
             my $role_name = $1;
 
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($role_name, "b", '', $file, "$line_number;$end_line", $package_name, \@tags);
-            push(@packages, $package_name);
+            # TODO: Consider changing to _package_end_line to better support unbracketed classes
+            my $end_line = $self->_sub_end_line($i);
+            $self->MakeTag($role_name, "b", '', "$line_number;$end_line");
+            push(@{$self->{packages}}, $role_name);
         }
 
         # This is a sub declaration if the line starts with sub
         elsif ($stmt =~ /^(?:async\s+)?(sub)\s+([\w:]+)(\s+:method)?([^{]*)/ or
                 $stmt =~ /^(?:async\s+)?(method)\s+\$?([\w:]+)()([^{]*)/ or
-                ($sActiveOO->{"Function::Parameters"} and $stmt =~ /^(fun)\s+([\w:]+)()([^{]*)/ )
+                ($self->{active}->{"Function::Parameters"} and $stmt =~ /^(fun)\s+([\w:]+)()([^{]*)/ )
                 ) {
             my $subName = $2;
             my $signature = $4;
             my $kind = ($1 eq 'method' or $3) ? 'o' : 's';
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($subName, $kind, '', $file, "$line_number;$end_line", $package_name, \@tags);
+            my $end_line = $self->_sub_end_line($i);
+            $self->MakeTag($subName, $kind, '', "$line_number;$end_line");
 
             # Match the after the sub declaration and before the start of the actual sub for signatures (if any)
             my @vars = ($signature =~ /([\$\@\%][\w:]+)\b/g);
@@ -269,28 +301,28 @@ sub build_pltags {
             $var_continues = ($stmt !~ /;$/ and $stmt !~ /[\)\=\}\{]/);
 
             foreach my $var (@vars) {
-                MakeTag($var, "v", '', $file, $line_number, $package_name, \@tags);
+                $self->MakeTag($var, "v", '', $line_number);
             }
         }
 
         # Phaser block
         elsif ($stmt=~/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/) {
             my $phaser = $1;
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($phaser, "e", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            my $end_line = $self->_sub_end_line($i);
+            $self->MakeTag($phaser, "e", '', "$line_number;$end_line");
         }
 
         # Label line
         elsif ($stmt=~/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:[^:].*{\s*$/) {
             my $label = $1;
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($label, "l", '', $file, "$line_number;$end_line", $package_name, \@tags);
+            my $end_line = $self->_sub_end_line($i);
+            $self->MakeTag($label, "l", '', "$line_number;$end_line");
         }
 
         # Constants. Important because they look like subs (and technically are), so I'll tags them as such 
         elsif ($stmt =~/^use\s+constant\s+(\w+)\b/) {
-            MakeTag($1, "n", '', $file, $line_number, $package_name, \@tags);
-            MakeTag("constant", "u", '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($1, "n", '', $line_number);
+            $self->MakeTag("constant", "u", '', $line_number);
         }
 
 
@@ -299,74 +331,78 @@ sub build_pltags {
             my $attr = $1;
             my $type = $attr =~ /^\w/ ? 'f' : 'v'; # attr looks like a function, $attr is a variable.
             # TODO: Define new type. Class $variables should probably be shown in the Outline view even though lexical variables are not
-            MakeTag($attr, $type, '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($attr, $type, '', $line_number);
             # If you have a locally defined package/class Foo want to reference the attributes as Foo::attr or $foo->attr, you need the full path.
             # Subs don't need this since we find them at compile time. We also find "d" types from imported packages in Inquisitor.pm
             if ($type eq 'f'){
-                MakeTag("${package_name}::$attr", "d", '', $file, $line_number, $package_name, \@tags);
+                $self->MakeTag( $self->{package_name} . "::$attr", "d", '', $line_number);
             }
         }
 
         # elsif ($sActiveOO->{"Object::Pad"} and $stmt=~/^field\s+([\$@%]\w+)\b/) { # Object::Pad field
         #     my $attr = $1;
-        #     MakeTag($attr, "v", '', $file, $line_number, $package_name, \@tags);
+        #     $self->MakeTag($attr, "v", '', $line_number);
         # }
 
-        elsif (($sActiveOO->{"Mars::Class"} or $sActiveOO->{"Venus::Class"}) and $stmt=~/^attr\s+["'](\w+)\b/) { # Mars attributes
+        elsif (($self->{active}->{"Mars::Class"} or $self->{active}->{"Venus::Class"}) and $stmt=~/^attr\s+["'](\w+)\b/) { # Mars attributes
             my $attr = $1;
-            MakeTag($attr, "f", '', $file, $line_number, $package_name, \@tags);
-            MakeTag("${package_name}::$attr", "d", '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($attr, "f", '', $line_number);
+            $self->MakeTag($self->{package_name} . "::$attr", "d", '', $line_number);
         }
 
         elsif ($stmt=~/^around\s+["']?(\w+)\b/) { # Moo/Moose overriding subs. 
-            MakeTag($1, "s", '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag($1, "s", '', $line_number);
         } 
         
         elsif ($stmt=~/^use\s+([\w:]+)\b/) { # Keep track of explicit imports for filtering
             my $import = $1;
-            MakeTag("$import", "u", '', $file, $line_number, $package_name, \@tags);
-            $sActiveOO->{$import} = 1;
+            $self->MakeTag("$import", "u", '', $line_number);
+            $self->{active}->{$import} = 1;
         }
 
-        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(?:any|before\_route)\s+\[([^\]]+)\]\s+(?:=>\h*)?(['"])([^\2]+)\2\h*=>\h*sub/) { # Multiple request routing paths
-            my $requests = $1;
-            my $route = $3;
-            $requests =~ s/['"\s\n]+//g;
-            my $route = "$requests $route";
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
+        elsif($self->match_dancer($stmt, $line_number, $i)) {
+            # Self contained
         }
-
-        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(?:[\s\w,\[\]'"]+=>\h*)?(['"])([^\2]+)\2\s*=>\s*sub/) { # Routing paths
-            my $route = "$1 $3";
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
-        }
-
-        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(qr\{[^\}]+\})\s+\s*=>\s*sub/) { # Regexp routing paths
-            my $route = "$1 $2";
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($route, "g", '', $file, "$line_number;$end_line", $package_name, \@tags);
-        }
-
-        elsif (($sActiveOO->{"Dancer"} or $sActiveOO->{"Dancer2"} or $sActiveOO->{"Mojolicious::Lite"}) and
-            $stmt=~/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/) { # Hooks
-            my $hook = $2;
-            my $end_line = SubEndLine(\@codeClean, $i, $offset);
-            MakeTag($hook, "j", '', $file, "$line_number;$end_line", $package_name, \@tags);
-        }
-
         elsif ($stmt=~/^\$self\->\{\s*(['"]|)_(\w+)\1\s*\}\s*=/) { # Common paradigm is for autoloaders to basically just point to the class variable
             my $variable = $2;
-            MakeTag("get_$variable", "3", '', $file, $line_number, $package_name, \@tags);
+            $self->MakeTag("get_$variable", "3", '', $line_number);
         }
 
     }
 
-    return \@tags, \@packages;
+    return $self->{tags}, $self->{packages};
+}
+
+sub match_dancer {
+    my ($self, $stmt, $line_number, $i) = @_;
+
+    return 0 if !($self->{active}->{"Dancer"} or $self->{active}->{"Dancer2"} or $self->{active}->{"Mojolicious::Lite"});
+
+    my $rFilter = qr{qr\{[^\}]+\}} ;
+
+    if( $stmt=~/^(?:any|before\_route)\s+\[([^\]]+)\]\s+(?:=>\h*)?(['"])([^\2]+)\2\h*=>\h*sub/) { # Multiple request routing paths
+        my $requests = $1;
+        my $route = $3;
+        $requests =~ s/['"\s\n]+//g;
+        $route = "$requests $route";
+        my $end_line = $self->_sub_end_line($i, $rFilter);
+        $self->MakeTag($route, "g", '', "$line_number;$end_line");
+    } elsif ($stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(?:[\s\w,\[\]'"]+=>\h*)?(['"])([^\2]+)\2\s*=>\s*sub/) { # Routing paths
+        my $route = "$1 $3";
+        my $end_line = $self->_sub_end_line($i, $rFilter);
+        $self->MakeTag($route, "g", '', "$line_number;$end_line");
+    } elsif ( $stmt=~/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(qr\{[^\}]+\})\s+\s*=>\s*sub/) { # Regexp routing paths
+        my $route = "$1 $2";
+        my $end_line = $self->_sub_end_line($i, $rFilter);
+        $self->MakeTag($route, "g", '', "$line_number;$end_line");
+    } elsif ( $stmt=~/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/) { # Hooks
+        my $hook = $2;
+        my $end_line = $self->_sub_end_line($i, $rFilter);
+        $self->MakeTag($hook, "j", '', "$line_number;$end_line");
+    } else {
+        return 0;
+    }
+    return 1; # Must've matched
 }
 
 1;

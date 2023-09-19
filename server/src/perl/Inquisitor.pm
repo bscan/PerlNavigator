@@ -181,7 +181,9 @@ sub run_pltags {
     my ($source, $offset, $file) = load_source($sourceFilePath);
 
     print "\n--------------Now Building the new pltags ---------------------\n";
-    my ($tags, $packages) = pltags::build_pltags($source, $offset, $file); # $0 should be the script getting compiled, not this module
+    my $plTagger = pltags->new();
+    my ($tags, $packages) = $plTagger->build_pltags($source, $offset, $file); # $0 should be the script getting compiled, not this module
+
     foreach my $newTag (@$tags){
         print $newTag . "\n";
     }

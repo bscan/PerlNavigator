@@ -4,10 +4,10 @@ use v5.26;
 use Object::Pad;
 class MyLib::ObjectPad;
 
-has $x :param = 0;
-has $y :param = 0;
-has @foo;
-has %bar;
+field $x :param = 0;
+field $y :param = 0;
+field @foo;
+field %bar;
 
 field $mutatorField: mutator;
 field $writerField: writer;

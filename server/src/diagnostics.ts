@@ -151,7 +151,7 @@ function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocum
     
     match = /\s+is not exported by the ([\w:]+) module$/i.exec(violation);
     if(match){
-        let lineNum = perlDoc.imported.get(match[2]);
+        let lineNum = perlDoc.imported.get(match[1]);
         if(typeof lineNum != 'undefined'){
             return {violation, lineNum};
         } else {

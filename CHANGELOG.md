@@ -1,5 +1,10 @@
 # Changelog
 
+
+## 0.6.2 2023-09-21
+- Support for Dancer/Dancer2 with syntax highlighting and detection of HTTP routes as symbols
+- Bug fix to show "is not exported by" syntax errors on the line where the module is imported
+
 ## 0.5.9 2023-07-09
 - Support for perlParams which helps with Carton, Docker, Carmel support, etc. Thanks @marlencrabapple https://github.com/bscan/PerlNavigator/pull/68
 

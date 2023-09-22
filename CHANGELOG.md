@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.6.3 2023-09-23
+- Allow server to be installed with npm i -g perlnavigator-server
+
 
 ## 0.6.2 2023-09-21
 - Support for Dancer/Dancer2 with syntax highlighting and detection of HTTP routes as symbols

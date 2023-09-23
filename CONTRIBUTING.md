@@ -21,3 +21,15 @@ If you run this command by itself, you can see how the typescript side and the p
 
 # Testing the Perl Navigator
 If you want to run a full environment of the Navigator, you can check out the repo and use the built-in Run configurations. The navigator was originally a clone of the Microsoft language server example from here: https://github.com/microsoft/vscode-extension-samples/tree/main/lsp-sample and includes the run configurations from it. It pops open a new window running the extension. For additional information, see the lsp-sample repo or feel reach out to me.
+
+
+## Building For VSCode/VSCodium
+You don't need to build the extension to be able to test and develop. 
+In addition to node.js and npm you will have to install [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce), a tool for packaging (among other things) extensions in the .vsix format used by both VSCode and VSCodium by running the following:
+```sh
+git clone https://github.com/bscan/PerlNavigator
+cd PerlNavigator/
+npm install -g @vscode/vsce
+vsce package
+```
+At this point all that's left to do is install the resulting .vsix file (located in the current directory) in VSCode or VSCodium by navigating to the Extensions pane and choosing "Install from VSIX...".

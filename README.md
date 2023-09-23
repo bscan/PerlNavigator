@@ -18,7 +18,7 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 * Imports cleanup via perlimports 
 * Outline view
 * Hover for more details about objects, subs, and modules
-* Syntax highlighting for Object::Pad, Moose, Zydeco, etc.
+* Syntax highlighting for Object::Pad, Moose, Zydeco, Dancer2, etc.
 * Support for Classes including Moo/Moose style classes
 
 ## Visual Studio Code Demo
@@ -53,18 +53,20 @@ By default, perlimports is not enabled, but the diagnostics (linting) can be ena
 Perlimports can be customized with a profile using the `perlnavigator.perlimportsProfile`. 
 Due to implementation limitations, perlimports requires a saved version of the file you are working on. If any results are unexpected, save the working file and try again.
 
-## Building For VSCode/VSCodium
-In addition to node.js and npm you will have to install [vsce](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce), a tool for packaging (among other things) extensions in the .vsix format used by both VSCode and VSCodium by running the following:
-```sh
-git clone https://github.com/bscan/PerlNavigator
-cd PerlNavigator/
-npm install -g @vscode/vsce
-vsce package
-```
-At this point all that's left to do is install the resulting .vsix file (located in the current directory) in VSCode or VSCodium by navigating to the Extensions pane and choosing "Install from VSIX...".
 
 ## Installation For Other Editors
-Currently, this is not yet packaged for other editors but you can build from source. You'll need to have node.js and npm installed.
+### Using NPM
+The easiest way to install is using npm
+```sh
+sudo npm install -g perlnavigator-server
+```
+Which will install as /usr/bin/perlnavigator. This can be used as the command for most editors without any other arguments (i.e. --stdio can be omitted)
+
+### Using the binaries
+Alternatively you can download binary releases for Windows, Linux, and MacOS here: https://github.com/bscan/PerlNavigator/releases 
+
+### Building from source
+You can also build from source if you prefer.
 ```sh
 git clone https://github.com/bscan/PerlNavigator
 cd PerlNavigator/

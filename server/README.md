@@ -1,8 +1,15 @@
 
 # Perl Navigator Language Server
 Provides syntax checking, autocompletion, perlcritic, code navigation, hover for Perl.
-
 Implemented as a Language Server using the Microsoft LSP libraries along with Perl doing the syntax checking and parsing.  
+
+## Installation
+The easiest way to install is using npm
+```sh
+sudo npm install -g perlnavigator-server
+```
+Which will install as /usr/bin/perlnavigator. This can be used as the command for most editors without any other arguments (i.e. --stdio can be omitted)
+
 
 ## Currently Implemented Features:
 * Syntax Checking

@@ -18,6 +18,8 @@ die("PerlTidy profile not readable") if ($profile and !-f $profile); # Profie ma
 
 my ($destination, $stderr, $formatErrors, $argv);
 
+$argv = '-nst';
+
 my $error_flag = Perl::Tidy::perltidy(
     argv        => $argv,
     source      => \$source,

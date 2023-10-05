@@ -9,6 +9,11 @@ if ( !eval{ require Perl::Tidy; 1} ){
     exit(0);
 }
 
+my $tidierToUse = Perl::Tidy->can('perltidy');
+if ( eval{ require Perl::Tidy::Sweetened; 1} ){
+    $tidierToUse = Perl::Tidy::Sweetened->can('perltidy');
+}
+
 my ($file, $profile);
 GetOptions ("profile=s" => \$profile);
 
@@ -20,7 +25,7 @@ my ($destination, $stderr, $formatErrors, $argv);
 
 $argv = '-nst';
 
-my $error_flag = Perl::Tidy::perltidy(
+my $error_flag = $tidierToUse->(
     argv        => $argv,
     source      => \$source,
     destination => \$destination,

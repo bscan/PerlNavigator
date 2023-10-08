@@ -337,6 +337,7 @@ sub dump_loaded_mods {
 
     foreach my $key_to_print (@$filtered_modules) {
         my $path = $displays->{$key_to_print};
+        next if !$path; # If we don't have a path, the modHunter module would be better
         print_tag("$key_to_print", "m", "", $path, $key_to_print, 0, "");
     }
     return;

@@ -35,6 +35,7 @@ import { getCompletions } from './completion';
 import { formatDoc, formatRange } from "./formatting";
 import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
+
 var LRU = require("lru-cache");
 
 // It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
@@ -239,8 +240,7 @@ documents.onDidChangeContent(change => {
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 
-    const filePath = Uri.parse(textDocument.uri).fsPath;
-    const fileName = basename(filePath);
+    const fileName = basename(Uri.parse(textDocument.uri).fsPath);
 
     const settings = await getDocumentSettings(textDocument.uri);
     nLog("Found settings", settings);
@@ -251,9 +251,11 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     const start = Date.now();
 
     const workspaceFolders = await getWorkspaceFoldersSafe(); 
+
     const pCompile = perlcompile(textDocument, workspaceFolders, settings); // Start compilation
-    const pCritic = perlcritic(textDocument, workspaceFolders, settings); // Start perlcritic
+    const pCritic = perlcritic(textDocument, workspaceFolders, settings);   // Start perlcritic
     const pImports = perlimports(textDocument, workspaceFolders, settings); // Start perlimports
+
 
     let perlOut = await pCompile;
     nLog("Compilation Time: " + (Date.now() - start)/1000 + " seconds", settings);
@@ -373,8 +375,11 @@ connection.onDefinition(params => {
 });
 
 
-connection.onDocumentSymbol(params => {
-    return getSymbols(navSymbols, params.textDocument.uri);
+connection.onDocumentSymbol(async params => {
+    let document = documents.get(params.textDocument.uri);
+    // We might  need to async wait for the document to be processed, but I suspect the order is fine
+    if(!document) return;
+    return getSymbols(document, params.textDocument.uri);
 });
 
 

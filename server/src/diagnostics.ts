@@ -9,8 +9,9 @@ import {
 import { dirname, join } from 'path';
 import Uri from 'vscode-uri';
 import { getIncPaths, getPerlimportsProfile, async_execFile, nLog } from './utils';
-import { buildNav } from "./parseDocument";
+import { buildNav } from "./parseTags";
 import { getPerlAssetsPath } from "./assets";
+import { parseDocument } from './parser';
 
 import {
     TextDocument
@@ -24,6 +25,8 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
     perlParams = perlParams.concat(getInquisitor());
     nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
+
+    const parsingPromise = parseDocument(textDocument);
 
     let output: string;
     let stdout: string;
@@ -56,15 +59,17 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
         }
     }
 
-    const perlDoc = await buildNav(stdout, filePath, textDocument.uri);
+    const compiledDoc = buildNav(stdout, filePath, textDocument.uri);
+    const parsedDoc = await parsingPromise;
+    const mergedDoc = mergeDocs(parsedDoc, compiledDoc);
 
     output.split("\n").forEach(violation => {
-        maybeAddCompDiag(violation, severity, diagnostics, filePath, perlDoc);
+        maybeAddCompDiag(violation, severity, diagnostics, filePath, mergedDoc);
     });
 
     // If a base object throws a warning multiple times, we want to deduplicate it to declutter the problems tab.
     const uniq_diagnostics = Array.from(new Set(diagnostics.map(diag => JSON.stringify(diag)))).map(str => JSON.parse(str));
-    return {diags: uniq_diagnostics, perlDoc: perlDoc};
+    return {diags: uniq_diagnostics, perlDoc: mergedDoc};
 }
 
 function getInquisitor(): string[]{
@@ -322,4 +327,22 @@ function getCriticDiagnosticSeverity(severity_num: string, settings: NavigatorSe
         default:
             return DiagnosticSeverity.Error;
     }
+}
+
+
+
+function mergeDocs(doc1: PerlDocument, doc2: PerlDocument){
+    // TODO: Redo this code. Instead of merging sources, you should keep track of where symbols came from
+
+    doc1.autoloads  = new Map([...doc1.autoloads, ...doc2.autoloads]);
+    doc1.canonicalElems  = new Map([...doc1.canonicalElems, ...doc2.canonicalElems]);
+    
+    // TODO: Should elems be merged? Probably. Or tagged doc and compilation results are totally split
+    doc1.elems  = new Map([...doc2.elems, ...doc1.elems]); // Tagged docs have priority?
+    doc1.imported  = new Map([...doc1.imported, ...doc2.imported]);
+    doc1.parents  = new Map([...doc1.parents, ...doc2.parents]);
+    doc1.filePath = doc2.filePath;
+    doc1.uri  = doc2.uri;
+    
+    return doc1;
 }

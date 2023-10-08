@@ -71,6 +71,7 @@ sub adjustForKeywords {
         # classes become packages (which they are) to support RequireExplicitPackage and RequireFilenameMatchesPackage
         $sSource =~ s/^(\h*)class\h(?=\h*\w)/${1}package /gm;
 
+        # Should these be mangled? Subroutines::ProhibitBuiltinHomonyms triggers on these
         # ADJUST blocks and similar are not processed correctly since they aren't recognized. Important for Modules::RequireEndWithOne
         $sSource =~ s/^(\h*)(ADJUST|ADJUST\h+:params|ADJUSTPARAMS|BUILD)(?=\h*\s?(\{|\())/${1}sub $2/gm;
 

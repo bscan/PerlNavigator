@@ -52,6 +52,7 @@ print %my_hash;
 print $hash_ref->{"Five"};
 print $$hash_ref{"Five"};
 # print $üτfⅷ;
+
 print MYCONSTANT;
 
 INIT {
@@ -115,7 +116,7 @@ my $otherObj = MyLib::MyOtherClass->new();
 $otherObj->unique_method_name();
 $otherObj->duplicate_method_name();
 
-my $unknownObj = $otherObj; # Type hints: $unknownObj isa MyLib::MyOtherClass
+my $unknownObj = $otherObj; # Type hints: $unknownObj2 isa MyLib::MyOtherClass
 $unknownObj->duplicate_method_name();
 
 my $mooObj = MyLib::MooClass->new();
@@ -161,6 +162,18 @@ sub same_file_package_sub {
     print "In same_file_package_sub\n";
 }
 
+package ParseTest {
+    my $foo ;        # Unmatched }
+    $foo = "
+    Quoted multiline }
+    ";      
+    $foo =~ s/\}//g; # Regexed }
+    
+    sub ParseSubTest {
+
+    }
+
+}
 
 package Foo {
     use Moo;

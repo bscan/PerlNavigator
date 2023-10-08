@@ -95,6 +95,7 @@ export enum PerlSymbolKind {
     ImportedVar  = "c",
     ImportedHash = "h",
     HttpRoute    = "g",
-    OutlineOnlySub = "j"
+    OutlineOnlySub = "j",
+    AutoLoadVar  = "3"
 }
 

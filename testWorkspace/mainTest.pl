@@ -116,7 +116,7 @@ my $otherObj = MyLib::MyOtherClass->new();
 $otherObj->unique_method_name();
 $otherObj->duplicate_method_name();
 
-my $unknownObj = $otherObj; # Type hints: $unknownObj2 isa MyLib::MyOtherClass
+my $unknownObj = $otherObj; # Type hints: $unknownObj isa MyLib::MyOtherClass
 $unknownObj->duplicate_method_name();
 
 my $mooObj = MyLib::MooClass->new();

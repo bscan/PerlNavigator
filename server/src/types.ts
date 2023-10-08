@@ -63,6 +63,11 @@ export interface PerlDocument {
     uri: string;
 }
 
+export enum ParseType {
+    deep,
+    shallow
+}
+
 export interface CompilationResults {
     diags: Diagnostic[],
     perlDoc: PerlDocument,

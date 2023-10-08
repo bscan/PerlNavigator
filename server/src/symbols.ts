@@ -10,7 +10,7 @@ import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 
-import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
+import { ParseType, PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import Uri from 'vscode-uri';
 import { realpathSync, existsSync } from 'fs';
 import { Console } from 'console';
@@ -18,7 +18,7 @@ import { parseDocument } from './parser';
 
 export async function getSymbols (textDocument: TextDocument, uri: string ): Promise<SymbolInformation[]> {
     
-    let perlDoc = await parseDocument(textDocument);
+    let perlDoc = await parseDocument(textDocument, ParseType.deep);
 
     let symbols: SymbolInformation[] = [];
     perlDoc.elems?.forEach((elements: PerlElem[], elemName: string) => {

@@ -2,7 +2,7 @@ import {
     Diagnostic,
     DiagnosticSeverity,
 } from 'vscode-languageserver/node';
-import { NavigatorSettings, CompilationResults, PerlDocument } from "./types";
+import { ParseType, NavigatorSettings, CompilationResults, PerlDocument } from "./types";
 import {
 	WorkspaceFolder
 } from 'vscode-languageserver-protocol';
@@ -26,7 +26,7 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     perlParams = perlParams.concat(getInquisitor());
     nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
 
-    const parsingPromise = parseDocument(textDocument);
+    const parsingPromise = parseDocument(textDocument, ParseType.shallow);
 
     let output: string;
     let stdout: string;

@@ -1,7 +1,7 @@
 
 
 import { start } from "repl";
-import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind} from "./types";
+import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, ParseType} from "./types";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import Uri from 'vscode-uri';
 import fs = require('fs');
@@ -29,11 +29,11 @@ function init_doc (textDocument: TextDocument): PerlDocument {
     return perlDoc;
 }
 
-export async function parseDocument(textDocument: TextDocument ): Promise<PerlDocument> {
+export async function parseDocument(textDocument: TextDocument, parseType: ParseType ): Promise<PerlDocument> {
 
     let perlDoc = init_doc(textDocument);
 
-    const codeArray = await cleanCode(textDocument, perlDoc);
+    const codeArray = await cleanCode(textDocument, perlDoc, parseType);
     let sActiveOO: Map<string, boolean> = new Map(); // Keep track of OO frameworks in use to keep down false alarms on field vs has vs attr
     // Loop through file
     const file = Uri.parse(textDocument.uri).fsPath;
@@ -110,20 +110,20 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
         else if ((match = stmt.match(/^package\s+([\w:]+)/))) {
             // Get name of the package
             package_name = match[1];
-            const endLine = PackageEndLine(line_num, codeArray);
+            const endLine = PackageEndLine(line_num, codeArray, parseType);
             MakeElem(package_name, PerlSymbolKind.Package, '', file, package_name, line_num, perlDoc, endLine);
         }
 
          // This is a class decoration for Object::Pad, Corinna, or Moops 
         else if((match = stmt.match(/^class\s+([\w:]+)/))){
             let class_name = match[1];
-            const endLine = PackageEndLine(line_num, codeArray);
+            const endLine = PackageEndLine(line_num, codeArray, parseType);
             MakeElem(class_name, PerlSymbolKind.Class, '', file, package_name, line_num, perlDoc, endLine);
         }
 
         else if((match = stmt.match(/^role\s+([\w:]+)/))){
             const roleName = match[1];
-            const endLine = SubEndLine(line_num, codeArray);
+            const endLine = SubEndLine(line_num, codeArray, parseType);
             MakeElem(roleName, PerlSymbolKind.Role, '', file, package_name, line_num, perlDoc, endLine);
         }
 
@@ -135,7 +135,7 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
             const subName = match[2];
             const signature = match[4];
             const kind = (match[1] === 'method' || match[3]) ? PerlSymbolKind.LocalMethod : PerlSymbolKind.LocalSub;
-            const endLine = SubEndLine(line_num, codeArray);
+            const endLine = SubEndLine(line_num, codeArray, parseType);
 
             MakeElem(subName, kind, '', file, package_name, line_num, perlDoc, endLine);
             // Match the after the sub declaration and before the start of the actual sub for signatures (if any)
@@ -153,7 +153,7 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
         // Phaser block
         else if ((match = stmt.match(/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/))) {
             const phaser = match[1];
-            const endLine = SubEndLine(line_num, codeArray);
+            const endLine = SubEndLine(line_num, codeArray, parseType);
 
             MakeElem(phaser, PerlSymbolKind.Phaser, '', file, package_name, line_num, perlDoc, endLine);
         }
@@ -161,7 +161,7 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
         // Label line
         else if ((match = stmt.match(/^([a-zA-Z_][a-zA-Z0-9_]*)\s*:[^:].*{\s*$/))) {
             const label = match[1];
-            const endLine = SubEndLine(line_num, codeArray);
+            const endLine = SubEndLine(line_num, codeArray, parseType);
 
             MakeElem(label, PerlSymbolKind.Label, '', file, package_name, line_num, perlDoc, endLine);
         }
@@ -212,7 +212,7 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
             sActiveOO.set(importPkg, true);
         }
 
-        else if(MatchDancer(stmt, line_num, sActiveOO, file, package_name, perlDoc, codeArray)) {
+        else if(MatchDancer(stmt, line_num, sActiveOO, file, package_name, perlDoc, codeArray, parseType)) {
             // Self contained
         }
 
@@ -227,7 +227,7 @@ export async function parseDocument(textDocument: TextDocument ): Promise<PerlDo
 
 
 function MatchDancer(stmt: string, line_num: number, sActiveOO: Map<string, boolean>,
-                    file: string, package_name: string, perlDoc: PerlDocument, codeArray: string[]): boolean {
+                    file: string, package_name: string, perlDoc: PerlDocument, codeArray: string[], parseType: ParseType): boolean {
 
         
     if(!(sActiveOO.has("Dancer") || sActiveOO.has("Dancer2") || sActiveOO.has("Mojolicious::Lite"))) {
@@ -243,7 +243,7 @@ function MatchDancer(stmt: string, line_num: number, sActiveOO: Map<string, bool
         // TODO: Put this back
         requests = requests.replace(/['"\s\n]+/g, "");
         route = `${requests} ${route}`;
-        const endLine = SubEndLine(line_num, codeArray);
+        const endLine = SubEndLine(line_num, codeArray, parseType);
         MakeElem(route, PerlSymbolKind.HttpRoute, '', file, package_name, line_num, perlDoc, endLine);
 
         // TODO: I think this is a bug with [^\2] not working
@@ -252,17 +252,17 @@ function MatchDancer(stmt: string, line_num: number, sActiveOO: Map<string, bool
     } else if ((match = stmt.match(/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(?:[\s\w,\[\]'"]+=>\s*)?(['"])([^'"]+)\2\s*=>\s*sub/))) {
         // Routing paths
         let route = match[1] + " " + match[3];
-        const endLine = SubEndLine(line_num, codeArray);
+        const endLine = SubEndLine(line_num, codeArray, parseType);
         MakeElem(route, PerlSymbolKind.HttpRoute, '', file, package_name, line_num, perlDoc, endLine);
     } else if ((match = stmt.match(/^(get|any|post|put|patch|delete|del|options|ajax|before_route)\s+(qr\{[^\}]+\})\s+\s*=>\s*sub/))) {
         //  Regexp routing paths
         let route = match[1] + " " + match[2];
-        const endLine = SubEndLine(line_num, codeArray);
+        const endLine = SubEndLine(line_num, codeArray, parseType);
         MakeElem(route, PerlSymbolKind.HttpRoute, '', file, package_name, line_num, perlDoc, endLine);
     } else if ((match = stmt.match(/^(?:hook)\s+(['"]|)(\w+)\1\s*=>\s*sub/))) {
         // Hooks
         let hook = match[2];
-        const endLine = SubEndLine(line_num, codeArray);
+        const endLine = SubEndLine(line_num, codeArray, parseType);
         MakeElem(hook, PerlSymbolKind.HttpRoute, '', file, package_name, line_num, perlDoc, endLine);
     } else {
         return false;
@@ -271,7 +271,7 @@ function MatchDancer(stmt: string, line_num: number, sActiveOO: Map<string, bool
 }
 
 
-async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument): Promise<string[]> {
+async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, parseType: ParseType): Promise<string[]> {
     let code = textDocument.getText();
 
     const codeArray = code.split("\n");
@@ -295,7 +295,10 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument): Pro
         codeClean.push(stmt);
     }
 
-    codeClean = await stripCommentsAndQuotes(codeClean);
+    if(parseType == ParseType.deep){
+        // If only doing shallow parsing, we don't need to strip {} or find start-end points of subs
+        codeClean = await stripCommentsAndQuotes(codeClean);
+    }
 
     return codeClean;
 }
@@ -362,10 +365,11 @@ function MakeElem(name: string, type: PerlSymbolKind | 'u' | '2',
 
 
 
-function SubEndLine (start_line: number, code: String[], rFilter: RegExp | null = null) : number {
+function SubEndLine (start_line: number, code: String[], parseType: ParseType, rFilter: RegExp | null = null) : number {
  
     let pos = 0;
     let found = false;
+    if(parseType == ParseType.shallow) return start_line;
 
     for (let i = start_line; i < code.length; i++) {
         // Perhaps limit the max depth?
@@ -398,8 +402,10 @@ function SubEndLine (start_line: number, code: String[], rFilter: RegExp | null 
 }
 
 
-function PackageEndLine (start_line: number, code: String[])  {
+function PackageEndLine (start_line: number, code: String[], parseType: ParseType)  {
   
+    if(parseType == ParseType.shallow) return start_line;
+
     if (code[start_line].match(/(class|package)[^#]+;/)){
 
         // Single line package definition.

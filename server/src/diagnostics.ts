@@ -26,7 +26,7 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     perlParams = perlParams.concat(getInquisitor());
     nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
 
-    const parsingPromise = parseDocument(textDocument, ParseType.shallow);
+    const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
 
     let output: string;
     let stdout: string;

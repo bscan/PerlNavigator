@@ -64,8 +64,8 @@ export interface PerlDocument {
 }
 
 export enum ParseType {
-    deep,
-    shallow
+    outline,
+    selfNavigation,
 }
 
 export interface CompilationResults {

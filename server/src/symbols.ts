@@ -18,7 +18,7 @@ import { parseDocument } from './parser';
 
 export async function getSymbols (textDocument: TextDocument, uri: string ): Promise<SymbolInformation[]> {
     
-    let perlDoc = await parseDocument(textDocument, ParseType.deep);
+    let perlDoc = await parseDocument(textDocument, ParseType.outline);
 
     let symbols: SymbolInformation[] = [];
     perlDoc.elems?.forEach((elements: PerlElem[], elemName: string) => {

@@ -214,8 +214,10 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             kind = CompletionItemKind.Constant;
         	break;
         case PerlSymbolKind.LocalSub:
-            if (/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
-                kind = CompletionItemKind.Function;
+            if (/^\$self\-/.test(lookupName)){
+                docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
+            }
+            kind = CompletionItemKind.Function;
             break;
         case PerlSymbolKind.ImportedSub:
         case PerlSymbolKind.Inherited:
@@ -223,8 +225,9 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
         case PerlSymbolKind.LocalMethod:
             kind = CompletionItemKind.Method;
             docs.push(elem.name);
-            if (elem.typeDetail && elem.typeDetail != elem.name)
+            if (elem.typeDetail && elem.typeDetail != elem.name){
                 docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
+            }
             break;
         case PerlSymbolKind.Package:
         case PerlSymbolKind.Module:

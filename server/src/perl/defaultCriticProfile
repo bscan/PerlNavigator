@@ -35,6 +35,11 @@ allow = vars subs refs
 [Modules::RequireExplicitPackage]
 allow_import_of = Object::Pad feature Feature::Compat::Class experimental
 
+# This is an odd one. Currently, the ADJUST is not recognized as a special Block by PPI, so I magled the code to "sub ADJUST", which then causes other issues.
+# Perhaps there's a better mangling, or PPI can be updated
+[Subroutines::ProhibitBuiltinHomonyms]
+allow = ADJUST
+
 # Not a default policy, but these exemptions are useful. I'm sure many others exist as well. 
 [Subroutines::ProhibitCallsToUndeclaredSubs]
-exempt_subs = Object::Pad::class Object::Pad::field Object::Pad::role Object::Pad::has Object::Pad::param Object::Pad::reader Object::Pad::writer Object::Pad::mutator Object::Pad::accessor experimental::field experimental::class experimental::param feature::field feature::class feature::param Future::AsyncAwait::await Future::AsyncAwait::async feature::try feature::catch Feature::Compat::Try::try Feature::Compat::Try::catch
+exempt_subs = Moo::has Moose::has Object::Pad::class Object::Pad::field Object::Pad::role Object::Pad::has Object::Pad::param Object::Pad::reader Object::Pad::writer Object::Pad::mutator Object::Pad::accessor experimental::field experimental::class experimental::param feature::field feature::class feature::param Future::AsyncAwait::await Future::AsyncAwait::async feature::try feature::catch Feature::Compat::Try::try Feature::Compat::Try::catch

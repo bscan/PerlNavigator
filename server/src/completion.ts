@@ -110,7 +110,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     if(knownObject){
         const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
         if(targetVar){
-            qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.type);
+            qualifiedSymbol = qualifiedSymbol.replace(/^\$\w+(?=:)/, targetVar.typeDetail);
             bKnownObj = true;
         }
     }
@@ -191,15 +191,13 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let documentation: MarkupContent | undefined = undefined;
     let docs: string[] = [];
 
-    if (elem.type.length > 1 || ( ["v", "c"].includes(elem.type) && lookupName == '$self')) {
-        // We either know the object type, or it's $self
+    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
         kind = CompletionItemKind.Variable;
-        if(elem.type.length > 1 ){
-            detail = `${lookupName}: ${elem.type}`;
-        } else if (lookupName == '$self') {
-            // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
-            detail = `${lookupName}: ${elem.package}`; 
-        }
+        detail = `${lookupName}: ${elem.typeDetail}`;
+    } else if ( ["v", "c", "1"].includes(elem.type) && lookupName == '$self' ) {
+        kind = CompletionItemKind.Variable;
+        // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
+        detail = `${lookupName}: ${elem.package}`; 
     } else {
         switch (elem.type) {
         case PerlSymbolKind.LocalVar: 

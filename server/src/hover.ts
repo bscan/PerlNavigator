@@ -30,14 +30,12 @@ export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocume
 function buildHoverDoc(symbol: string, elem: PerlElem){
 
     let desc = "";
-    if (elem.type.length > 1 || ( ["v", "c"].includes(elem.type) && /^\$self/.test(symbol))) {
+
+    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
+        desc = "(object) " + `${elem.typeDetail}`;
+    } else if ( ["v", "c", "1"].includes(elem.type) && /^\$self/.test(symbol) ) {
         // We either know the object type, or it's $self
-        desc = "(object) ";
-        if(elem.type.length > 1 ){
-            desc += `${elem.type}`;
-        } else if (/^\$self/.test(symbol)) {
-            desc += `${elem.package}`; 
-        }
+        desc = "(object) " + `${elem.package}`; 
     } else if(elem.type == 'v'){
         // desc = `(variable) ${symbol}`; //  Not very interesting info
     } else if (elem.type == 'n'){ 

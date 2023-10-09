@@ -63,6 +63,11 @@ export interface PerlDocument {
     uri: string;
 }
 
+export enum ParseType {
+    outline,
+    selfNavigation,
+}
+
 export interface CompilationResults {
     diags: Diagnostic[],
     perlDoc: PerlDocument,
@@ -95,6 +100,7 @@ export enum PerlSymbolKind {
     ImportedVar  = "c",
     ImportedHash = "h",
     HttpRoute    = "g",
-    OutlineOnlySub = "j"
+    OutlineOnlySub = "j",
+    AutoLoadVar  = "3"
 }
 

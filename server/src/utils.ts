@@ -165,7 +165,7 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
     let knownObject = /^(\$\w+)\->(?:\w+)$/.exec(symbol);
     if(knownObject){
         const targetVar = perlDoc.canonicalElems.get(knownObject[1]);
-        if(targetVar) qSymbol = qSymbol.replace(/^\$\w+(?=\->)/, targetVar.type);
+        if(targetVar) qSymbol = qSymbol.replace(/^\$\w+(?=\->)/, targetVar.typeDetail);
     }
 
     // Add what we mean when someone wants ->new().

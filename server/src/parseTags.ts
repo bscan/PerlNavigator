@@ -2,7 +2,7 @@
 import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind} from "./types";
 
 
-export async function buildNav(stdout: string, filePath: string, fileuri: string): Promise<PerlDocument> {
+export function buildNav(stdout: string, filePath: string, fileuri: string): PerlDocument {
 
     stdout = stdout.replace(/\r/g, ""); // Windows 
 

@@ -1,5 +1,7 @@
 # Changelog
 
+## 0.7.1 2023-10-09
+- Migrating browser version to new parser. Still not unified, but much closer.
 
 ## 0.7.0 2023-10-09
 - No new features, no new bugs 🤞.

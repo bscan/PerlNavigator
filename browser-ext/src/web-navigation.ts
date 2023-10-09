@@ -1,13 +1,11 @@
 import {
     DefinitionParams,
     Location,
-    WorkspaceFolder
 } from 'vscode-languageserver/browser';
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, NavigatorSettings } from "./web-types";
-import { realpathSync, existsSync, realpath } from 'fs';
 import { getSymbol, lookupSymbol } from "./web-utils";
 
 
@@ -19,7 +17,7 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     if(!symbol) return;
 
     const foundElems = lookupSymbol(perlDoc, symbol, position.line);
-
+    
     if(foundElems.length == 0){
         return;
     }

@@ -6,8 +6,8 @@ import { createConnection, BrowserMessageReader, BrowserMessageWriter, SymbolInf
 
 import { Color, ColorInformation, Range, InitializeParams, InitializeResult, ServerCapabilities, TextDocuments, ColorPresentation, TextEdit, TextDocumentIdentifier } from 'vscode-languageserver';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem } from "./web-types";
-import { buildNav } from "./web-parse";
+import { ParseType, PerlDocument, PerlElem } from "./web-types";
+import { parseDocument } from "./web-parse";
 
 import { getDefinition } from "./web-navigation";
 import { getSymbols } from "./web-symbols";
@@ -83,15 +83,18 @@ documents.onDidChangeContent(change => {
 
 async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
 	// console.log("Rebuilding symbols for " + textDocument.uri + "");
-    const perlDoc = await buildNav(textDocument);
+    const perlDoc = await parseDocument(textDocument, ParseType.selfNavigation);
     navSymbols.set(textDocument.uri, perlDoc);
     return;
 
 }
 
 
-connection.onDocumentSymbol(params => {
-    return getSymbols(navSymbols, params.textDocument.uri);
+connection.onDocumentSymbol(async params => {
+    let document = documents.get(params.textDocument.uri);
+    // We might  need to async wait for the document to be processed, but I suspect the order is fine
+    if(!document) return;
+    return getSymbols(document, params.textDocument.uri);
 });
 
 // This handler provides the initial list of the completion items.

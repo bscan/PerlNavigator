@@ -33,7 +33,10 @@ export interface NavigatorSettings {
     enableProgress: boolean;
 }
 
-
+export enum ParseType {
+    outline,
+    selfNavigation,
+}
 
 export interface PerlElem {
     name: string,
@@ -55,6 +58,7 @@ export interface PerlImport {
 export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
     canonicalElems: Map<string, PerlElem>;
+    autoloads: Map<string, PerlElem>;
     imported: Map<string, number>;
     parents: Map<string, string>;
     filePath: string;
@@ -72,6 +76,7 @@ export interface CompletionPrefix {
     charEnd: number,
 }
 
+
 export enum PerlSymbolKind {
     Module       = "m",
     Package      = "p",
@@ -88,9 +93,12 @@ export enum PerlSymbolKind {
     Constant     = "n",
     Label        = "l",
     Phaser       = "e",
-    Canonical    = "1",
-    // UseStatement = "u", // Reserved: used in pltags, but removed before symbol assignment.
+    Canonical    = "1", // 2 and 3 are also reserved
+    // UseStatement = "u" . Reserved: used in pltags, but removed before symbol assignment.
     ImportedVar  = "c",
     ImportedHash = "h",
+    HttpRoute    = "g",
+    OutlineOnlySub = "j",
+    AutoLoadVar  = "3"
 }
 

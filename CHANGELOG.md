@@ -1,5 +1,11 @@
 # Changelog
 
+
+## 0.7.0 2023-10-09
+- No new features, no new bugs 🤞.
+- Large refactor of the tagger. Migrated from Perl to Typescript. This should enable a variety of features moving forward that require a Perl parser. 
+- Now depends on TextMate grammars as implemented using Oniguruma in WebAssembly
+
 ## 0.6.3 2023-09-23
 - Allow server to be installed with npm i -g perlnavigator-server
 
@@ -8,8 +14,10 @@
 - Support for Dancer/Dancer2 with syntax highlighting and detection of HTTP routes as symbols
 - Bug fix to show "is not exported by" syntax errors on the line where the module is imported
 
+
 ## 0.5.9 2023-07-09
 - Support for perlParams which helps with Carton, Docker, Carmel support, etc. Thanks @marlencrabapple https://github.com/bscan/PerlNavigator/pull/68
+
 
 ## 0.5.8 2023-07-08
 - Better support for use feature 'class': improved navigation, syntax highlighting fixes, critic on :param, critic on :isa()

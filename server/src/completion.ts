@@ -191,13 +191,15 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let documentation: MarkupContent | undefined = undefined;
     let docs: string[] = [];
 
-    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
-        kind = CompletionItemKind.Variable;
-        detail = `${lookupName}: ${elem.typeDetail}`;
-    } else if ( ["v", "c", "1"].includes(elem.type) && lookupName == '$self' ) {
-        kind = CompletionItemKind.Variable;
-        // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
-        detail = `${lookupName}: ${elem.package}`; 
+    if (["v", "c", "1"].includes(elem.type)) {
+        if (elem.typeDetail.length > 0) {
+    	    kind = CompletionItemKind.Variable;
+    	    detail = `${lookupName}: ${elem.typeDetail}`;
+        } else if (lookupName == '$self') {
+    	    kind = CompletionItemKind.Variable;
+    	    // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
+    	    detail = `${lookupName}: ${elem.package}`; 
+        }
     } else {
         switch (elem.type) {
         case PerlSymbolKind.LocalVar: 

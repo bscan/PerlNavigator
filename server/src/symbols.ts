@@ -22,29 +22,41 @@ export async function getSymbols (textDocument: TextDocument, uri: string ): Pro
         
         elements.forEach(element => {
             let kind: SymbolKind;
-            if (element.type == PerlSymbolKind.LocalSub || element.type == PerlSymbolKind.OutlineOnlySub){
+	    switch (element.type) {
+            case PerlSymbolKind.LocalSub:
+	    case PerlSymbolKind.OutlineOnlySub:
                 kind = SymbolKind.Function;
-            } else if (element.type == PerlSymbolKind.LocalMethod){
+		break;
+            case PerlSymbolKind.LocalMethod:
                 kind = SymbolKind.Method;
-            } else if (element.type == PerlSymbolKind.Package){
+		break;
+            case PerlSymbolKind.Package:
                 kind = SymbolKind.Package;
-            } else if (element.type == PerlSymbolKind.Class){
+		break;
+            case PerlSymbolKind.Class:
                 kind = SymbolKind.Class;
-            } else if (element.type == PerlSymbolKind.Role){
+		break;
+            case PerlSymbolKind.Role:
                 kind = SymbolKind.Interface;
-            } else if (element.type == PerlSymbolKind.Field){
+		break;
+            case PerlSymbolKind.Field:
                 kind = SymbolKind.Field;
-            } else if (element.type == PerlSymbolKind.Label){
+		break;
+            case PerlSymbolKind.Label:
                 kind = SymbolKind.Key;
-            } else if (element.type == PerlSymbolKind.Phaser){
+		break;
+            case PerlSymbolKind.Phaser:
                 kind = SymbolKind.Event;
-            } else if (element.type == PerlSymbolKind.Constant){
+		break;
+            case PerlSymbolKind.Constant:
                 kind = SymbolKind.Constant;
-            } else if (element.type == PerlSymbolKind.HttpRoute){
+		break;
+            case PerlSymbolKind.HttpRoute:
                 kind = SymbolKind.Interface;
-            } else {
-                return;
-            }
+		break;
+	    default:
+	        return;
+	    }
             const location: Location = {
                 range: {
                     start: { line: element.line, character: 0 },

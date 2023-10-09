@@ -30,49 +30,73 @@ export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocume
 function buildHoverDoc(symbol: string, elem: PerlElem){
 
     let desc = "";
-
-    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
-        desc = "(object) " + `${elem.typeDetail}`;
-    } else if ( ["v", "c", "1"].includes(elem.type) && /^\$self/.test(symbol) ) {
-        // We either know the object type, or it's $self
-        desc = "(object) " + `${elem.package}`; 
-    } else if(elem.type == 'v'){
-        // desc = `(variable) ${symbol}`; //  Not very interesting info
-    } else if (elem.type == 'n'){ 
-        desc = `(constant) ${symbol}`;
-    } else if(elem.type == 'c'){ 
-        desc = `${elem.name}: ${elem.value}`;
-        if(elem.package) desc += ` (${elem.package})` ; // Is this ever known?
-    } else if(elem.type == 'h'){ 
-        desc = `${elem.name}  (${elem.package})`;
-    } else if (elem.type == 's'){
-        desc = `(subroutine) ${symbol}`;
-    } else if (['o','x'].includes(elem.type)){
-        desc = `(method) ${symbol}`;
-    } else if  (['t','i'].includes(elem.type)){ // inherited methods can still be subs (e.g. new from a parent)
-        desc = `(subroutine) ${elem.name}`;
-        if(elem.typeDetail && elem.typeDetail != elem.name) desc = desc + ` (${elem.typeDetail})`;
-    }else if (elem.type == 'p'){
-        desc = `(package) ${elem.name}`;
-    } else if (elem.type == 'm'){
-        desc = `(module) ${elem.name}: ${elem.file}`;
-    } else if (elem.type == 'l'){ 
-        desc = `(label) ${symbol}`;
-    } else if (elem.type == 'a'){
-        desc = `(class) ${symbol}`;
-    } else if (elem.type == 'b'){
-        desc = `(role) ${symbol}`;
-    } else if (elem.type == 'f' || elem.type == 'd'){
-        desc = `(attribute) ${symbol}`;
-    } else if (elem.type == 'e'){ 
-        desc = `(phase) ${symbol}`;
-    } else if (elem.type == 'g' || elem.type == 'j'){ 
-        // You cant go-to or hover on a route or outline only sub.
+    if (["v", "c", "1"].includes(elem.type)) {
+	if (elem.typeDetail.length > 0)
+            desc = "(object) " + `${elem.typeDetail}`;
+	else if (/^\$self/.test(symbol))
+            // We either know the object type, or it's $self
+            desc = "(object) " + `${elem.package}`; 
     } else {
-        // We should never get here
-        desc = `Unknown: ${symbol}`;
+        switch (elem.type) {
+        case 't': // inherited methods can still be subs (e.g. new from a parent)
+        case 'i':
+            desc = `(subroutine) ${elem.name}`;
+            if (elem.typeDetail && elem.typeDetail != elem.name)
+                desc = desc + ` (${elem.typeDetail})`;
+	    break;
+        case 'o':
+        case 'x':
+            desc = `(method) ${symbol}`;
+	    break;
+        case 'v':
+            // Not very interesting info
+            // desc = `(variable) ${symbol}`;
+	    break;
+        case 'n': 
+            desc = `(constant) ${symbol}`;
+	    break;
+        case 'c': 
+            desc = `${elem.name}: ${elem.value}`;
+            if (elem.package)
+                desc += ` (${elem.package})` ; // Is this ever known?
+	    break;
+        case 'h': 
+            desc = `${elem.name}  (${elem.package})`;
+	    break;
+        case 's':
+            desc = `(subroutine) ${symbol}`;
+	    break;
+        case 'p':
+            desc = `(package) ${elem.name}`;
+	    break;
+        case 'm':
+            desc = `(module) ${elem.name}: ${elem.file}`;
+	    break;
+        case 'l': 
+            desc = `(label) ${symbol}`;
+	    break;
+        case 'a':
+            desc = `(class) ${symbol}`;
+	    break;
+        case 'b':
+            desc = `(role) ${symbol}`;
+	    break;
+        case 'f':
+        case 'd':
+            desc = `(attribute) ${symbol}`;
+	    break;
+        case 'e': 
+            desc = `(phase) ${symbol}`;
+	    break;
+        case 'g':
+        case 'j': 
+            // You cant go-to or hover on a route or outline only sub.
+	    break;
+        default:
+            // We should never get here
+            desc = `Unknown: ${symbol}`;
+	    break;
+        }
     }
-
-
     return desc;
 }

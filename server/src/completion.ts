@@ -198,36 +198,59 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
         kind = CompletionItemKind.Variable;
         // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
         detail = `${lookupName}: ${elem.package}`; 
-    } else if(elem.type == PerlSymbolKind.LocalVar){ 
-        kind = CompletionItemKind.Variable;
-    } else if(elem.type == PerlSymbolKind.ImportedVar){ 
-        kind = CompletionItemKind.Constant;
-        // detail = elem.name;
-        docs.push(elem.name);
-        docs.push(`Value: ${elem.value}`);
-    } else if(elem.type == PerlSymbolKind.ImportedHash || elem.type == PerlSymbolKind.Constant) { 
-        kind = CompletionItemKind.Constant;
-    } else if (elem.type == PerlSymbolKind.LocalSub){
-        if(/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
-        kind = CompletionItemKind.Function;
-    } else if  (elem.type == PerlSymbolKind.ImportedSub || elem.type == PerlSymbolKind.Inherited || elem.type == PerlSymbolKind.Method || elem.type == PerlSymbolKind.LocalMethod){
-        kind = CompletionItemKind.Method;
-        docs.push(elem.name);
-        if(elem.typeDetail && elem.typeDetail != elem.name) docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
-    }else if (elem.type == PerlSymbolKind.Package || elem.type == PerlSymbolKind.Module){
-        kind = CompletionItemKind.Module;
-    }else if (elem.type == PerlSymbolKind.Label){ // Loop labels
-        kind = CompletionItemKind.Reference;
-    } else if (elem.type == PerlSymbolKind.Class){
-        kind = CompletionItemKind.Class;
-    } else if (elem.type == PerlSymbolKind.Role){
-        kind = CompletionItemKind.Interface;
-    } else if (elem.type == PerlSymbolKind.Field || elem.type == PerlSymbolKind.PathedField){
-        kind = CompletionItemKind.Field;
-    } else if (elem.type == PerlSymbolKind.Phaser || elem.type == PerlSymbolKind.HttpRoute || elem.type == PerlSymbolKind.OutlineOnlySub){
-        return [];
-    } else {        // A sign that something needs fixing. Everything should've been enumerated. 
-        kind = CompletionItemKind.Property;
+    } else {
+        switch (elem.type) {
+        case PerlSymbolKind.LocalVar: 
+            kind = CompletionItemKind.Variable;
+            break;
+        case PerlSymbolKind.ImportedVar: 
+            kind = CompletionItemKind.Constant;
+            // detail = elem.name;
+            docs.push(elem.name);
+            docs.push(`Value: ${elem.value}`);
+            break;
+        case PerlSymbolKind.ImportedHash:
+        case PerlSymbolKind.Constant:
+            kind = CompletionItemKind.Constant;
+        	break;
+        case PerlSymbolKind.LocalSub:
+            if (/^\$self\-/.test(lookupName)) docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
+                kind = CompletionItemKind.Function;
+            break;
+        case PerlSymbolKind.ImportedSub:
+        case PerlSymbolKind.Inherited:
+        case PerlSymbolKind.Method:
+        case PerlSymbolKind.LocalMethod:
+            kind = CompletionItemKind.Method;
+            docs.push(elem.name);
+            if (elem.typeDetail && elem.typeDetail != elem.name)
+                docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
+            break;
+        case PerlSymbolKind.Package:
+        case PerlSymbolKind.Module:
+            kind = CompletionItemKind.Module;
+            break;
+        case PerlSymbolKind.Label: // Loop labels
+            kind = CompletionItemKind.Reference;
+            break;
+        case PerlSymbolKind.Class:
+            kind = CompletionItemKind.Class;
+            break;
+        case PerlSymbolKind.Role:
+            kind = CompletionItemKind.Interface;
+            break;
+        case PerlSymbolKind.Field:
+        case PerlSymbolKind.PathedField:
+            kind = CompletionItemKind.Field;
+            break;
+        case PerlSymbolKind.Phaser:
+        case PerlSymbolKind.HttpRoute:
+        case PerlSymbolKind.OutlineOnlySub:
+            return [];
+        default: // A sign that something needs fixing. Everything should've been enumerated.
+            kind = CompletionItemKind.Property;
+            break;
+        }
     }
 
     if(docs.length>0){

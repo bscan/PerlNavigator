@@ -119,7 +119,8 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     const bSelf = /^(\$self):(?::\w*)?$/.exec(qualifiedSymbol);
     if(bSelf) bKnownObj = true;
 
-    // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase(); Case insensitive matches are hard since we restore what you originally matched on
+    // Search the normalized string; return the original?
+    const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
 
     perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
@@ -129,7 +130,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
         // All plain and inherited subroutines should match with $self. We're excluding "t" here because imports clutter the list, despite perl allowing them called on $self->
         if(bSelf && ["s", "i", "o", "f"].includes(element.type) ) elemName = `$self::${elemName}`;
 
-        if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)){
+        if (goodMatch(perlDoc, elemName, lcQualifiedSymbol, symbol, bKnownObj)){
             // Hooray, it's a match! 
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, '\\$1'); // quotemeta for $self->FOO

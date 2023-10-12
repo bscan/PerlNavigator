@@ -246,7 +246,7 @@ function constants(state: ParserState) : boolean {
     // Constants. Important because they look like subs (and technically are), so I'll tags them as such 
     if ((match = state.stmt.match(/^use\s+constant\s+(\w+)\b/))) {
         MakeElem(match[1], PerlSymbolKind.Constant, '', state);
-        MakeElem("constant", 'u', '', state);
+        MakeElem("constant", PerlSymbolKind._UseStatement, '', state);
         return true;
     } else {
         return false;
@@ -301,7 +301,7 @@ function imports(state: ParserState) : boolean {
     let match;
     if ((match = state.stmt.match(/^use\s+([\w:]+)\b/))) { // Keep track of explicit imports for filtering
         const importPkg = match[1];
-        MakeElem(importPkg, "u", '', state);
+        MakeElem(importPkg, PerlSymbolKind._UseStatement, '', state);
         return true;
     } else {
         return false;
@@ -411,7 +411,7 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
 
 
 
-function MakeElem(name: string, type: PerlSymbolKind | 'u' | '2',
+function MakeElem(name: string, type: PerlSymbolKind | PerlSymbolKind._UseStatement | '2',
     typeDetail: string, state: ParserState, lineEnd: number = 0): void {
 
     if(!name) return; // Don't store empty names (shouldn't happen)
@@ -420,7 +420,7 @@ function MakeElem(name: string, type: PerlSymbolKind | 'u' | '2',
         lineEnd = state.line_number
     }
 
-    if (type == 'u'){
+    if (type == PerlSymbolKind._UseStatement){
         // Explictly loaded module. Helpful for focusing autocomplete results
         state.perlDoc.imported.set(name, state.line_number);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types

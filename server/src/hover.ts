@@ -3,7 +3,7 @@ import {
     Hover,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem } from "./types";
+import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
 
 export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Hover | undefined {
@@ -30,7 +30,9 @@ export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocume
 function buildHoverDoc(symbol: string, elem: PerlElem){
 
     let desc = "";
-    if (["v", "c", "1"].includes(elem.type)) {
+    if ([PerlSymbolKind.LocalVar,
+	PerlSymbolKind.ImportedVar,
+        PerlSymbolKind.Canonical].includes(elem.type)) {
 	if (elem.typeDetail.length > 0)
             desc = "(object) " + `${elem.typeDetail}`;
 	else if (/^\$self/.test(symbol))
@@ -38,58 +40,58 @@ function buildHoverDoc(symbol: string, elem: PerlElem){
             desc = "(object) " + `${elem.package}`; 
     }
     switch (elem.type) {
-    case 't': // inherited methods can still be subs (e.g. new from a parent)
-    case 'i':
+    case PerlSymbolKind.ImportedSub: // inherited methods can still be subs (e.g. new from a parent)
+    case PerlSymbolKind.Inherited:
         desc = `(subroutine) ${elem.name}`;
         if (elem.typeDetail && elem.typeDetail != elem.name)
     	    desc = desc + ` (${elem.typeDetail})`;
         break;
-    case 'o':
-    case 'x':
+    case PerlSymbolKind.LocalMethod:
+    case PerlSymbolKind.Method:
         desc = `(method) ${symbol}`;
         break;
     // case 'v':
         // Not very interesting info
         // desc = `(variable) ${symbol}`;
         // break;
-    case 'n': 
+    case PerlSymbolKind.Constant: 
         desc = `(constant) ${symbol}`;
         break;
-    case 'c': 
+    case PerlSymbolKind.ImportedVar: 
         desc = `${elem.name}: ${elem.value}`;
         if (elem.package)
     	    desc += ` (${elem.package})` ; // Is this ever known?
         break;
-    case 'h': 
+    case PerlSymbolKind.ImportedHash: 
         desc = `${elem.name}  (${elem.package})`;
         break;
-    case 's':
+    case PerlSymbolKind.LocalSub:
         desc = `(subroutine) ${symbol}`;
         break;
-    case 'p':
+    case PerlSymbolKind.Package:
         desc = `(package) ${elem.name}`;
         break;
-    case 'm':
+    case PerlSymbolKind.Module:
         desc = `(module) ${elem.name}: ${elem.file}`;
         break;
-    case 'l': 
+    case PerlSymbolKind.Label: 
         desc = `(label) ${symbol}`;
         break;
-    case 'a':
+    case PerlSymbolKind.Class:
         desc = `(class) ${symbol}`;
         break;
-    case 'b':
+    case PerlSymbolKind.Role:
         desc = `(role) ${symbol}`;
         break;
-    case 'f':
-    case 'd':
+    case PerlSymbolKind.Field:
+    case PerlSymbolKind.PathedField:
         desc = `(attribute) ${symbol}`;
         break;
-    case 'e': 
+    case PerlSymbolKind.Phaser: 
         desc = `(phase) ${symbol}`;
         break;
-    case 'g':
-    case 'j': 
+    case PerlSymbolKind.HttpRoute:
+    case PerlSymbolKind.OutlineOnlySub: 
         // You cant go-to or hover on a route or outline only sub.
         break;
     default:

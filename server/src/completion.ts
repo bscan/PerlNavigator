@@ -15,9 +15,9 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     let position = params.position
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
-    const text = txtDoc.getText({ start, end });
+    const text : string = txtDoc.getText({ start, end });
 
-    const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
+    const index : number = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
     const imPrefix = getImportPrefix(text, index);
     if (imPrefix) {
@@ -126,8 +126,11 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
         let element = perlDoc.canonicalElems.get(elemName) || elements[0]; // Get the canonical (typed) element, otherwise just grab the first one.
 
-        // All plain and inherited subroutines should match with $self. We're excluding "t" here because imports clutter the list, despite perl allowing them called on $self->
-        if(bSelf && ["s", "i", "o", "f"].includes(element.type) ) elemName = `$self::${elemName}`;
+        // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here because imports clutter the list, despite perl allowing them called on $self->
+        if(bSelf && [PerlSymbolKind.LocalSub,
+		    PerlSymbolKind.Inherited,
+		    PerlSymbolKind.LocalMethod,
+		    PerlSymbolKind.Field].includes(element.type) ) elemName = `$self::${elemName}`;
 
         if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)){
             // Hooray, it's a match! 
@@ -138,12 +141,21 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
             if(symbol.endsWith('-')) aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->');  // Half-arrows count too
 
             // Don't send invalid constructs
-            if(/\-\>\w+::/.test(aligned) ||  // like FOO->BAR::BAZ
-                (/\-\>\w+$/.test(aligned) && !["s", "t", "i", "o", "x", "f", "d"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
-                (!/^\$.*\-\>\w+$/.test(aligned) &&  ["o", "x", "f", "d"].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
-                (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
-                (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
-                ) return;
+            if(/\-\>\w+::/.test(aligned) || // like FOO->BAR::BAZ
+	       (/\-\>\w+$/.test(aligned) && ![PerlSymbolKind.LocalSub,
+                                            PerlSymbolKind.ImportedSub,
+                                            PerlSymbolKind.Inherited,
+                                            PerlSymbolKind.LocalMethod,
+                                            PerlSymbolKind.Method,
+                                            PerlSymbolKind.Field,
+                                            PerlSymbolKind.PathedField].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                   (!/^\$.*\-\>\w+$/.test(aligned) && [PerlSymbolKind.LocalMethod,
+                                                      PerlSymbolKind.Method,
+						      PerlSymbolKind.Field,
+						      PerlSymbolKind.PathedField].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
+                   (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
+                   (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
+              ) return;
 
             matches = matches.concat(buildMatches(aligned, element, replace));
         }
@@ -191,7 +203,9 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let documentation: MarkupContent | undefined = undefined;
     let docs: string[] = [];
 
-    if (["v", "c", "1"].includes(elem.type)) {
+    if ([PerlSymbolKind.LocalVar,
+	PerlSymbolKind.ImportedVar,
+	PerlSymbolKind.Canonical].includes(elem.type)) {
         if (elem.typeDetail.length > 0) {
     	    kind = CompletionItemKind.Variable;
     	    detail = `${lookupName}: ${elem.typeDetail}`;

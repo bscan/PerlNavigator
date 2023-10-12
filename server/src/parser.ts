@@ -411,7 +411,7 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
 
 
 
-function MakeElem(name: string, type: PerlSymbolKind | PerlSymbolKind._UseStatement | '2',
+function MakeElem(name: string, type: PerlSymbolKind,
     typeDetail: string, state: ParserState, lineEnd: number = 0): void {
 
     if(!name) return; // Don't store empty names (shouldn't happen)
@@ -427,7 +427,7 @@ function MakeElem(name: string, type: PerlSymbolKind | PerlSymbolKind._UseStatem
         return; // Don't store it as an element
     } 
 
-    if (type == '2'){
+    if (type == PerlSymbolKind._Canonical2){
         state.perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     } 
@@ -443,7 +443,7 @@ function MakeElem(name: string, type: PerlSymbolKind | PerlSymbolKind._UseStatem
         value: "",
     };
 
-    if (type == '3'){
+    if (type == PerlSymbolKind._Canonical3){
         state.perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 

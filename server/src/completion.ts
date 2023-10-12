@@ -119,8 +119,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     const bSelf = /^(\$self):(?::\w*)?$/.exec(qualifiedSymbol);
     if(bSelf) bKnownObj = true;
 
-    // Search the normalized string; return the original?
-    // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase();
+    // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase(); Case insensitive matches are hard since we restore what you originally matched on
 
     perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
         if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list

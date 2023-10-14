@@ -12,18 +12,17 @@ import { parseFromUri } from "./parser";
 export async function getSignature(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<SignatureHelp | undefined> {
     let position = params.position
     const [symbol, currentSig] = getFunction(position, txtDoc);
-    if(!symbol)
+    if (!symbol)
         return;
     const elems = lookupSymbol(perlDoc, modMap, symbol, position.line);
     // Nothing or too many things.
-    if(elems.length != 1)
+    if (elems.length != 1)
         return;
     let elem = elems[0];
     const refined = await refineForSignature(elem, perlDoc, params);
     if (!refined)
         return;
-    // Currently unused.
-    // const elem_count = perlDoc.elems.size;
+    // const elem_count = perlDoc.elems.size; // Currently unused.
     return buildSignature(refined, currentSig, symbol);
 }
 
@@ -64,15 +63,13 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     const end = { line: position.line + 1, character: 0 };
     const text = txtDoc.getText({ start, end });
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
-    // right
-    let r = index;
+    let r = index; // right
     // Find signature.
     for (; r > 1 && text[r] != '('; --r)
     	;
     if (r <= 1)
         return [];
-    // left
-    let l = r - 1;
+    let l = r - 1; // left
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     for (; l >= 0 && canShift(text[l]); --l)
         // Allow for ->, but not => or > (e.g. $foo->bar, but not $foo=>bar or $foo>bar).
@@ -86,8 +83,7 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
         // Allow variables as well because we know may know the object type.
 	if (lCh == '$' || lCh == '@' || lCh == '%') {
 	    symbol = lCh + symbol;
-	    // Currently unused?
-	    // --l;
+	    // --l; // Currently unused?
 	}
     }
     const currentSig = text.substring(r, index);
@@ -108,7 +104,7 @@ function buildSignature(elem: PerlElem, currentSig:string, symbol:string): Signa
     if (params.length == 0)
         return;
     let paramLabels: ParameterInformation[] = [];
-    for(const param of params)
+    for (const param of params)
         paramLabels.push({label: param});
     let mainSig: SignatureInformation = {
         parameters: paramLabels,

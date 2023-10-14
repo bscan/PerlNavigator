@@ -1,5 +1,5 @@
 
-import { PerlDocument, PerlElem,  PerlSymbolKind, ParseType} from "./types";
+import { PerlDocument, PerlElem,  PerlSymbolKind, ParseType, TagKind} from "./types";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import Uri from 'vscode-uri';
 import fs = require('fs');
@@ -18,7 +18,6 @@ function init_doc (textDocument: TextDocument): PerlDocument {
         autoloads: new Map(),
         imported: new Map(),
         parents: new Map(),
-        filePath: filePath,
         uri: textDocument.uri,
     };
 
@@ -30,7 +29,7 @@ type ParserState = {
     line_number: number;
     var_continues: boolean;
     package_name: string;
-    file: string;
+    uri: string;
     perlDoc: PerlDocument;
     parseType: ParseType;
     codeArray: string[];
@@ -39,15 +38,37 @@ type ParserState = {
 type ParseFunc = (state: ParserState) => boolean;
 
 
+export async function parseFromUri(uri: string, parseType: ParseType) : Promise<PerlDocument | undefined>{
+    // File may not exists. Return nothing if it doesn't
+    const absolutePath = Uri.parse(uri).fsPath;
+    try {
+        var content = await fs.promises.readFile(absolutePath, 'utf8');
+    } catch {
+        return;
+    }
+    
+    const document = TextDocument.create(
+        uri, 
+        'perl',
+        1,
+        content
+    );
+
+    return await parseDocument(document, parseType);
+}
 
 export async function parseDocument(textDocument: TextDocument, parseType: ParseType ): Promise<PerlDocument> {
    
     let parseFunctions: ParseFunc[] = [];
     if(parseType == ParseType.outline){
-        parseFunctions = [packages, subs, labels, constants, fields, imports, dancer];
+        parseFunctions = [subs, labels, constants, fields, imports, dancer];
     } else if(parseType == ParseType.selfNavigation){
-        parseFunctions = [knownObj, localVars, packages, subs, labels, constants, fields, imports, autoloads, dancer];
+        parseFunctions = [knownObj, localVars, subs, labels, constants, fields, imports, autoloads, dancer];
+    } else if(parseType == ParseType.signatures){
+        parseFunctions = [subs]
     }
+
+    parseFunctions.unshift(packages); // Packages always need to be found to be able to categorize the elements.
 
     let perlDoc = init_doc(textDocument);
 
@@ -56,7 +77,7 @@ export async function parseDocument(textDocument: TextDocument, parseType: Parse
         line_number: 0,
         package_name: '',
         perlDoc: perlDoc,
-        file: Uri.parse(textDocument.uri).fsPath,
+        uri: textDocument.uri,
         var_continues: false,
         codeArray: await cleanCode(textDocument, perlDoc, parseType),
         parseType: parseType
@@ -107,11 +128,11 @@ function localVars (state: ParserState): boolean {
         // Remove my or local from statement, if present
         mod_stmt = mod_stmt.replace(/^(my|our|local|state)\s+/, "");
 
-        // Remove any assignment piece
+        // Remove any assignment piece. Breaks with signature defaults
         mod_stmt = mod_stmt.replace(/\s*=.*/, "");
 
-        // Remove part where sub starts (for signatures). Consider other options here.
-        mod_stmt = mod_stmt.replace(/\s*\}.*/, "");
+        // Remove part where sub starts (for signatures), while exempting default {} args
+        mod_stmt = mod_stmt.replace(/\s*(\{[^\}]|\)).*/, "");
 
         // Now find all variable names, i.e. "words" preceded by $, @ or %
         let vars = mod_stmt.matchAll(/([\$\@\%][\w:]+)\b/g);
@@ -197,21 +218,68 @@ function subs(state: ParserState) : boolean {
         const kind = (match[1] === 'method' || match[3]) ? PerlSymbolKind.LocalMethod : PerlSymbolKind.LocalSub;
         const endLine = SubEndLine(state);
 
-        MakeElem(subName, kind, '', state, endLine);
-        // Match the after the sub declaration and before the start of the actual sub for signatures (if any)
+        // Match the after the sub declaration and before the start of the actual sub for signatures (if any).
+        // TODO: Change this to multi-line signatures
         const vars = signature.matchAll(/([\$\@\%][\w:]+)\b/g);
+        let signature_params = [];
 
         // Define subrountine signatures, but exclude prototypes
         // The declaration continues if the line does not end with ;
         state.var_continues = !(state.stmt.match(/;$/) || state.stmt.match(/[\)\=\}\{]/));
 
         for (const matchvar of vars) {
+            signature_params.push(matchvar[1]);
             MakeElem(matchvar[1], PerlSymbolKind.LocalVar,'', state);
         }
+
+        const extras = look_ahead_signatures(state);
+        for (const extra of extras) { signature_params.push(extra) };
+
+        MakeElem(subName, kind, '', state, endLine, signature_params);
     } else {
         return false;
     }
     return true;
+}
+
+function look_ahead_signatures(state: ParserState): string[] {
+
+    let sig_vars: string[] = [];
+    let sig_continues = true;
+
+    for (let i = state.line_number; i < state.codeArray.length; i++) {
+
+        // Limit depth for speed and accuracy.
+        let depth = i - state.line_number;        
+        let stmt = state.codeArray[i];
+
+        if(sig_continues){
+            // The signature continues if the line does not end with ;
+            sig_continues = (!stmt.endsWith(";") && !stmt.match(/[\)\}\{]/));
+
+            if(depth > 0){ // First line is already parsed
+                // Remove part where sub starts (for signatures). Consider other options here.
+                let mod_stmt = stmt.replace(/\s*(\{[^\}]|\)).*/, "");
+                // Now find all variable names, i.e. "words" preceded by $, @ or %
+                let vars = mod_stmt.matchAll(/([\$\@\%][\w:]+)\b/g);
+                for (const matchvar of vars) { sig_vars.push(matchvar[0]) }
+            }
+        } 
+        let match;
+        if( (match = stmt.match(/(?:^|{)\s*my\s+(\(\s*[\$@%]\w+\s*(?:,\s*[\$@%]\w+\s*)*\))\s*=\s*\@_/)) ||
+            (match = stmt.match(/(?:^|{)\s*my\s+(\s*[\$@%]\w+\s*)=\s*shift\b/))) {
+            let vars = match[1].matchAll(/([\$\@\%][\w:]+)\b/g);
+            for (const matchvar of vars) { sig_vars.push(matchvar[0]) }
+        }     
+
+        if(depth > 4 || stmt.match(/(?:^|[^{])\}/)){
+            // Sub has ended, we don't want to find the signature from the next sub.
+            return sig_vars; 
+        }
+    }
+
+
+    return sig_vars;
 }
 
 function labels(state: ParserState) : boolean {
@@ -246,7 +314,7 @@ function constants(state: ParserState) : boolean {
     // Constants. Important because they look like subs (and technically are), so I'll tags them as such 
     if ((match = state.stmt.match(/^use\s+constant\s+(\w+)\b/))) {
         MakeElem(match[1], PerlSymbolKind.Constant, '', state);
-        MakeElem("constant", PerlSymbolKind._UseStatement, '', state);
+        MakeElem("constant", TagKind.UseStatement, '', state);
         return true;
     } else {
         return false;
@@ -301,7 +369,7 @@ function imports(state: ParserState) : boolean {
     let match;
     if ((match = state.stmt.match(/^use\s+([\w:]+)\b/))) { // Keep track of explicit imports for filtering
         const importPkg = match[1];
-        MakeElem(importPkg, PerlSymbolKind._UseStatement, '', state);
+        MakeElem(importPkg, TagKind.UseStatement, '', state);
         return true;
     } else {
         return false;
@@ -375,7 +443,7 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
         line_number: 0,
         package_name: '',
         perlDoc: perlDoc,
-        file: Uri.parse(textDocument.uri).fsPath,
+        uri: textDocument.uri,
         var_continues: false,
         codeArray: codeArray,
         parseType: parseType
@@ -411,8 +479,8 @@ async function cleanCode(textDocument: TextDocument, perlDoc: PerlDocument, pars
 
 
 
-function MakeElem(name: string, type: PerlSymbolKind,
-    typeDetail: string, state: ParserState, lineEnd: number = 0): void {
+function MakeElem(name: string, type: PerlSymbolKind | TagKind,
+    typeDetail: string, state: ParserState, lineEnd: number = 0, signature: string[] = []): void {
 
     if(!name) return; // Don't store empty names (shouldn't happen)
 
@@ -420,14 +488,14 @@ function MakeElem(name: string, type: PerlSymbolKind,
         lineEnd = state.line_number
     }
 
-    if (type == PerlSymbolKind._UseStatement){
+    if (type == TagKind.UseStatement){
         // Explictly loaded module. Helpful for focusing autocomplete results
         state.perlDoc.imported.set(name, state.line_number);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 
 
-    if (type == PerlSymbolKind._Canonical2){
+    if (type == TagKind.Canonical2){
         state.perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     } 
@@ -436,18 +504,21 @@ function MakeElem(name: string, type: PerlSymbolKind,
         name: name,
         type: type,
         typeDetail: typeDetail,
-        file: state.file,
+        uri: state.uri,
         package: state.package_name,
         line: state.line_number,
         lineEnd: lineEnd,
         value: "",
     };
 
-    if (type == PerlSymbolKind._Canonical3){
+    if (type == PerlSymbolKind.Canonical3){
         state.perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 
 
+    if(signature?.length > 0){
+        newElem.signature = signature
+    }
 
     if(typeDetail.length > 0){
         // TODO: The canonicalElems don't need to be PerlElems, they might be just a string.

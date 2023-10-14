@@ -7,7 +7,7 @@ sub new {
     return bless {}, $class;
 }
 
-sub unique_method_name {
+sub unique_method_name { my ($foo, $bar, $baz) = @_;
     print "In unique_method_name\n";
 }
 

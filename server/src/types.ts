@@ -40,7 +40,8 @@ export interface PerlElem {
     name: string,
     type: PerlSymbolKind;
     typeDetail: string,
-    file: string;
+    signature?: string[],
+    uri: string;
     package: string;
     line: number;
     lineEnd: number;
@@ -59,13 +60,13 @@ export interface PerlDocument {
     autoloads: Map<string, PerlElem>;
     imported: Map<string, number>;
     parents: Map<string, string>;
-    filePath: string;
     uri: string;
 }
 
 export enum ParseType {
     outline,
     selfNavigation,
+    signatures
 }
 
 export interface CompilationResults {
@@ -77,6 +78,12 @@ export interface CompletionPrefix {
     symbol: string,
     charStart: number,
     charEnd: number,
+}
+
+// Ensure TagKind and PerlSymbolKind have no overlap
+export enum TagKind {
+    Canonical2    = "2",
+    UseStatement  = "u", // Reserved: used in pltags, but removed before symbol assignment.
 }
 
 export enum PerlSymbolKind {
@@ -96,9 +103,7 @@ export enum PerlSymbolKind {
     Label          = "l",
     Phaser         = "e",
     Canonical      = "1", // 2 and 3 are also reserved
-    _Canonical2    = "2",
-    _Canonical3    = "3",
-    _UseStatement  = "u", // Reserved: used in pltags, but removed before symbol assignment.
+    Canonical3     = "3",
     ImportedVar    = "c",
     ImportedHash   = "h",
     HttpRoute      = "g",

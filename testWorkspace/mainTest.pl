@@ -87,6 +87,7 @@ sub sub_with_sig($subParam1, @subParam2){ ## no critic (prototypes)
     print "in sub_with_sig($subParam1, @subParam2)\n"
 }
 
+
 print "\n------ Subs --------\n";
 same_script_sub("FooSix");
 SameFilePackage::same_file_package_sub();
@@ -150,6 +151,7 @@ my $otObj = MyLib::ObjectTiny->new();
 my $marsObj = MyLib::MarsExample->new(foo=>10);
 print $marsObj->foo(20);
 print $marsObj->foo;
+
 
 use attributes ();
 print "ObjectPad attributes: " . attributes::get(\&MyLib::ObjectPad::describe) . "\n";

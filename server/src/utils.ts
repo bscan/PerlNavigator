@@ -131,12 +131,12 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
     let foundMod = modMap.get(symbol);
     if(foundMod){
         // Ideally we would've found the module in the PerlDoc, but perhaps it was "required" instead of "use'd"
-        const modFile = Uri.parse(foundMod).fsPath;
+        const modUri = Uri.parse(foundMod).toString();
         const modElem: PerlElem = {
             name: symbol,
             type: PerlSymbolKind.Module,
             typeDetail: "",
-            file: modFile,
+            uri: modUri,
             package: symbol,
             line: 0,
             lineEnd: 0,

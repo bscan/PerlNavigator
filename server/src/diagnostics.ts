@@ -341,7 +341,6 @@ function mergeDocs(doc1: PerlDocument, doc2: PerlDocument){
     doc1.elems  = new Map([...doc2.elems, ...doc1.elems]); // Tagged docs have priority?
     doc1.imported  = new Map([...doc1.imported, ...doc2.imported]);
     doc1.parents  = new Map([...doc1.parents, ...doc2.parents]);
-    doc1.filePath = doc2.filePath;
     doc1.uri  = doc2.uri;
     
     return doc1;

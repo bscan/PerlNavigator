@@ -34,10 +34,11 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
         if(!elemResolved) return;
 
         let uri: string;
-        if(perlDoc.filePath !== elemResolved.file){ // TODO Compare URI instead
+        if(perlDoc.uri !== elemResolved.uri){
             // If sending to a different file, let's make sure it exists and clean up the path
-            if(!existsSync(elemResolved.file)) return; // Make sure the file exists and hasn't been deleted.
-            uri =  Uri.file(realpathSync(elemResolved.file)).toString(); // Resolve symlinks
+            const file = Uri.parse(elemResolved.uri).fsPath;
+            if(!existsSync(file)) return; // Make sure the file exists and hasn't been deleted.
+            uri =  Uri.file(realpathSync(file)).toString(); // Resolve symlinks
         } else {
             // Sending to current file (including untitled files)
             uri = perlDoc.uri;
@@ -58,9 +59,9 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
 
 function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: string): PerlElem | undefined {
     
-    if(elem.file && !badFile(elem.file)){
+    if(elem.uri && !badFile(Uri.parse(elem.uri).fsPath)){
 
-        if(perlDoc.filePath == elem.file  && symbol.includes('->')){
+        if(perlDoc.uri == elem.uri  && symbol.includes('->')){
             // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
             const method = symbol.split('->').pop();
             if(method){ // Shouldn't this always be defined? Double check
@@ -68,7 +69,7 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
 
                 if(found){
                     if(elem.line == 0 && elem.type == 'x'){
-                        if(found[0].file == perlDoc.filePath) return found[0];
+                        if(found[0].uri == perlDoc.uri) return found[0];
                     } else if (elem.line > 0 && elem.type == 't') {
                         // Solve the off-by-one error at least for these. Eventually, you could consult a tagger for this step.
                         
@@ -92,7 +93,7 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
             const elemResolved = perlDoc.elems.get(elem.package);
             if(elemResolved){
                 for (let potentialElem of elemResolved) {
-                    if(potentialElem.file && !badFile(potentialElem.file)){
+                    if(potentialElem.uri && !badFile(Uri.parse(potentialElem.uri).fsPath)){
                         return potentialElem;
                     }
                 };

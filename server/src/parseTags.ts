@@ -1,6 +1,6 @@
 
-import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind} from "./types";
-
+import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, TagKind} from "./types";
+import Uri from 'vscode-uri';
 
 export function buildNav(stdout: string, filePath: string, fileuri: string): PerlDocument {
 
@@ -12,7 +12,6 @@ export function buildNav(stdout: string, filePath: string, fileuri: string): Per
             autoloads: new Map(),
             imported: new Map(),
             parents: new Map(),
-            filePath: filePath,
             uri: fileuri,
         };
 
@@ -46,14 +45,14 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     const value      = items[6] || ""; 
 
-    if (type == PerlSymbolKind._UseStatement){
+    if (type == TagKind.UseStatement){
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 
 
-    if (type == PerlSymbolKind._Canonical2){
+    if (type == TagKind.Canonical2){
         perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     } 
@@ -64,7 +63,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         name: name,
         type: type as PerlSymbolKind,
         typeDetail: typeDetail,
-        file: file,
+        uri: Uri.file(file).toString(), //  Uri.from(file).toString(),
         package: pack,
         line: startLine,
         lineEnd: endLine,
@@ -83,7 +82,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         return;
     }
 
-    if (type == PerlSymbolKind._Canonical3){
+    if (type == PerlSymbolKind.Canonical3){
         perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 

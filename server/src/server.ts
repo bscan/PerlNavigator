@@ -35,6 +35,7 @@ import { getCompletions } from './completion';
 import { formatDoc, formatRange } from "./formatting";
 import { nLog } from './utils';
 import { startProgress, endProgress } from './progress';
+import { getSignature } from "./signatures";
 
 var LRU = require("lru-cache");
 
@@ -79,7 +80,10 @@ connection.onInitialize((params: InitializeParams) => {
             workspaceSymbolProvider: true, 
             hoverProvider: true, 
             documentFormattingProvider: true, 
-            documentRangeFormattingProvider: true, 
+            documentRangeFormattingProvider: true,
+            signatureHelpProvider: {
+                'triggerCharacters': ['(',',']
+            } 
         }
     };
     if (hasWorkspaceFolderCapability) {
@@ -351,7 +355,7 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
 });
 
 
-connection.onHover(params => {
+connection.onHover(async params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
     let mods = availableMods.get('default');
@@ -359,7 +363,7 @@ connection.onHover(params => {
     
     if(!document || !perlDoc) return;
 
-    return getHover(params, perlDoc, document, mods);
+    return await getHover(params, perlDoc, document, mods);
 });
 
 
@@ -410,6 +414,18 @@ connection.onDocumentRangeFormatting(async params => {
     const editOut: TextEdit[] | undefined = await formatRange(params, document, settings, workspaceFolders, connection);
     return editOut;
 });
+
+
+connection.onSignatureHelp(async params => {
+    let document = documents.get(params.textDocument.uri);
+    let perlDoc = navSymbols.get(params.textDocument.uri);
+    let mods = availableMods.get('default');
+    if(!mods) mods = new Map();
+    if(!document || !perlDoc) return;
+    const signature = await getSignature(params, perlDoc, document, mods);
+    return signature;
+});
+
 
 connection.onShutdown((handler) => {
     try {

@@ -2,6 +2,7 @@ package MyLib::MyClass;
 use strict;
 use warnings;
 use Data::Dumper qw(Dumper);
+use experimental 'signatures';
 
 sub new {
     my $class = shift;
@@ -14,7 +15,7 @@ sub overridden_method {
     print "In overridden_method from MyClass\n";
 }
 
-sub inherited_method {
+sub inherited_method($self, $foo, $bar) {
     print "In inherited_method\n";
 }
 

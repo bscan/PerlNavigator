@@ -1,5 +1,5 @@
 
-import { PerlDocument, PerlElem,  PerlSymbolKind, ParseType, TagKind} from "./types";
+import { PerlDocument, PerlElem,  PerlSymbolKind, ParseType, TagKind, ElemSource} from "./types";
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import Uri from 'vscode-uri';
 import fs = require('fs');
@@ -496,6 +496,7 @@ function MakeElem(name: string, type: PerlSymbolKind | TagKind,
         line: state.line_number,
         lineEnd: lineEnd,
         value: "",
+        source: ElemSource.parser
     };
 
     if (type == PerlSymbolKind.Canonical3){

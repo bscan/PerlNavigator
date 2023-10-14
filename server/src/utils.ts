@@ -8,7 +8,7 @@ import {
     TextDocument,
     Position
 } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind } from "./types";
+import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind, ElemSource} from "./types";
 import * as path from 'path';
 
 export const async_execFile = promisify(execFile);
@@ -141,6 +141,7 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
             line: 0,
             lineEnd: 0,
             value: "",
+            source: ElemSource.modHunter
         }
         return [modElem];
     }

@@ -5,9 +5,10 @@ import {
     ParameterInformation
 } from 'vscode-languageserver/node';
 import { TextDocument, Position } from 'vscode-languageserver-textdocument';
-import { ParseType, PerlDocument, PerlElem, PerlSymbolKind } from "./types";
+import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import {  lookupSymbol } from "./utils";
 import { parseFromUri } from "./parser";
+import { refineElement } from "./refinement";
 
 export async function getSignature(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<SignatureHelp | undefined> {
     let position = params.position
@@ -19,42 +20,11 @@ export async function getSignature(params: TextDocumentPositionParams, perlDoc: 
     if (elems.length != 1)
         return;
     let elem = elems[0];
-    const refined = await refineForSignature(elem, perlDoc, params);
+    const refined = await refineElement(elem, params);
     if (!refined)
         return;
     // const elem_count = perlDoc.elems.size; // Currently unused.
     return buildSignature(refined, currentSig, symbol);
-}
-
-export async function refineForSignature(elem: PerlElem, perlDoc: PerlDocument, params: TextDocumentPositionParams): Promise<PerlElem | undefined> {
-    if (![PerlSymbolKind.LocalSub,
-	PerlSymbolKind.ImportedSub,
-        PerlSymbolKind.Inherited,
-	PerlSymbolKind.LocalMethod,
-	PerlSymbolKind.Method].includes(elem.type)) {
-        return;
-    }
-    let refined: PerlElem | undefined = undefined;
-    if (perlDoc.uri == elem.uri) {
-        // We're typing the actual signature or hovering over the definition. No pop-up needed.
-        if (elem.line == params.position.line)
-            return;
-        // Should I instead always only parse on demand? Could speed up processing a bit on the diagnostics tagging side?
-        refined = elem;
-    } else {
-        const doc = await parseFromUri(elem.uri, ParseType.signatures);
-        if (!doc)
-	    return ;
-        // Looks up Foo::Bar::baz by only the function name baz
-        // Will fail if you have multiple same name functions in the same file.
-        let match = elem.name.match(/\w+$/);
-        if (match) {
-            const refinedElems = doc.elems.get(match[0]);
-            if (refinedElems && refinedElems.length == 1)
-                refined = refinedElems[0];
-        }
-    }
-    return refined;
 }
 
 

@@ -46,6 +46,7 @@ export interface PerlElem {
     line: number;
     lineEnd: number;
     value: string;
+    source: ElemSource;
 };
 
 // Used for keeping track of what has been imported
@@ -61,6 +62,12 @@ export interface PerlDocument {
     imported: Map<string, number>;
     parents: Map<string, string>;
     uri: string;
+}
+
+export enum ElemSource {
+    symbolTable,
+    modHunter,
+    parser
 }
 
 export enum ParseType {

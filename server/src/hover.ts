@@ -5,7 +5,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
-import { refineForSignature } from "./signatures";
+import { refineElement } from "./refinement";
 import Uri from 'vscode-uri';
 
 export async function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Hover | undefined> {
@@ -23,7 +23,7 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
         elem = elems[0];
     }
 
-    const refined = await refineForSignature(elem, perlDoc, params);
+    const refined = await refineElement(elem, params);
 
     let hoverStr = buildHoverDoc(symbol, elem, refined);
     // Sometimes, there's nothing worth showing.
@@ -50,7 +50,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
             sig = '(' + signature.join(', ') + ')';
     } 
     if ([PerlSymbolKind.LocalVar,
-	PerlSymbolKind.ImportedVar,
+        PerlSymbolKind.ImportedVar,
         PerlSymbolKind.Canonical].includes(elem.type)) {
         if (elem.typeDetail.length > 0)
             return "(object) " + `${elem.typeDetail}`;
@@ -64,7 +64,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     case PerlSymbolKind.Inherited:
         desc = `(subroutine) ${name}${sig}`;
         if (elem.typeDetail && elem.typeDetail != elem.name)
-                desc += ` (${elem.typeDetail})`;
+                desc += `  [${elem.typeDetail}]`;
         break;
     case PerlSymbolKind.LocalSub:
         desc = `(subroutine) ${name}${sig}`;
@@ -83,10 +83,10 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     case PerlSymbolKind.ImportedVar: 
         desc = `${name}: ${elem.value}`;
         if (elem.package)
-            desc += ` (${elem.package})` ; // Is this ever known?
+            desc += ` [${elem.package}]` ; // Is this ever known?
         break;
     case PerlSymbolKind.ImportedHash: 
-        desc = `${elem.name}  (${elem.package})`;
+        desc = `${elem.name}  [${elem.package}]`;
         break;
 
     case PerlSymbolKind.Package:
@@ -122,7 +122,6 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     default:
         // We should never get here
         desc = `Unknown: ${symbol}`;
-        console.log(`${symbol} ISA ${elem.type}`);
         break;
     }
     return desc;

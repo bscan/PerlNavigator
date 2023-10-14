@@ -1,5 +1,5 @@
 
-import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, TagKind} from "./types";
+import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, TagKind, ElemSource} from "./types";
 import Uri from 'vscode-uri';
 
 export function buildNav(stdout: string, filePath: string, fileuri: string): PerlDocument {
@@ -68,6 +68,7 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         line: startLine,
         lineEnd: endLine,
         value: value,
+        source: ElemSource.symbolTable
     };
 
     // Move fancy object types into the typeDetail field????

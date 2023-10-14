@@ -80,27 +80,29 @@ export interface CompletionPrefix {
 }
 
 export enum PerlSymbolKind {
-    Module       = "m",
-    Package      = "p",
-    Class        = "a",
-    Role         = "b",
-    ImportedSub  = "t",
-    Inherited    = "i",
-    Field        = "f", // Instance fields
-    PathedField  = "d", // Instance fields
-    LocalSub     = "s", 
-    LocalMethod  = "o", // Assumed to be instance methods
-    Method       = "x", // Assumed to be instance methods
-    LocalVar     = "v",
-    Constant     = "n",
-    Label        = "l",
-    Phaser       = "e",
-    Canonical    = "1", // 2 and 3 are also reserved
-    // UseStatement = "u" . Reserved: used in pltags, but removed before symbol assignment.
-    ImportedVar  = "c",
-    ImportedHash = "h",
-    HttpRoute    = "g",
+    Module         = "m",
+    Package        = "p",
+    Class          = "a",
+    Role           = "b",
+    ImportedSub    = "t",
+    Inherited      = "i",
+    Field          = "f", // Instance fields
+    PathedField    = "d", // Instance fields
+    LocalSub       = "s", 
+    LocalMethod    = "o", // Assumed to be instance methods
+    Method         = "x", // Assumed to be instance methods
+    LocalVar       = "v",
+    Constant       = "n",
+    Label          = "l",
+    Phaser         = "e",
+    Canonical      = "1", // 2 and 3 are also reserved
+    _Canonical2    = "2",
+    _Canonical3    = "3",
+    _UseStatement  = "u", // Reserved: used in pltags, but removed before symbol assignment.
+    ImportedVar    = "c",
+    ImportedHash   = "h",
+    HttpRoute      = "g",
     OutlineOnlySub = "j",
-    AutoLoadVar  = "3"
+    AutoLoadVar    = "3"
 }
 

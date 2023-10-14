@@ -46,14 +46,14 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
 
     const value      = items[6] || ""; 
 
-    if (type == 'u'){
+    if (type == PerlSymbolKind._UseStatement){
         // Explictly loaded module. Helpful for focusing autocomplete results
         perlDoc.imported.set(name, startLine);
         // if(/\bDBI$/.exec(name)) perlDoc.imported.set(name + "::db", true); // TODO: Build mapping of common constructors to types
         return; // Don't store it as an element
     } 
 
-    if (type == '2'){
+    if (type == PerlSymbolKind._Canonical2){
         perlDoc.parents.set(name, typeDetail);
         return; // Don't store it as an element
     } 
@@ -77,13 +77,13 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         perlDoc.canonicalElems.set(name, newElem);
     } 
 
-    if (type == '1'){
+    if (type == PerlSymbolKind.Canonical){
         // This object is only intended as the canonicalLookup, not for anything else.
         // This doesn't do anything until fancy object types are moved into the typeDetail field
         return;
     }
 
-    if (type == '3'){
+    if (type == PerlSymbolKind._Canonical3){
         perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 

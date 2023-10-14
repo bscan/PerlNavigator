@@ -15,9 +15,9 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     let position = params.position
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
-    const text = txtDoc.getText({ start, end });
+    const text : string = txtDoc.getText({ start, end });
 
-    const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
+    const index : number = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
     const imPrefix = getImportPrefix(text, index);
     if (imPrefix) {
@@ -126,8 +126,11 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
         let element = perlDoc.canonicalElems.get(elemName) || elements[0]; // Get the canonical (typed) element, otherwise just grab the first one.
 
-        // All plain and inherited subroutines should match with $self. We're excluding "t" here because imports clutter the list, despite perl allowing them called on $self->
-        if(bSelf && ["s", "i", "o", "f"].includes(element.type) ) elemName = `$self::${elemName}`;
+        // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here because imports clutter the list, despite perl allowing them called on $self->
+        if(bSelf && [PerlSymbolKind.LocalSub,
+		    PerlSymbolKind.Inherited,
+		    PerlSymbolKind.LocalMethod,
+		    PerlSymbolKind.Field].includes(element.type) ) elemName = `$self::${elemName}`;
 
         if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)){
             // Hooray, it's a match! 
@@ -138,12 +141,21 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
             if(symbol.endsWith('-')) aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->');  // Half-arrows count too
 
             // Don't send invalid constructs
-            if(/\-\>\w+::/.test(aligned) ||  // like FOO->BAR::BAZ
-                (/\-\>\w+$/.test(aligned) && !["s", "t", "i", "o", "x", "f", "d"].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
-                (!/^\$.*\-\>\w+$/.test(aligned) &&  ["o", "x", "f", "d"].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
-                (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
-                (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
-                ) return;
+            if(/\-\>\w+::/.test(aligned) || // like FOO->BAR::BAZ
+	       (/\-\>\w+$/.test(aligned) && ![PerlSymbolKind.LocalSub,
+                                            PerlSymbolKind.ImportedSub,
+                                            PerlSymbolKind.Inherited,
+                                            PerlSymbolKind.LocalMethod,
+                                            PerlSymbolKind.Method,
+                                            PerlSymbolKind.Field,
+                                            PerlSymbolKind.PathedField].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
+                   (!/^\$.*\-\>\w+$/.test(aligned) && [PerlSymbolKind.LocalMethod,
+                                                      PerlSymbolKind.Method,
+						      PerlSymbolKind.Field,
+						      PerlSymbolKind.PathedField].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
+                   (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
+                   (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
+              ) return;
 
             matches = matches.concat(buildMatches(aligned, element, replace));
         }
@@ -191,69 +203,70 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let documentation: MarkupContent | undefined = undefined;
     let docs: string[] = [];
 
-    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
-        kind = CompletionItemKind.Variable;
-        detail = `${lookupName}: ${elem.typeDetail}`;
-    } else if ( ["v", "c", "1"].includes(elem.type) && lookupName == '$self' ) {
-        kind = CompletionItemKind.Variable;
-        // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
-        detail = `${lookupName}: ${elem.package}`; 
-    } else {
-        switch (elem.type) {
-        case PerlSymbolKind.LocalVar: 
-            kind = CompletionItemKind.Variable;
-            break;
-        case PerlSymbolKind.ImportedVar: 
-            kind = CompletionItemKind.Constant;
-            // detail = elem.name;
-            docs.push(elem.name);
-            docs.push(`Value: ${elem.value}`);
-            break;
-        case PerlSymbolKind.ImportedHash:
-        case PerlSymbolKind.Constant:
-            kind = CompletionItemKind.Constant;
-        	break;
-        case PerlSymbolKind.LocalSub:
-            if (/^\$self\-/.test(lookupName)){
-                docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
-            }
-            kind = CompletionItemKind.Function;
-            break;
-        case PerlSymbolKind.ImportedSub:
-        case PerlSymbolKind.Inherited:
-        case PerlSymbolKind.Method:
-        case PerlSymbolKind.LocalMethod:
-            kind = CompletionItemKind.Method;
-            docs.push(elem.name);
-            if (elem.typeDetail && elem.typeDetail != elem.name){
-                docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
-            }
-            break;
-        case PerlSymbolKind.Package:
-        case PerlSymbolKind.Module:
-            kind = CompletionItemKind.Module;
-            break;
-        case PerlSymbolKind.Label: // Loop labels
-            kind = CompletionItemKind.Reference;
-            break;
-        case PerlSymbolKind.Class:
-            kind = CompletionItemKind.Class;
-            break;
-        case PerlSymbolKind.Role:
-            kind = CompletionItemKind.Interface;
-            break;
-        case PerlSymbolKind.Field:
-        case PerlSymbolKind.PathedField:
-            kind = CompletionItemKind.Field;
-            break;
-        case PerlSymbolKind.Phaser:
-        case PerlSymbolKind.HttpRoute:
-        case PerlSymbolKind.OutlineOnlySub:
-            return [];
-        default: // A sign that something needs fixing. Everything should've been enumerated.
-            kind = CompletionItemKind.Property;
-            break;
+    if ([PerlSymbolKind.LocalVar,
+	PerlSymbolKind.ImportedVar,
+	PerlSymbolKind.Canonical].includes(elem.type)) {
+        if (elem.typeDetail.length > 0) {
+    	    kind = CompletionItemKind.Variable;
+    	    detail = `${lookupName}: ${elem.typeDetail}`;
+        } else if (lookupName == '$self') {
+    	    kind = CompletionItemKind.Variable;
+    	    // elem.package can be misleading if you use $self in two different packages in the same module. Get scoped matches will address this
+    	    detail = `${lookupName}: ${elem.package}`; 
         }
+    }
+    switch (elem.type) {
+    case PerlSymbolKind.LocalVar: 
+        kind = CompletionItemKind.Variable;
+        break;
+    case PerlSymbolKind.ImportedVar: 
+        kind = CompletionItemKind.Constant;
+        // detail = elem.name;
+        docs.push(elem.name);
+        docs.push(`Value: ${elem.value}`);
+        break;
+    case PerlSymbolKind.ImportedHash:
+    case PerlSymbolKind.Constant:
+        kind = CompletionItemKind.Constant;
+    	break;
+    case PerlSymbolKind.LocalSub:
+        if (/^\$self\-/.test(lookupName))
+    	    docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
+        kind = CompletionItemKind.Function;
+        break;
+    case PerlSymbolKind.ImportedSub:
+    case PerlSymbolKind.Inherited:
+    case PerlSymbolKind.Method:
+    case PerlSymbolKind.LocalMethod:
+        kind = CompletionItemKind.Method;
+        docs.push(elem.name);
+        if (elem.typeDetail && elem.typeDetail != elem.name)
+    	    docs.push(`\nDefined as:\n  ${elem.typeDetail}`);
+        break;
+    case PerlSymbolKind.Package:
+    case PerlSymbolKind.Module:
+        kind = CompletionItemKind.Module;
+        break;
+    case PerlSymbolKind.Label: // Loop labels
+        kind = CompletionItemKind.Reference;
+        break;
+    case PerlSymbolKind.Class:
+        kind = CompletionItemKind.Class;
+        break;
+    case PerlSymbolKind.Role:
+        kind = CompletionItemKind.Interface;
+        break;
+    case PerlSymbolKind.Field:
+    case PerlSymbolKind.PathedField:
+        kind = CompletionItemKind.Field;
+        break;
+    case PerlSymbolKind.Phaser:
+    case PerlSymbolKind.HttpRoute:
+    case PerlSymbolKind.OutlineOnlySub:
+        return [];
+    default: // A sign that something needs fixing. Everything should've been enumerated.
+        kind = CompletionItemKind.Property;
+        break;
     }
 
     if(docs.length>0){

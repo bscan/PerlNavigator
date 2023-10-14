@@ -3,7 +3,7 @@ import {
     Hover,
 } from 'vscode-languageserver/node';
 import { TextDocument } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem } from "./types";
+import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
 
 export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Hover | undefined {
@@ -30,49 +30,74 @@ export function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocume
 function buildHoverDoc(symbol: string, elem: PerlElem){
 
     let desc = "";
-
-    if ( ["v", "c", "1"].includes(elem.type) && elem.typeDetail.length > 0) {
-        desc = "(object) " + `${elem.typeDetail}`;
-    } else if ( ["v", "c", "1"].includes(elem.type) && /^\$self/.test(symbol) ) {
-        // We either know the object type, or it's $self
-        desc = "(object) " + `${elem.package}`; 
-    } else if(elem.type == 'v'){
-        // desc = `(variable) ${symbol}`; //  Not very interesting info
-    } else if (elem.type == 'n'){ 
-        desc = `(constant) ${symbol}`;
-    } else if(elem.type == 'c'){ 
-        desc = `${elem.name}: ${elem.value}`;
-        if(elem.package) desc += ` (${elem.package})` ; // Is this ever known?
-    } else if(elem.type == 'h'){ 
-        desc = `${elem.name}  (${elem.package})`;
-    } else if (elem.type == 's'){
-        desc = `(subroutine) ${symbol}`;
-    } else if (['o','x'].includes(elem.type)){
-        desc = `(method) ${symbol}`;
-    } else if  (['t','i'].includes(elem.type)){ // inherited methods can still be subs (e.g. new from a parent)
+    if ([PerlSymbolKind.LocalVar,
+	PerlSymbolKind.ImportedVar,
+        PerlSymbolKind.Canonical].includes(elem.type)) {
+	if (elem.typeDetail.length > 0)
+            desc = "(object) " + `${elem.typeDetail}`;
+	else if (/^\$self/.test(symbol))
+            // We either know the object type, or it's $self
+            desc = "(object) " + `${elem.package}`; 
+    }
+    switch (elem.type) {
+    case PerlSymbolKind.ImportedSub: // inherited methods can still be subs (e.g. new from a parent)
+    case PerlSymbolKind.Inherited:
         desc = `(subroutine) ${elem.name}`;
-        if(elem.typeDetail && elem.typeDetail != elem.name) desc = desc + ` (${elem.typeDetail})`;
-    }else if (elem.type == 'p'){
+        if (elem.typeDetail && elem.typeDetail != elem.name)
+    	    desc = desc + ` (${elem.typeDetail})`;
+        break;
+    case PerlSymbolKind.LocalMethod:
+    case PerlSymbolKind.Method:
+        desc = `(method) ${symbol}`;
+        break;
+    // case 'v':
+        // Not very interesting info
+        // desc = `(variable) ${symbol}`;
+        // break;
+    case PerlSymbolKind.Constant: 
+        desc = `(constant) ${symbol}`;
+        break;
+    case PerlSymbolKind.ImportedVar: 
+        desc = `${elem.name}: ${elem.value}`;
+        if (elem.package)
+    	    desc += ` (${elem.package})` ; // Is this ever known?
+        break;
+    case PerlSymbolKind.ImportedHash: 
+        desc = `${elem.name}  (${elem.package})`;
+        break;
+    case PerlSymbolKind.LocalSub:
+        desc = `(subroutine) ${symbol}`;
+        break;
+    case PerlSymbolKind.Package:
         desc = `(package) ${elem.name}`;
-    } else if (elem.type == 'm'){
+        break;
+    case PerlSymbolKind.Module:
         desc = `(module) ${elem.name}: ${elem.file}`;
-    } else if (elem.type == 'l'){ 
+        break;
+    case PerlSymbolKind.Label: 
         desc = `(label) ${symbol}`;
-    } else if (elem.type == 'a'){
+        break;
+    case PerlSymbolKind.Class:
         desc = `(class) ${symbol}`;
-    } else if (elem.type == 'b'){
+        break;
+    case PerlSymbolKind.Role:
         desc = `(role) ${symbol}`;
-    } else if (elem.type == 'f' || elem.type == 'd'){
+        break;
+    case PerlSymbolKind.Field:
+    case PerlSymbolKind.PathedField:
         desc = `(attribute) ${symbol}`;
-    } else if (elem.type == 'e'){ 
+        break;
+    case PerlSymbolKind.Phaser: 
         desc = `(phase) ${symbol}`;
-    } else if (elem.type == 'g' || elem.type == 'j'){ 
+        break;
+    case PerlSymbolKind.HttpRoute:
+    case PerlSymbolKind.OutlineOnlySub: 
         // You cant go-to or hover on a route or outline only sub.
-    } else {
+        break;
+    default:
         // We should never get here
         desc = `Unknown: ${symbol}`;
+        break;
     }
-
-
     return desc;
 }

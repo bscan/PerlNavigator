@@ -60,12 +60,16 @@ export async function parseFromUri(uri: string, parseType: ParseType) : Promise<
 export async function parseDocument(textDocument: TextDocument, parseType: ParseType ): Promise<PerlDocument> {
    
     let parseFunctions: ParseFunc[] = [];
-    if(parseType == ParseType.outline){
+    switch (parseType) {
+    case ParseType.outline:
         parseFunctions = [subs, labels, constants, fields, imports, dancer];
-    } else if(parseType == ParseType.selfNavigation){
+        break;
+    case ParseType.selfNavigation:
         parseFunctions = [knownObj, localVars, subs, labels, constants, fields, imports, autoloads, dancer];
-    } else if(parseType == ParseType.signatures){
+        break;
+    case ParseType.signatures:
         parseFunctions = [subs]
+        break;
     }
 
     parseFunctions.unshift(packages); // Packages always need to be found to be able to categorize the elements.
@@ -87,9 +91,8 @@ export async function parseDocument(textDocument: TextDocument, parseType: Parse
     for (state.line_number= 0; state.line_number < state.codeArray.length; state.line_number++) {
         state.stmt = state.codeArray[state.line_number];
         // Nothing left? Never mind.
-        if (!state.stmt) {
+        if (!state.stmt)
             continue;
-        }
            
         parseFunctions.some(fn => fn(state));
     }
@@ -137,35 +140,25 @@ function localVars (state: ParserState): boolean {
         // Now find all variable names, i.e. "words" preceded by $, @ or %
         let vars = mod_stmt.matchAll(/([\$\@\%][\w:]+)\b/g);
 
-        for (let match of vars) {
+        for (let match of vars)
             MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
-        }
         return true;
-    } 
-    
     // Lexical loop variables, potentially with labels in front. foreach my $foo
-    else if ((match = state.stmt.match(/^(?:(\w+)\s*:(?!\:))?\s*(?:for|foreach)\s+my\s+(\$[\w]+)\b/))) {
-        if (match[1]) {
+    } else if ((match = state.stmt.match(/^(?:(\w+)\s*:(?!\:))?\s*(?:for|foreach)\s+my\s+(\$[\w]+)\b/))) {
+        if (match[1])
             MakeElem(match[1], PerlSymbolKind.Label, '', state);
-        }
         MakeElem(match[2], PerlSymbolKind.LocalVar, '', state);
-    }
     // Lexical match variables if(my ($foo, $bar) ~= ). Optional to detect (my $newstring = $oldstring) =~ s/foo/bar/g;
-    else if ((match = state.stmt.match(/^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/))) {
+    } else if ((match = state.stmt.match(/^(?:\}\s*elsif|if|unless|while|until|for)?\s*\(\s*my\b(.*)$/))) {
         // Remove any assignment piece
         const mod_stmt = state.stmt.replace(/\s*=.*/, "");
         let vars = mod_stmt.matchAll(/([\$\@\%][\w]+)\b/g);
-        for (let match of vars) {
+        for (let match of vars)
             MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
-        }
-    }
-
     // Try-catch exception variables
-    else if ((match = state.stmt.match(/^\}?\s*catch\s*\(\s*(\$\w+)\s*\)\s*\{?$/))) {
+    } else if ((match = state.stmt.match(/^\}?\s*catch\s*\(\s*(\$\w+)\s*\)\s*\{?$/))) {
         MakeElem(match[1], PerlSymbolKind.LocalVar, '', state);
-    }
-
-    else {
+    } else {
         return false;
     }
 
@@ -181,24 +174,18 @@ function packages(state: ParserState) : boolean{
         state.package_name = match[1];
         const endLine = PackageEndLine(state);
         MakeElem(state.package_name, PerlSymbolKind.Package, '', state, endLine);
-    } 
-    
     // This is a class decoration for Object::Pad, Corinna, or Moops 
-    else if((match = state.stmt.match(/^class\s+([\w:]+)/))){
+    } else if((match = state.stmt.match(/^class\s+([\w:]+)/))){
         let class_name = match[1];
         state.package_name = class_name;
         const endLine = PackageEndLine(state);
         MakeElem(class_name, PerlSymbolKind.Class, '', state, endLine);
-    }
-    
-    else if((match = state.stmt.match(/^role\s+([\w:]+)/))){
+    } else if((match = state.stmt.match(/^role\s+([\w:]+)/))){
         const roleName = match[1];
         // state.package_name = roleName; # Being cautious against changing the package name
         const endLine = SubEndLine(state);
         MakeElem(roleName, PerlSymbolKind.Role, '', state, endLine);
-    }
-
-    else {
+    } else {
         return false;
     }
 
@@ -552,9 +539,8 @@ function SubEndLine (state: ParserState, rFilter: RegExp | null = null) : number
 
         
         if(i == state.line_number){
-            if(rFilter){
+            if(rFilter)
                 stmt.replace(rFilter, "");
-            }
             // Default argument of empty hash. Other types of hashes may still trip this up
             stmt.replace(/\$\w+\s*=\s*\{\s*\}/,"");
         }

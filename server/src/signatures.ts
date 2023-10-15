@@ -47,10 +47,12 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
 	        break;
     let lCh = "";
     if (l >= 0
-	&& text[l] == '$' || text[l] == '@' || text[l] == '%')
+	&& text[l] == '$' || text[l] == '@' || text[l] == '%') {
 	lCh = text[l];
-    else
+	++l;
+    } else {
 	l = 0;
+    }
     const symbol = lCh + text.substring(l, r);
     const currSig = text.substring(r, index);
     return [symbol, currSig];

@@ -48,20 +48,16 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
 
 // Similar to getSymbol for navigation, but don't "move right". 
 function getPrefix(text: string, position: number): CompletionPrefix {
+
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     let l = position - 1; // left
     for (; l >= 0 && canShift(text[l]); --l)
     	;
-    let symbol;
+    let symbol = text.substring(Math.max(l + 1, 0), position);
     if (l >= 0) {
 	const lCh = text[l];
-	if (lCh == '$' || lCh == '@' || lCh == '%')
-	    symbol = lCh + text.substring(l + 1, position);
-    	else
-	    symbol = text.substring(l + 1, position);
-    } else {
-	symbol = text.substring(0, position);
-	l = 0;
+	if (lCh === '$' || lCh === '@' || lCh === '%')
+	    symbol = lCh + symbol;
     }
     return {symbol: symbol, charStart: l, charEnd: position};
 }
@@ -158,7 +154,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
                         PerlSymbolKind.Method,
 			PerlSymbolKind.Field,
 			PerlSymbolKind.PathedField].includes(element.type)
-			|| aligned.indexOf("-:") != -1 // We look things up like this, but don't let them slip through
+			|| /-:/.test(aligned) // We look things up like this, but don't let them slip through
 			|| /^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway
 		         return;
             matches = matches.concat(buildMatches(aligned, element, replace));
@@ -218,7 +214,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     	    detail = `${lookupName}: ${elem.package}`; 
         }
     }
-    if (!detail) {
+    if(!detail){
         switch (elem.type) {
         case PerlSymbolKind.LocalVar: 
             kind = CompletionItemKind.Variable;
@@ -234,7 +230,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             kind = CompletionItemKind.Constant;
             break;
         case PerlSymbolKind.LocalSub:
-            if (lookupName.startsWith("$self-"))
+            if (/^\$self\-/.test(lookupName))
                 docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
             kind = CompletionItemKind.Function;
             break;
@@ -278,7 +274,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     
     let labelsToBuild = [lookupName];
 
-    if (lookupName.endsWith("::new")) {
+    if(/::new$/.test(lookupName)){
         // Having ->new at the top (- sorts before :) is the more common way to call packages (although you can call it either way).
         labelsToBuild.push(lookupName.replace(/::new$/, "->new"));
     }
@@ -308,13 +304,13 @@ function getSortText(label: string): string {
 
     if (/^[@\$%]?[a-z]?[a-z]?[A-Z][A-Z_]*$/.test(label) || /(?:::|->)[A-Z][A-Z_]+$/.test(label)) {
         sortText = "4" + label;
-    } else if (label == '_' || /(?:::|->)_\w+$/.test(label)) {
+    } else if(/^_$/.test(label) || /(?:::|->)_\w+$/.test(label)) {
         sortText = "3" + label;
-    } else if (/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)) {
+    } else if(/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)) {
         // Public methods / functions
         sortText = "2";
         // Prioritize '->new'
-        if (label.indexOf('->new') != -1)
+        if (/->new/.test(label))
 	    sortText += "1";
         sortText += label;
     } else {

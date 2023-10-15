@@ -52,7 +52,7 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
 	if (lCh == '$' || lCh == '@' || lCh == '%')
     	    symbol = lCh + text.substring(l + 1, r);
         else
-    	symbol = text.substring(l + 1, r);
+    	    symbol = text.substring(l + 1, r);
     } else {
         symbol = text.substring(0, r);
     }

@@ -18,7 +18,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
     let includePaths: string[] = [];
 
     settings.includePaths.forEach(path => {
-        if (/\$workspaceFolder/.test(path)) {
+        if (path.indexOf("$workspaceFolder") != -1) {
             if (workspaceFolders) {
                 workspaceFolders.forEach(workspaceFolder => {
                     const incPath = Uri.parse(workspaceFolder.uri).fsPath;

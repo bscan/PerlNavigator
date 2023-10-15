@@ -111,7 +111,7 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     const lineNum = output.lineNum;
     violation = output.violation;
 
-    if( /=PerlWarning=/.test(violation) ){
+    if (violation.indexOf("=PerlWarning=") != -1) {
         // Downgrade severity for explicitly marked severities
         severity = DiagnosticSeverity.Warning;
         violation = violation.replace(/=PerlWarning=/g, ""); // Don't display the PerlWarnings
@@ -131,7 +131,8 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
 
 function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocument): {violation:string, lineNum:number} | void {
 
-    if(/Too late to run CHECK block/.test(violation)) return;
+    if (violation.indexOf("Too late to run CHECK block") != -1)
+        return;
 
     let match = /^(.+)at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
 
@@ -146,9 +147,8 @@ function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocum
             const importFileName = match[2].replace('.pm', '').replace(/[\\\/]/g, "::");
             perlDoc.imported.forEach((line, mod) => {
                 // importFileName could be something like usr::lib::perl::dir::Foo::Bar
-                if (importFileName.endsWith(mod)){
+                if (importFileName.endsWith(mod))
                     lineNum = line;
-                }
             })
             return {violation, lineNum}
         }
@@ -157,12 +157,9 @@ function localizeErrors (violation: string, filePath: string, perlDoc: PerlDocum
     match = /\s+is not exported by the ([\w:]+) module$/i.exec(violation);
     if(match){
         let lineNum = perlDoc.imported.get(match[1]);
-        if(typeof lineNum != 'undefined'){
-            return {violation, lineNum};
-        } else {
+        if (typeof lineNum == 'undefined')
             lineNum = 0;
-            return {violation, lineNum};
-        }
+	return {violation, lineNum};
     }
     return;
 }
@@ -246,7 +243,7 @@ function getCriticProfile (workspaceFolders: WorkspaceFolder[] | null, settings:
     let profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
         let profile = settings.perlcriticProfile;
-        if (/\$workspaceFolder/.test(profile)){
+        if (profile.indexOf("$workspaceFolder") != -1) {
             if (workspaceFolders){
                 // TODO: Fix this too. Only uses the first workspace folder
                 const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;

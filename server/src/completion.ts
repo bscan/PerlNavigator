@@ -15,9 +15,8 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     let position = params.position
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
-    const text : string = txtDoc.getText({ start, end });
-
-    const index : number = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
+    const text = txtDoc.getText({ start, end });
+    const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
     const imPrefix = getImportPrefix(text, index);
     if (imPrefix) {
@@ -32,7 +31,8 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     } else {
         const prefix = getPrefix(text, index);
 
-        if(!prefix.symbol) return [];
+        if (!prefix.symbol)
+		return [];
 
         const replace: Range = {
                 start: { line: position.line, character: prefix.charStart },
@@ -49,24 +49,20 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
 // Similar to getSymbol for navigation, but don't "move right". 
 function getPrefix(text: string, position: number): CompletionPrefix {
 
-    const leftAllow  = (c: string) => /[\w\:\>\-]/.exec(c);
-
-    let left = position - 1;
-
-    while (left >= 0 && leftAllow(text[left])) {
-        left -= 1;
+    const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
+    let l = position - 1; // left
+    for (; l >= 0 && canShift(text[l]); --l)
+    	;
+    let lCh = "";
+    if (l >= 0
+	&& text[l] == '$' || text[l] == '@' || text[l] == '%') {
+        lCh = text[l];
+	++l;
+    } else {
+	l = 0;
     }
-    left = Math.max(0, left + 1);
-
-    let symbol = text.substring(left, position);
-    const lChar  = left > 0 ? text[left-1] : "";
-
-    if(lChar === '$' || lChar === '@' || lChar === '%'){
-        symbol = lChar + symbol;
-        left -= 1;
-    }
-
-    return {symbol: symbol, charStart: left, charEnd: position};
+    const symbol = lCh + text.substring(l, position);
+    return {symbol: symbol, charStart: l, charEnd: position};
 }
 
 // First we check if it's an import statement, which is a special type of autocomplete with far more options
@@ -122,41 +118,51 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
     // const lcQualifiedSymbol = qualifiedSymbol.toLowerCase(); Case insensitive matches are hard since we restore what you originally matched on
 
     perlDoc.elems.forEach((elements: PerlElem[], elemName: string) => {
-        if(/^[\$\@\%].$/.test(elemName)) return; // Remove single character magic perl variables. Mostly clutter the list
+        if (/^[\$\@\%].$/.test(elemName))
+	    return; // Remove single character magic perl variables. Mostly clutter the list
 
         let element = perlDoc.canonicalElems.get(elemName) || elements[0]; // Get the canonical (typed) element, otherwise just grab the first one.
 
         // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here because imports clutter the list, despite perl allowing them called on $self->
-        if(bSelf && [PerlSymbolKind.LocalSub,
-		    PerlSymbolKind.Inherited,
-		    PerlSymbolKind.LocalMethod,
-		    PerlSymbolKind.Field].includes(element.type) ) elemName = `$self::${elemName}`;
+        if (bSelf && [PerlSymbolKind.LocalSub,
+		     PerlSymbolKind.Inherited,
+		     PerlSymbolKind.LocalMethod,
+		     PerlSymbolKind.Field].includes(element.type))
+	    elemName = `$self::${elemName}`;
 
-        if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)){
+        if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)) {
             // Hooray, it's a match! 
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, '\\$1'); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, 'gi'), symbol);
 
-            if(symbol.endsWith('-')) aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->');  // Half-arrows count too
+            if (symbol.endsWith('-'))
+	       aligned = aligned.replace(new RegExp(`-:`, 'gi'), '->');  // Half-arrows count too
 
             // Don't send invalid constructs
-            if(/\-\>\w+::/.test(aligned) || // like FOO->BAR::BAZ
-	       (/\-\>\w+$/.test(aligned) && ![PerlSymbolKind.LocalSub,
-                                            PerlSymbolKind.ImportedSub,
-                                            PerlSymbolKind.Inherited,
-                                            PerlSymbolKind.LocalMethod,
-                                            PerlSymbolKind.Method,
-                                            PerlSymbolKind.Field,
-                                            PerlSymbolKind.PathedField].includes(element.type)) || // FOO->BAR if Bar is not a sub/method.
-                   (!/^\$.*\-\>\w+$/.test(aligned) && [PerlSymbolKind.LocalMethod,
-                                                      PerlSymbolKind.Method,
-						      PerlSymbolKind.Field,
-						      PerlSymbolKind.PathedField].includes(element.type)) || // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
-                   (/-:/.test(aligned)) ||  // We look things up like this, but don't let them slip through
-                   (/^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway             
-              ) return;
-
+	    // like FOO->BAR::BAZ
+	    if (/\-\>\w+::/.test(aligned))
+       		return;
+	    // FOO->BAR if Bar is not a sub/method.
+	    if (/\-\>\w+$/.test(aligned)
+		 && ![PerlSymbolKind.LocalSub,
+                    PerlSymbolKind.ImportedSub,
+                    PerlSymbolKind.Inherited,
+                    PerlSymbolKind.LocalMethod,
+                    PerlSymbolKind.Method,
+                    PerlSymbolKind.Field,
+                    PerlSymbolKind.PathedField].includes(element.type))
+	   	return;
+		    // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
+	    if (!/^\$.*\-\>\w+$/.test(aligned)
+	        && [PerlSymbolKind.LocalMethod,
+                   PerlSymbolKind.Method,
+		   PerlSymbolKind.Field,
+		   PerlSymbolKind.PathedField].includes(element.type))
+	    	return;
+	    if (aligned.indexOf("-:") != -1 // We look things up like this, but don't let them slip through
+		|| /^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway
+	    	return;
             matches = matches.concat(buildMatches(aligned, element, replace));
         }
     });
@@ -167,26 +173,25 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
 // TODO: preprocess all "allowed" matches so we don't waste time iterating over them for every autocomplete.
 function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: string, origSymbol: string, bKnownObj: boolean): boolean {
-
-    if(!elemName.startsWith(qualifiedSymbol)) return false;
-
+    if (!elemName.startsWith(qualifiedSymbol))
+        return false;
     // All uppercase methods are generally private or autogenerated and unhelpful
-    if(/(?:::|->)[A-Z][A-Z_]+$/.test(elemName)) return false;
-
-    if(bKnownObj){
+    if (/(?:::|->)[A-Z][A-Z_]+$/.test(elemName))
+        return false;
+    if (bKnownObj) {
         // If this is a known object type, we probably aren't importing the package or building a new one.
-        if(/(?:::|->)(?:new|import)$/.test(elemName)) return false;
-
+        if (/(?:::|->)(?:new|import)$/.test(elemName))
+	    return false;
         // If we known the object type (and variable name is not $self), then exclude the double underscore private variables (rare anyway. single underscore kept, but ranked last in the autocomplete)
-        if((/^(?!\$self)\$/.test(origSymbol) && /(?:::|->)__\w+$/.test(elemName))) return false;
-
+        if ((/^(?!\$self)\$/.test(origSymbol) && /(?:::|->)__\w+$/.test(elemName)))
+	    return false;
         // Otherwise, always autocomplete, even if the module has not been explicitly imported.
         return true;
     }
     // Get the module name to see if it's been imported. Otherwise, don't allow it.
     let modRg = /^(.+)::.*?$/;
     var match = modRg.exec(elemName);
-    if(match && !perlDoc.imported.has(match[1])){
+    if (match && !perlDoc.imported.has(match[1])) {
         // TODO: Allow completion on packages/class defined within the file itself (e.g. Foo->new, $foo->new already works)
         // Thing looks like a module, but was not explicitly imported
         return false;
@@ -215,7 +220,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     	    detail = `${lookupName}: ${elem.package}`; 
         }
     }
-    if(!detail){
+    if (!detail) {
         switch (elem.type) {
         case PerlSymbolKind.LocalVar: 
             kind = CompletionItemKind.Variable;
@@ -231,7 +236,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             kind = CompletionItemKind.Constant;
             break;
         case PerlSymbolKind.LocalSub:
-            if (/^\$self\-/.test(lookupName))
+            if (lookupName.startsWith("$self-"))
                 docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
             kind = CompletionItemKind.Function;
             break;
@@ -270,16 +275,14 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             break;
         }
     }
-    if(docs.length>0){
+    if (docs.length > 0)
         documentation = {kind: "markdown", value: "```\n" + docs.join("\n") + "\n```" };
-    }
     
     let labelsToBuild = [lookupName];
 
-    if(/::new$/.test(lookupName)){
+    if (lookupName.endsWith("::new"))
         // Having ->new at the top (- sorts before :) is the more common way to call packages (although you can call it either way).
         labelsToBuild.push(lookupName.replace(/::new$/, "->new"));
-    }
 
     let matches: CompletionItem[] = [];
 
@@ -304,15 +307,16 @@ function getSortText(label: string): string {
 
     let sortText: string;
 
-    if(/^[@\$%]?[a-z]?[a-z]?[A-Z][A-Z_]*$/.test(label) || /(?:::|->)[A-Z][A-Z_]+$/.test(label)){
+    if (/^[@\$%]?[a-z]?[a-z]?[A-Z][A-Z_]*$/.test(label) || /(?:::|->)[A-Z][A-Z_]+$/.test(label)) {
         sortText = "4" + label;
-    } else if(/^_$/.test(label) || /(?:::|->)_\w+$/.test(label)){
+    } else if (label == '_' || /(?:::|->)_\w+$/.test(label)) {
         sortText = "3" + label;
-    } else if(/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)){
+    } else if (/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)) {
         // Public methods / functions
         sortText = "2";
         // Prioritize '->new'
-        if (/->new/.test(label)) { sortText += "1" }
+        if (label.indexOf("->new") != -1)
+	    sortText += "1";
         sortText += label;
     } else {
         // Variables and regex mistakes

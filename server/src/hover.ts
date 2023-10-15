@@ -39,26 +39,27 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
 
     let sig = "";
     let name = elem.name;
+    // Early return.
+    if ([PerlSymbolKind.LocalVar,
+        PerlSymbolKind.ImportedVar,
+        PerlSymbolKind.Canonical].includes(elem.type)) {
+        if (elem.typeDetail.length > 0)
+            return `(object) ${elem.typeDetail}`;
+	else if (symbol.startsWith("$self"))
+            // We either know the object type, or it's $self
+            return `(object) ${elem.package}`; 
+    }
     if (refined && refined.signature) {
         let signature = refined.signature;
-        signature  = [...signature];
+        signature = [...signature];
         if (symbol.match(/\->/)) {
             signature.shift()
             name = name.replace(/::(\w+)$/, '->$1');
         }
         if (signature.length > 0)
             sig = '(' + signature.join(', ') + ')';
-    } 
-    if ([PerlSymbolKind.LocalVar,
-        PerlSymbolKind.ImportedVar,
-        PerlSymbolKind.Canonical].includes(elem.type)) {
-        if (elem.typeDetail.length > 0)
-            return "(object) " + `${elem.typeDetail}`;
-	else if (/^\$self/.test(symbol))
-            // We either know the object type, or it's $self
-            return "(object) " + `${elem.package}`; 
     }
-    let desc = "";
+    let desc;
     switch (elem.type) {
     case PerlSymbolKind.ImportedSub: // inherited methods can still be subs (e.g. new from a parent)
     case PerlSymbolKind.Inherited:
@@ -88,7 +89,6 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     case PerlSymbolKind.ImportedHash: 
         desc = `${elem.name}  [${elem.package}]`;
         break;
-
     case PerlSymbolKind.Package:
         desc = `(package) ${elem.name}`;
         break;

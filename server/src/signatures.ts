@@ -33,12 +33,10 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     const end = { line: position.line + 1, character: 0 };
     const text = txtDoc.getText({ start, end });
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
-    let r = index; // right
     // Find signature.
-    for (; r > 1 && text[r] != '('; --r)
-    	;
-    if (r <= 1)
-        return [];
+    const r = text.lastIndexOf('(', index); //right
+    if (r < 1)
+	    return [];
     let l = r - 1; // left
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     for (; l >= 0 && canShift(text[l]); --l)
@@ -47,17 +45,17 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
 	    if (l - 1 >= 0
 		&& text[l - 1] != '-')
 	        break;
-    let symbol = text.substring(Math.max(l + 1, 0), r);
-    if (l >= 0) {
-	const lCh = text[l];
-        // Allow variables as well because we know may know the object type.
-	if (lCh == '$' || lCh == '@' || lCh == '%') {
-	    symbol = lCh + symbol;
-	    // --l; // Currently unused?
-	}
+    let lCh = "";
+    if (l >= 0
+	&& text[l] == '$' || text[l] == '@' || text[l] == '%') {
+	lCh = text[l];
+	++l;
+    } else {
+	l = 0;
     }
-    const currentSig = text.substring(r, index);
-    return [symbol, currentSig];
+    const symbol = lCh + text.substring(l, r);
+    const currSig = text.substring(r, index);
+    return [symbol, currSig];
 }
 
 function buildSignature(elem: PerlElem, currentSig:string, symbol:string): SignatureHelp | undefined {

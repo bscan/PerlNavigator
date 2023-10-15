@@ -35,9 +35,9 @@ export async function refineElement(elem: PerlElem, params: TextDocumentPosition
         refined = elem;
     } else {
         let doc = parsedDocs.get(elem.uri);
-        if(!doc){
+        if (!doc) {
             doc = await parseFromUri(elem.uri, ParseType.signatures);
-            if(!doc)
+            if (!doc)
                 return;
             parsedDocs.set(elem.uri, doc);
         }

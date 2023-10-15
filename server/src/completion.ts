@@ -141,25 +141,28 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
             // Don't send invalid constructs
 	    // like FOO->BAR::BAZ
-	    if (/\-\>\w+::/.test(aligned)
-	       || /\-\>\w+$/.test(aligned))
-		 // FOO->BAR if Bar is not a sub/method.
-		 if (![PerlSymbolKind.LocalSub,
+	    if (/\-\>\w+::/.test(aligned))
+       		return;
+	    // FOO->BAR if Bar is not a sub/method.
+	    if (/\-\>\w+$/.test(aligned)
+		 && ![PerlSymbolKind.LocalSub,
                     PerlSymbolKind.ImportedSub,
                     PerlSymbolKind.Inherited,
                     PerlSymbolKind.LocalMethod,
                     PerlSymbolKind.Method,
                     PerlSymbolKind.Field,
-                    PerlSymbolKind.PathedField].includes(element.type)
-		    || !/^\$.*\-\>\w+$/.test(aligned))
+                    PerlSymbolKind.PathedField].includes(element.type))
+	   	return;
 		    // FOO::BAR if Bar is a instance method or attribute (I assume them to be instance methods/attributes, not class)
-		     if ([PerlSymbolKind.LocalMethod,
-                        PerlSymbolKind.Method,
-			PerlSymbolKind.Field,
-			PerlSymbolKind.PathedField].includes(element.type)
-			|| aligned.indexOf("-:") != -1 // We look things up like this, but don't let them slip through
-			|| /^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway
-		         return;
+	    if (!/^\$.*\-\>\w+$/.test(aligned)
+	        && [PerlSymbolKind.LocalMethod,
+                   PerlSymbolKind.Method,
+		   PerlSymbolKind.Field,
+		   PerlSymbolKind.PathedField].includes(element.type))
+	    	return;
+	    if (aligned.indexOf("-:") != -1 // We look things up like this, but don't let them slip through
+		|| /^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway
+	    	return;
             matches = matches.concat(buildMatches(aligned, element, replace));
         }
     });

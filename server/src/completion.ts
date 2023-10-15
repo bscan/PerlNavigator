@@ -157,7 +157,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
                         PerlSymbolKind.Method,
 			PerlSymbolKind.Field,
 			PerlSymbolKind.PathedField].includes(element.type)
-			|| /-:/.test(aligned) // We look things up like this, but don't let them slip through
+			|| aligned.indexOf("-:") != -1 // We look things up like this, but don't let them slip through
 			|| /^\$.*::/.test(aligned)) // $Foo::Bar, I don't really hunt for these anyway
 		         return;
             matches = matches.concat(buildMatches(aligned, element, replace));
@@ -233,7 +233,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
             kind = CompletionItemKind.Constant;
             break;
         case PerlSymbolKind.LocalSub:
-            if (/^\$self\-/.test(lookupName))
+            if (lookupName.startsWith("$self-"))
                 docs.push(elem.name); // For consistency with the other $self methods. VScode seems to hide documentation if less populated?
             kind = CompletionItemKind.Function;
             break;
@@ -306,13 +306,13 @@ function getSortText(label: string): string {
 
     if (/^[@\$%]?[a-z]?[a-z]?[A-Z][A-Z_]*$/.test(label) || /(?:::|->)[A-Z][A-Z_]+$/.test(label)) {
         sortText = "4" + label;
-    } else if(/^_$/.test(label) || /(?:::|->)_\w+$/.test(label)) {
+    } else if (label == '_' || /(?:::|->)_\w+$/.test(label)) {
         sortText = "3" + label;
-    } else if(/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)) {
+    } else if (/^\w$/.test(label) || /(?:::|->)\w+$/.test(label)) {
         // Public methods / functions
         sortText = "2";
         // Prioritize '->new'
-        if (/->new/.test(label))
+        if (label.indexOf("->new") != -1)
 	    sortText += "1";
         sortText += label;
     } else {

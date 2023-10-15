@@ -53,10 +53,10 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
         PerlSymbolKind.ImportedVar,
         PerlSymbolKind.Canonical].includes(elem.type)) {
         if (elem.typeDetail.length > 0)
-            return "(object) " + `${elem.typeDetail}`;
+            return `(object) ${elem.typeDetail}`;
 	else if (/^\$self/.test(symbol))
             // We either know the object type, or it's $self
-            return "(object) " + `${elem.package}`; 
+            return `(object) ${elem.package}`; 
     }
     let desc = "";
     switch (elem.type) {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.7.2 2023-10-15
+- Leveraging the new parser for variety of features:
+- Subroutine signatures visible while typing, and on hover (includes support for methods, corinna, etc)
+- Navigation improved by just-in-time parsing. Fixes off-by-one line errors and Moo attributes.
+- Foo::Bar->new(...)->func is now recognized as Foo::Bar->func()
+- Thank you to IAKOBVS for code reviews and pull requests with speed improvements, readability improvement, and bug fixes 
+
 ## 0.7.1 2023-10-09
 - Migrating browser version to new parser. Still not unified, but much closer.
 

@@ -35,7 +35,7 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
     // Find signature.
     const r = text.lastIndexOf('(', index); //right
-    if (r == -1)
+    if (r < 1)
 	    return [];
     let l = r - 1; // left
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);

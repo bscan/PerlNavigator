@@ -124,9 +124,9 @@ function getMatches(perlDoc: PerlDocument, symbol: string,  replace: Range): Com
 
         // All plain and inherited subroutines should match with $self. We're excluding PerlSymbolKind.ImportedSub here because imports clutter the list, despite perl allowing them called on $self->
         if (bSelf && [PerlSymbolKind.LocalSub,
-		    PerlSymbolKind.Inherited,
-		    PerlSymbolKind.LocalMethod,
-		    PerlSymbolKind.Field].includes(element.type))
+		     PerlSymbolKind.Inherited,
+		     PerlSymbolKind.LocalMethod,
+		     PerlSymbolKind.Field].includes(element.type))
 	    elemName = `$self::${elemName}`;
 
         if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)) {

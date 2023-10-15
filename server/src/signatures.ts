@@ -45,17 +45,19 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
 	    if (l - 1 >= 0
 		&& text[l - 1] != '-')
 	        break;
-    let symbol = text.substring(Math.max(l + 1, 0), r);
+    let symbol;
     if (l >= 0) {
 	const lCh = text[l];
         // Allow variables as well because we know may know the object type.
-	if (lCh == '$' || lCh == '@' || lCh == '%') {
-	    symbol = lCh + symbol;
-	    // --l; // Currently unused?
-	}
+	if (lCh == '$' || lCh == '@' || lCh == '%')
+    	    symbol = lCh + text.substring(l + 1, r);
+        else
+    	symbol = text.substring(l + 1, r);
+    } else {
+        symbol = text.substring(0, r);
     }
-    const currentSig = text.substring(r, index);
-    return [symbol, currentSig];
+    const currSig = text.substring(r, index);
+    return [symbol, currSig];
 }
 
 function buildSignature(elem: PerlElem, currentSig:string, symbol:string): SignatureHelp | undefined {

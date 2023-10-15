@@ -23,7 +23,7 @@ use MyLib::ClassAccessor;
 use MyLib::ClassTiny;
 use MyLib::ObjectTiny;
 use MyLib::MarsExample;
-
+use MyLib::Corinna;
 
 use MySubClass;
 
@@ -106,12 +106,14 @@ print encode_base64($0) . "\n";
 
 print "\n ------ Methods and Attributes ------\n";
 
+
 my $testObj = MyLib::MyClass->new();
 $testObj->overridden_method();
+$testObj->dynamic();
 
 my $subObj = MySubClass->new();
 $subObj->overridden_method();
-$subObj->inherited_method();
+$subObj->inherited_method(2,3);
 
 my $otherObj = MyLib::MyOtherClass->new();
 $otherObj->unique_method_name();
@@ -119,6 +121,8 @@ $otherObj->duplicate_method_name();
 
 my $unknownObj = $otherObj; # Type hints: $unknownObj isa MyLib::MyOtherClass
 $unknownObj->duplicate_method_name();
+
+MyLib::MyOtherClass->new($my_scalar)->duplicate_method_name();
 
 my $mooObj = MyLib::MooClass->new();
 $mooObj->moo_sub();
@@ -151,6 +155,9 @@ my $otObj = MyLib::ObjectTiny->new();
 my $marsObj = MyLib::MarsExample->new(foo=>10);
 print $marsObj->foo(20);
 print $marsObj->foo;
+
+my $corinna = MyLib::Corinna->new();
+$corinna->move(2,3);
 
 
 use attributes ();

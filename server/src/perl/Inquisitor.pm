@@ -141,7 +141,7 @@ sub resolve_file {
 
     if ($meta->START->isa('B::COP')){
         $file = $meta->START->file;
-        $line = $meta->START->line - 2;
+        $line = $meta->START->line - 1;
     } elsif ($meta->GV->isa('B::GV') and $meta->GV->FILE =~ /Class[\\\/](?:XS)?Accessor\.pm$/){
         # If something comes from XSAccessor or Accessor, it's an attribute (e.g. Moo, ClassAccessor), but we don't know where in the Moo class it's defined.
         $subType = 'd';

@@ -82,7 +82,8 @@ connection.onInitialize((params: InitializeParams) => {
             documentFormattingProvider: true, 
             documentRangeFormattingProvider: true,
             signatureHelpProvider: {
-                'triggerCharacters': ['(',',']
+                // Triggers open signature help, switch to next param, and then close help
+                'triggerCharacters': ['(',',', ')']
             } 
         }
     };
@@ -367,14 +368,14 @@ connection.onHover(async params => {
 });
 
 
-connection.onDefinition(params => {
+connection.onDefinition(async params => {
     let document = documents.get(params.textDocument.uri);
     let perlDoc = navSymbols.get(params.textDocument.uri);
     let mods = availableMods.get('default');
     if(!mods) mods = new Map();
     if(!document) return;
     if(!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
-    let locOut: Location | Location[] | undefined = getDefinition(params, perlDoc, document, mods);
+    let locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
     return locOut;
 });
 

@@ -24,6 +24,8 @@ sub duplicate_method_name {
 }
 
 
+*dynamic = sub { print "Dynamic\n" };
+
 my $genWarning;
 my $genWarning;
 

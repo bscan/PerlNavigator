@@ -67,13 +67,14 @@ export interface PerlDocument {
 export enum ElemSource {
     symbolTable,
     modHunter,
-    parser
+    parser,
+    packageInference
 }
 
 export enum ParseType {
     outline,
     selfNavigation,
-    signatures
+    refinement
 }
 
 export interface CompilationResults {

@@ -67,8 +67,8 @@ export async function parseDocument(textDocument: TextDocument, parseType: Parse
     case ParseType.selfNavigation:
         parseFunctions = [knownObj, localVars, subs, labels, constants, fields, imports, autoloads, dancer];
         break;
-    case ParseType.signatures:
-        parseFunctions = [subs]
+    case ParseType.refinement:
+        parseFunctions = [subs, fields];
         break;
     }
 

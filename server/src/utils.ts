@@ -86,6 +86,8 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
     right = Math.max(left, right);
 
     let symbol = text.substring(left, right);
+    const prefix = text.substring(0, left);
+
     const lChar  = left > 0 ? text[left-1] : "";
     const llChar = left > 1 ? text[left-2] : "";
     const rChar  = right < text.length  ? text[right] : "";
@@ -102,6 +104,15 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
         symbol = lChar + symbol;   // @foo, %foo -> @foo, %foo
     }else if(lChar === '{' && rChar === '}' && ["$", "%", "@"].includes(llChar)){
         symbol = llChar + symbol;  // ${foo} -> $foo
+    }
+
+    if(symbol.match(/^->\w+$/)){
+        // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
+        // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
+        let match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/)
+
+        if(match)
+            symbol = match[1] + symbol;
     }
 
     return symbol;
@@ -208,6 +219,29 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
             });
             if(foundElems.length > 0) return foundElems;
         }
+    }
+
+    if(symbol.match(/^(\w(?:\w|::\w)*)$/)){
+        // Running out of options here. Perhaps it's a Package, and the file is in the symbol table under its individual functions.
+
+        for (let potentialElem of perlDoc.elems.values() ) {
+            const element = potentialElem[0]; // All Elements are with same name are normally the same.
+            if(element.package && element.package == symbol){
+                const packElem: PerlElem = {
+                    name: symbol,
+                    type: PerlSymbolKind.Package,
+                    typeDetail: "",
+                    uri: element.uri,
+                    package: symbol,
+                    line: 0,
+                    lineEnd: 0,
+                    value: "",
+                    source: ElemSource.packageInference
+                }
+                // Just return the first one. The others would likely be the same
+                return [packElem]
+            } 
+        };
     }
 
     return [];

@@ -5,7 +5,7 @@ import {
 import { TextDocument } from 'vscode-languageserver-textdocument';
 import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
-import { refineElement } from "./refinement";
+import { refineElementIfSub } from "./refinement";
 import Uri from 'vscode-uri';
 
 export async function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Hover | undefined> {
@@ -23,7 +23,7 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
         elem = elems[0];
     }
 
-    const refined = await refineElement(elem, params);
+    const refined = await refineElementIfSub(elem, params, perlDoc);
 
     let hoverStr = buildHoverDoc(symbol, elem, refined);
     // Sometimes, there's nothing worth showing.
@@ -51,8 +51,8 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     }
     if (refined && refined.signature) {
         let signature = refined.signature;
-        signature = [...signature];
-        if (symbol.match(/\->/)) {
+        signature  = [...signature];
+        if (symbol.match(/\->/) && refined.type != PerlSymbolKind.LocalMethod) {
             signature.shift()
             name = name.replace(/::(\w+)$/, '->$1');
         }
@@ -108,7 +108,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
         break;
     case PerlSymbolKind.Field:
     case PerlSymbolKind.PathedField:
-        desc = `(attribute) ${symbol}`;
+        desc = `(attribute) ${elem.name}`;
         break;
     case PerlSymbolKind.Phaser: 
         desc = `(phase) ${symbol}`;
@@ -121,7 +121,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
         desc = `(autoloaded) ${symbol}`
     default:
         // We should never get here
-        desc = `Unknown: ${symbol}`;
+        desc = `Unknown: ${elem.name}`;
         break;
     }
     return desc;

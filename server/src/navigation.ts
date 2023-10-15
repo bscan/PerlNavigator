@@ -6,15 +6,16 @@ import {
 import {
     TextDocument
 } from 'vscode-languageserver-textdocument';
-import { PerlDocument, PerlElem, NavigatorSettings } from "./types";
+import { PerlDocument, PerlElem, NavigatorSettings, ElemSource, ParseType } from "./types";
 import Uri from 'vscode-uri';
-import { realpathSync, existsSync, realpath } from 'fs';
+import { realpathSync, existsSync, realpath, promises } from 'fs';
 import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog } from "./utils";
 import { dirname, join } from 'path';
 import { getPerlAssetsPath } from "./assets";
+import { refineElement } from './refinement';
 
 
-export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Location[] | undefined {
+export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Location[] | undefined> {
     
     let position = params.position
     const symbol = getSymbol(position, txtDoc);
@@ -28,16 +29,20 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
     }
 
     let locationsFound: Location[] = [];
-    
-    foundElems.forEach(elem => {
-        const elemResolved: PerlElem | undefined = resolveElemForNav(perlDoc, elem, symbol);
-        if(!elemResolved) return;
+
+    for (const elem of foundElems) {
+        const elemResolved: PerlElem | undefined = await resolveElemForNav(perlDoc, elem, symbol);
+        if(!elemResolved)
+            continue;
 
         let uri: string;
         if(perlDoc.uri !== elemResolved.uri){
             // If sending to a different file, let's make sure it exists and clean up the path
             const file = Uri.parse(elemResolved.uri).fsPath;
-            if(!existsSync(file)) return; // Make sure the file exists and hasn't been deleted.
+
+            if(!isFile(file))
+                continue; // Make sure the file exists and hasn't been deleted.
+
             uri =  Uri.file(realpathSync(file)).toString(); // Resolve symlinks
         } else {
             // Sending to current file (including untitled files)
@@ -51,16 +56,30 @@ export function getDefinition(params: DefinitionParams, perlDoc: PerlDocument, t
                 end: { line: elemResolved.line, character: 500}
                 }
         }
+
         locationsFound.push(newLoc);
-    });    
+    }    
+    // const count = locationsFound
     return locationsFound;
 }
 
+async function isFile(file: string): Promise<boolean> {
 
-function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: string): PerlElem | undefined {
+    try {
+        const stats = await promises.stat(file);
+        return stats.isFile();
+    } catch (err) {
+        // File or directory doesn't exist
+        return false;
+    }
+}
+
+
+async function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: string): Promise<PerlElem | undefined> {
     
-    if(elem.uri && !badFile(Uri.parse(elem.uri).fsPath)){
-
+    let refined = await refineElement(elem, perlDoc);
+    elem = refined || elem;
+    if(!badFile(elem.uri)){
         if(perlDoc.uri == elem.uri  && symbol.includes('->')){
             // Corinna methods don't have line numbers. Let's hunt for them. If you dont find anything better, just return the original element.
             const method = symbol.split('->').pop();
@@ -93,7 +112,7 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
             const elemResolved = perlDoc.elems.get(elem.package);
             if(elemResolved){
                 for (let potentialElem of elemResolved) {
-                    if(potentialElem.uri && !badFile(Uri.parse(potentialElem.uri).fsPath)){
+                    if(potentialElem.uri && !badFile(potentialElem.uri)){
                         return potentialElem;
                     }
                 };
@@ -115,8 +134,19 @@ function resolveElemForNav (perlDoc: PerlDocument, elem: PerlElem, symbol: strin
 }
 
 
-function badFile (file: string){
-    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c)$/.test(file);
+function badFile (uri: string) : boolean{
+
+    if(!uri){
+        return true;
+    }
+    const fsPath = Uri.parse(uri).fsPath;
+
+    if(!fsPath || fsPath.length <= 1){
+        // Single forward slashes seem to sneak in here.
+        return true;
+    }
+
+    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c)$/.test(fsPath);
 }
 
 export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {

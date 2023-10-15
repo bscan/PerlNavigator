@@ -499,7 +499,7 @@ function MakeElem(name: string, type: PerlSymbolKind | TagKind,
         source: ElemSource.parser
     };
 
-    if (type == PerlSymbolKind.Canonical3){
+    if (type == PerlSymbolKind.AutoLoadVar){
         state.perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 

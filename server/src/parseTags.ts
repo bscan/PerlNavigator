@@ -77,13 +77,13 @@ function parseElem(perlTag: string, perlDoc: PerlDocument): void {
         perlDoc.canonicalElems.set(name, newElem);
     } 
 
-    if (type == PerlSymbolKind.Canonical){
+    if (type == PerlSymbolKind.Canonical) {
         // This object is only intended as the canonicalLookup, not for anything else.
         // This doesn't do anything until fancy object types are moved into the typeDetail field
         return;
     }
 
-    if (type == PerlSymbolKind.Canonical3){
+    if (type == PerlSymbolKind.AutoLoadVar) {
         perlDoc.autoloads.set(name, newElem);
         return; // Don't store it as an element
     } 

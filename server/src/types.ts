@@ -89,32 +89,31 @@ export interface CompletionPrefix {
 
 // Ensure TagKind and PerlSymbolKind have no overlap
 export enum TagKind {
-    Canonical2    = "2",
-    UseStatement  = "u", // Reserved: used in pltags, but removed before symbol assignment.
+    Canonical2    = '2',
+    UseStatement  = 'u', // Reserved: used in pltags, but removed before symbol assignment.
 }
 
 export enum PerlSymbolKind {
-    Module         = "m",
-    Package        = "p",
-    Class          = "a",
-    Role           = "b",
-    ImportedSub    = "t",
-    Inherited      = "i",
-    Field          = "f", // Instance fields
-    PathedField    = "d", // Instance fields
-    LocalSub       = "s", 
-    LocalMethod    = "o", // Assumed to be instance methods
-    Method         = "x", // Assumed to be instance methods
-    LocalVar       = "v",
-    Constant       = "n",
-    Label          = "l",
-    Phaser         = "e",
-    Canonical      = "1", // 2 and 3 are also reserved
-    Canonical3     = "3",
-    ImportedVar    = "c",
-    ImportedHash   = "h",
-    HttpRoute      = "g",
-    OutlineOnlySub = "j",
-    AutoLoadVar    = "3"
+    Module         = 'm',
+    Package        = 'p',
+    Class          = 'a',
+    Role           = 'b',
+    ImportedSub    = 't',
+    Inherited      = 'i',
+    Field          = 'f', // Instance fields
+    PathedField    = 'd', // Instance fields
+    LocalSub       = 's', 
+    LocalMethod    = 'o', // Assumed to be instance methods
+    Method         = 'x', // Assumed to be instance methods
+    LocalVar       = 'v',
+    Constant       = 'n',
+    Label          = 'l',
+    Phaser         = 'e',
+    Canonical      = '1', // 2 and 3 are also reserved
+    ImportedVar    = 'c',
+    ImportedHash   = 'h',
+    HttpRoute      = 'g',
+    OutlineOnlySub = 'j',
+    AutoLoadVar    = '3',
 }
 

@@ -39,16 +39,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
 
     let sig = "";
     let name = elem.name;
-    if (refined && refined.signature) {
-        let signature = refined.signature;
-        signature  = [...signature];
-        if (symbol.match(/\->/)) {
-            signature.shift()
-            name = name.replace(/::(\w+)$/, '->$1');
-        }
-        if (signature.length > 0)
-            sig = '(' + signature.join(', ') + ')';
-    } 
+    // Early return.
     if ([PerlSymbolKind.LocalVar,
         PerlSymbolKind.ImportedVar,
         PerlSymbolKind.Canonical].includes(elem.type)) {
@@ -57,6 +48,16 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
 	else if (symbol.startsWith("$self"))
             // We either know the object type, or it's $self
             return `(object) ${elem.package}`; 
+    }
+    if (refined && refined.signature) {
+        let signature = refined.signature;
+        signature = [...signature];
+        if (symbol.match(/\->/)) {
+            signature.shift()
+            name = name.replace(/::(\w+)$/, '->$1');
+        }
+        if (signature.length > 0)
+            sig = '(' + signature.join(', ') + ')';
     }
     let desc;
     switch (elem.type) {

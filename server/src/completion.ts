@@ -217,7 +217,7 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     	    detail = `${lookupName}: ${elem.package}`; 
         }
     }
-    if(!detail){
+    if (!detail) {
         switch (elem.type) {
         case PerlSymbolKind.LocalVar: 
             kind = CompletionItemKind.Variable;
@@ -277,10 +277,9 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     
     let labelsToBuild = [lookupName];
 
-    if(/::new$/.test(lookupName)){
+    if (lookupName.endsWith("::new"))
         // Having ->new at the top (- sorts before :) is the more common way to call packages (although you can call it either way).
         labelsToBuild.push(lookupName.replace(/::new$/, "->new"));
-    }
 
     let matches: CompletionItem[] = [];
 

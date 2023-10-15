@@ -33,12 +33,10 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     const end = { line: position.line + 1, character: 0 };
     const text = txtDoc.getText({ start, end });
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
-    let r = index; // right
     // Find signature.
-    for (; r > 1 && text[r] != '('; --r)
-    	;
-    if (r <= 1)
-        return [];
+    const r = text.lastIndexOf('(', index); //right
+    if (r == -1)
+	    return [];
     let l = r - 1; // left
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     for (; l >= 0 && canShift(text[l]); --l)

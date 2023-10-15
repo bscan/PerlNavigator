@@ -49,24 +49,19 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
 // Similar to getSymbol for navigation, but don't "move right". 
 function getPrefix(text: string, position: number): CompletionPrefix {
 
-    const leftAllow  = (c: string) => /[\w\:\>\-]/.exec(c);
-
-    let left = position - 1;
-
-    while (left >= 0 && leftAllow(text[left])) {
-        left -= 1;
+    const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
+    let l = position - 1; // left
+    for (; l >= 0 && canShift(text[l]); --l)
+    	;
+    let symbol = text.substring(Math.max(l + 1, 0), position);
+    if (l >= 0) {
+	const lCh = text[l];
+	if (lCh === '$' || lCh === '@' || lCh === '%') {
+	    symbol = lCh + symbol;
+	    --l;
+	}
     }
-    left = Math.max(0, left + 1);
-
-    let symbol = text.substring(left, position);
-    const lChar  = left > 0 ? text[left-1] : "";
-
-    if(lChar === '$' || lChar === '@' || lChar === '%'){
-        symbol = lChar + symbol;
-        left -= 1;
-    }
-
-    return {symbol: symbol, charStart: left, charEnd: position};
+    return {symbol: symbol, charStart: l, charEnd: position};
 }
 
 // First we check if it's an import statement, which is a special type of autocomplete with far more options

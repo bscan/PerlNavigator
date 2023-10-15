@@ -88,7 +88,6 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     case PerlSymbolKind.ImportedHash: 
         desc = `${elem.name}  [${elem.package}]`;
         break;
-
     case PerlSymbolKind.Package:
         desc = `(package) ${elem.name}`;
         break;

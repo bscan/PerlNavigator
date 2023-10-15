@@ -1,34 +1,34 @@
-import 'process'
-import { tmpdir } from 'os';
-import { rmdirSync, mkdirSync, mkdtempSync, createReadStream, createWriteStream } from 'fs';
-import { dirname, join } from 'path';
+import "process";
+import { tmpdir } from "os";
+import { rmdirSync, mkdirSync, mkdtempSync, createReadStream, createWriteStream } from "fs";
+import { dirname, join } from "path";
 
 let haveExtractedAssets = false;
 let pkgAssetPath: string;
 
 function extractAssetsIfNecessary(): string {
     if (!haveExtractedAssets) {
-        pkgAssetPath = mkdtempSync(join(tmpdir(), 'perl-navigator'));
-        let assets : string[] = [
-            'src/perl/Inquisitor.pm',
-            'src/perl/lib_bs22/Class/Inspector.pm',
-            'src/perl/lib_bs22/Devel/Symdump.pm',
-            'src/perl/lib_bs22/Devel/Symdump/Export.pm',
-            'src/perl/lib_bs22/Inspectorito.pm',
-            'src/perl/lib_bs22/ModHunter.pl',
-            'src/perl/lib_bs22/SubUtilPP.pm',
-            'src/perl/lib_bs22/SourceStash.pm',
-            'src/perl/lib_bs22/pltags.pm',
-            'src/perl/Inquisitor.pm',
-            'src/perl/criticWrapper.pl',
-            'src/perl/defaultCriticProfile',
-            'src/perl/tidyWrapper.pl'
+        pkgAssetPath = mkdtempSync(join(tmpdir(), "perl-navigator"));
+        let assets: string[] = [
+            "src/perl/Inquisitor.pm",
+            "src/perl/lib_bs22/Class/Inspector.pm",
+            "src/perl/lib_bs22/Devel/Symdump.pm",
+            "src/perl/lib_bs22/Devel/Symdump/Export.pm",
+            "src/perl/lib_bs22/Inspectorito.pm",
+            "src/perl/lib_bs22/ModHunter.pl",
+            "src/perl/lib_bs22/SubUtilPP.pm",
+            "src/perl/lib_bs22/SourceStash.pm",
+            "src/perl/lib_bs22/pltags.pm",
+            "src/perl/Inquisitor.pm",
+            "src/perl/criticWrapper.pl",
+            "src/perl/defaultCriticProfile",
+            "src/perl/tidyWrapper.pl",
         ];
 
-        assets.forEach(asset => {
+        assets.forEach((asset) => {
             let source = join(dirname(__dirname), asset);
             let dest = join(pkgAssetPath, asset);
-            mkdirSync(dirname(dest), { 'recursive': true }); // Create all parent folders
+            mkdirSync(dirname(dest), { recursive: true }); // Create all parent folders
             createReadStream(source).pipe(createWriteStream(dest));
         });
 
@@ -52,12 +52,12 @@ export function getAssetsPath(): string {
 }
 
 export function getPerlAssetsPath(): string {
-    return join(getAssetsPath(), 'src', 'perl');
+    return join(getAssetsPath(), "src", "perl");
 }
 
 export function cleanupTemporaryAssetPath() {
     if (haveExtractedAssets) {
-        rmdirSync(pkgAssetPath, { 'recursive': true }); // Create all parent folders
+        rmdirSync(pkgAssetPath, { recursive: true }); // Create all parent folders
         haveExtractedAssets = false;
     }
 }

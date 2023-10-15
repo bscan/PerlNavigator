@@ -1,31 +1,20 @@
-import {
-    TextDocumentPositionParams,
-    SignatureHelp,
-    SignatureInformation,
-    ParameterInformation
-} from 'vscode-languageserver/node';
-import { TextDocument, Position } from 'vscode-languageserver-textdocument';
+import { TextDocumentPositionParams, SignatureHelp, SignatureInformation, ParameterInformation } from "vscode-languageserver/node";
+import { TextDocument, Position } from "vscode-languageserver-textdocument";
 import { ElemSource, ParseType, PerlDocument, PerlElem, PerlSymbolKind } from "./types";
-import {  lookupSymbol } from "./utils";
+import { lookupSymbol } from "./utils";
 import { parseFromUri } from "./parser";
-import fs = require('fs');
-import Uri from 'vscode-uri';
-
+import fs = require("fs");
+import Uri from "vscode-uri";
 
 var LRU = require("lru-cache");
 
 // Extremely short 30 second cache of parsed documents. Similar to the one in server.ts, but this is refinement-centric (signatures, navigation).
 // Usually only used for typing multiple signatures, hover over the same place, etc.
 // Parsing is so fast, I'm not sure this is even needed.
-const parsedDocs = new LRU({max: 10, ttl: 1000 * 30 });
-
+const parsedDocs = new LRU({ max: 10, ttl: 1000 * 30 });
 
 export async function refineElementIfSub(elem: PerlElem, params: TextDocumentPositionParams, perlDoc: PerlDocument): Promise<PerlElem | undefined> {
-    if (![PerlSymbolKind.LocalSub,
-        PerlSymbolKind.ImportedSub,
-        PerlSymbolKind.Inherited,
-        PerlSymbolKind.LocalMethod,
-        PerlSymbolKind.Method].includes(elem.type)) {
+    if (![PerlSymbolKind.LocalSub, PerlSymbolKind.ImportedSub, PerlSymbolKind.Inherited, PerlSymbolKind.LocalMethod, PerlSymbolKind.Method].includes(elem.type)) {
         return;
     }
 
@@ -37,29 +26,24 @@ export async function refineElementIfSub(elem: PerlElem, params: TextDocumentPos
     return await refineElement(elem, perlDoc);
 }
 
-
 export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Promise<PerlElem> {
-
     // Return back the original if you can't refine
     let refined: PerlElem = elem;
     if (elem.source == ElemSource.parser || elem.source == ElemSource.modHunter) {
         refined = elem;
     } else {
         const resolvedUri = await getUriFromElement(elem, perlDoc);
-        if(!resolvedUri)
-            return refined;
+        if (!resolvedUri) return refined;
 
         let doc = parsedDocs.get(resolvedUri);
-        if(!doc){
+        if (!doc) {
             doc = await parseFromUri(resolvedUri, ParseType.refinement);
-            if(!doc)
-                return refined;
+            if (!doc) return refined;
             parsedDocs.set(resolvedUri, doc);
-
         }
 
         let refinedElems = [];
-        if([PerlSymbolKind.Package, PerlSymbolKind.Class].includes(elem.type)){
+        if ([PerlSymbolKind.Package, PerlSymbolKind.Class].includes(elem.type)) {
             refinedElems = doc.elems.get(elem.name);
         } else {
             // Looks up Foo::Bar::baz by only the function name baz
@@ -69,38 +53,32 @@ export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Prom
                 refinedElems = doc.elems.get(match[0]);
             }
         }
-        
-        if (refinedElems && refinedElems.length == 1){
+
+        if (refinedElems && refinedElems.length == 1) {
             refined = refinedElems[0];
         }
     }
     return refined;
 }
 
+async function getUriFromElement(elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
+    if (await isFile(elem.uri)) return elem.uri;
 
-async function getUriFromElement (elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
-
-    if(await isFile(elem.uri))
-        return elem.uri;
-
-    if(!elem.package)
-        return;
+    if (!elem.package) return;
 
     const elemResolved = perlDoc.elems.get(elem.package);
-    if(!elemResolved)
-        return;
+    if (!elemResolved) return;
 
     for (let potentialElem of elemResolved) {
-        if(await isFile(potentialElem.uri)){
+        if (await isFile(potentialElem.uri)) {
             return potentialElem.uri;
         }
     }
 }
 
-
 async function isFile(uri: string): Promise<boolean> {
     const file = Uri.parse(uri).fsPath;
-    if(!file || file.length < 1){
+    if (!file || file.length < 1) {
         return false;
     }
     try {
@@ -111,4 +89,3 @@ async function isFile(uri: string): Promise<boolean> {
         return false;
     }
 }
-    

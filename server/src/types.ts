@@ -2,11 +2,7 @@
 // defaults for configurable editors stored in package.json
 // defaults for non-configurable editors in server.ts
 
-import {
-    Diagnostic,
-} from 'vscode-languageserver/node';
-
-
+import { Diagnostic } from "vscode-languageserver/node";
 
 export interface NavigatorSettings {
     perlPath: string;
@@ -34,26 +30,23 @@ export interface NavigatorSettings {
     enableProgress: boolean;
 }
 
-
-
 export interface PerlElem {
-    name: string,
+    name: string;
     type: PerlSymbolKind;
-    typeDetail: string,
-    signature?: string[],
+    typeDetail: string;
+    signature?: string[];
     uri: string;
     package: string;
     line: number;
     lineEnd: number;
     value: string;
     source: ElemSource;
-};
+}
 
 // Used for keeping track of what has been imported
 export interface PerlImport {
     mod: string;
-};
-
+}
 
 export interface PerlDocument {
     elems: Map<string, PerlElem[]>;
@@ -68,24 +61,24 @@ export enum ElemSource {
     symbolTable,
     modHunter,
     parser,
-    packageInference
+    packageInference,
 }
 
 export enum ParseType {
     outline,
     selfNavigation,
-    refinement
+    refinement,
 }
 
 export interface CompilationResults {
-    diags: Diagnostic[],
-    perlDoc: PerlDocument,
+    diags: Diagnostic[];
+    perlDoc: PerlDocument;
 }
 
 export interface CompletionPrefix {
-    symbol: string,
-    charStart: number,
-    charEnd: number,
+    symbol: string;
+    charStart: number;
+    charEnd: number;
 }
 
 // Ensure TagKind and PerlSymbolKind have no overlap
@@ -117,4 +110,3 @@ export enum PerlSymbolKind {
     OutlineOnlySub = 'j',
     AutoLoadVar    = '3',
 }
-

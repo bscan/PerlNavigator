@@ -132,7 +132,7 @@ function badFile(uri: string): boolean {
         return true;
     }
 
-    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c)$/.test(fsPath);
+    return /(?:Sub[\\\/]Defer\.pm|Moo[\\\/]Object\.pm|Moose[\\\/]Object\.pm|\w+\.c|Inspectorito\.pm)$/.test(fsPath);
 }
 
 export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {

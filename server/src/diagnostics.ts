@@ -111,7 +111,7 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity , diag
     const lineNum = output.lineNum;
     violation = output.violation;
 
-    if( /=PerlWarning=/.test(violation) ){
+    if (violation.indexOf("=PerlWarning=") != -1) {
         // Downgrade severity for explicitly marked severities
         severity = DiagnosticSeverity.Warning;
         violation = violation.replace(/=PerlWarning=/g, ""); // Don't display the PerlWarnings
@@ -246,7 +246,7 @@ function getCriticProfile (workspaceFolders: WorkspaceFolder[] | null, settings:
     let profileCmd: string[] = [];
     if (settings.perlcriticProfile) {
         let profile = settings.perlcriticProfile;
-        if (/\$workspaceFolder/.test(profile)){
+        if (profile.indexOf("$workspaceFolder") != -1) {
             if (workspaceFolders){
                 // TODO: Fix this too. Only uses the first workspace folder
                 const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;

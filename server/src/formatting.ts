@@ -135,7 +135,7 @@ function getTidyProfile (workspaceFolders: WorkspaceFolder[] | null, settings: N
     let profileCmd: string[] = [];
     if (settings.perltidyProfile) {
         let profile = settings.perltidyProfile;
-        if (/\$workspaceFolder/.test(profile)){
+        if (profile.indexOf("$workspaceFolder") != -1) {
             if (workspaceFolders){
                 // TODO: Fix this. Only uses the first workspace folder
                 const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;

@@ -54,11 +54,11 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
         PerlSymbolKind.Canonical].includes(elem.type)) {
         if (elem.typeDetail.length > 0)
             return `(object) ${elem.typeDetail}`;
-	else if (/^\$self/.test(symbol))
+	else if (symbol.startsWith("$self"))
             // We either know the object type, or it's $self
             return `(object) ${elem.package}`; 
     }
-    let desc = "";
+    let desc;
     switch (elem.type) {
     case PerlSymbolKind.ImportedSub: // inherited methods can still be subs (e.g. new from a parent)
     case PerlSymbolKind.Inherited:

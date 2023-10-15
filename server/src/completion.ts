@@ -15,9 +15,8 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     let position = params.position
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
-    const text : string = txtDoc.getText({ start, end });
-
-    const index : number = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
+    const text = txtDoc.getText({ start, end });
+    const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
     const imPrefix = getImportPrefix(text, index);
     if (imPrefix) {
@@ -32,7 +31,8 @@ export function getCompletions(params: TextDocumentPositionParams, perlDoc: Perl
     } else {
         const prefix = getPrefix(text, index);
 
-        if(!prefix.symbol) return [];
+        if (!prefix.symbol)
+		return [];
 
         const replace: Range = {
                 start: { line: position.line, character: prefix.charStart },

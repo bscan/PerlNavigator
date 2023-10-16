@@ -45,10 +45,12 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     let l = position - 1; // left
     for (; l >= 0 && canShift(text[l]); --l);
     let lCh = "";
-    if (l != position && l >= 0 && (text[l] == "$" || text[l] == "@" || text[l] == "%"))
-        lCh = text[l];
-    else
+    if (l >= 0) {
+	    if (l != position && (text[l] == "$" || text[l] == "@" || text[l] == "%"))
+		lCh = text[l];
+    } else {
         ++l;
+    }
     const symbol = lCh + text.substring(l, position);
     return { symbol: symbol, charStart: l, charEnd: position };
 }

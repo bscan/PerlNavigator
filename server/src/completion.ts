@@ -146,7 +146,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): Comp
                 return;
             if (
                 aligned.indexOf("-:") != -1 || // We look things up like this, but don't let them slip through
-                /^\$.*::/.test(aligned)
+		aligned.startsWith('$') && aligned.indexOf("::", 1) != -1
             )
                 // $Foo::Bar, I don't really hunt for these anyway
                 return;
@@ -166,7 +166,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
         // If this is a known object type, we probably aren't importing the package or building a new one.
         if (/(?:::|->)(?:new|import)$/.test(elemName)) return false;
         // If we known the object type (and variable name is not $self), then exclude the double underscore private variables (rare anyway. single underscore kept, but ranked last in the autocomplete)
-        if (/^(?!\$self)\$/.test(origSymbol) && /(?:::|->)__\w+$/.test(elemName)) return false;
+        if (origSymbol.startsWith('$') && !origSymbol.startsWith("$self") && /(?:::|->)__\w+$/.test(elemName)) return false;
         // Otherwise, always autocomplete, even if the module has not been explicitly imported.
         return true;
     }

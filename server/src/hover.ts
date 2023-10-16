@@ -106,6 +106,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
             break;
         case PerlSymbolKind.AutoLoadVar:
             desc = `(autoloaded) ${symbol}`;
+            break;
         default:
             // We should never get here
             desc = `Unknown: ${elem.name}`;

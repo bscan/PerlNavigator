@@ -114,8 +114,10 @@ function localVars(state: ParserState): boolean {
     // line, or if this line starts with my or local
     let match;
     if (state.var_continues || (match = state.stmt.match(/^(?:my|our|local|state)\b/))) {
-        // The declaration continues if the line does not end with ;
-        state.var_continues = !state.stmt.endsWith(";") && !state.stmt.match(/[\)\=\}\{]/);
+        // The declaration continues unless there's a semicolon, signature end, or sub start. 
+        // This can get tripped up with comments, but it's not a huge deal. subroutines are more important
+        state.var_continues = !state.stmt.match(/[\)\=\}\{;]/);
+        
         let mod_stmt = state.stmt;
         // Remove my or local from statement, if present
         mod_stmt = mod_stmt.replace(/^(my|our|local|state)\s+/, "");
@@ -242,7 +244,10 @@ function look_ahead_signatures(state: ParserState): string[] {
             }
         }
         let match;
-        if ((match = stmt.match(/(?:^|{)\s*my\s+(\(\s*[\$@%]\w+\s*(?:,\s*[\$@%]\w+\s*)*\))\s*=\s*\@_/)) || (match = stmt.match(/(?:^|{)\s*my\s+(\s*[\$@%]\w+\s*)=\s*shift\b/))) {
+        if ((match = stmt.match(/(?:^|{)\s*my\s+(\(\s*[\$@%]\w+\s*(?:,\s*[\$@%]\w+\s*)*\))\s*=\s*\@_/)) || // my ($foo, $bar) = @_
+            (match = stmt.match(/(?:^|{)\s*my\s+(\s*[\$@%]\w+\s*)=\s*shift\b/)) ||                         // my $foo = shift
+            (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[\$@%]\w+\s*\))\s*=\s*shift\b/))                     // my ($foo) = shift
+            ) {
             let vars = match[1].matchAll(/([\$\@\%][\w:]+)\b/g);
             for (const matchvar of vars) {
                 sig_vars.push(matchvar[0]);

@@ -137,7 +137,7 @@ function getTidyProfile(workspaceFolders: WorkspaceFolder[] | null, settings: Na
                 // TODO: Fix this. Only uses the first workspace folder
                 const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;
                 profileCmd.push("--profile");
-                profileCmd.push(profile.replace(/\$workspaceFolder/g, workspaceUri));
+                profileCmd.push(profile.replaceAll("$workspaceFolder", workspaceUri));
             } else {
                 nLog("You specified $workspaceFolder in your perltidy path, but didn't include any workspace folders. Ignoring profile.", settings);
             }

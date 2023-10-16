@@ -84,8 +84,9 @@ function getImportMatches(mods: string[], symbol: string, replace: Range): Compl
 function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): CompletionItem[] {
     let matches: CompletionItem[] = [];
 
-    let qualifiedSymbol = symbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
-    qualifiedSymbol = qualifiedSymbol.replace(/-$/g, ":"); // Maybe I just started typing Module-
+    let qualifiedSymbol = symbol.replaceAll("->", "::"); // Module->method() can be found via Module::method
+    if (qualifiedSymbol.endsWith('-'))
+    	qualifiedSymbol = qualifiedSymbol.replace('-', ':');
 
     let bKnownObj = false;
     // Check if we know the type of this object
@@ -119,7 +120,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): Comp
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, "\\$1"); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, "gi"), symbol);
 
-            if (symbol.endsWith("-")) aligned = aligned.replace(new RegExp(`-:`, "gi"), "->"); // Half-arrows count too
+            if (symbol.endsWith("-")) aligned = aligned.replaceAll('-:', "->"); // Half-arrows count too
 
             // Don't send invalid constructs
             // like FOO->BAR::BAZ

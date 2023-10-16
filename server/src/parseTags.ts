@@ -2,7 +2,7 @@ import { PerlDocument, PerlElem, PerlImport, PerlSymbolKind, TagKind, ElemSource
 import Uri from "vscode-uri";
 
 export function buildNav(stdout: string, filePath: string, fileuri: string): PerlDocument {
-    stdout = stdout.replace(/\r/g, ""); // Windows
+    stdout = stdout.replaceAll("\r", "") // Windows
 
     let perlDoc: PerlDocument = {
         elems: new Map(),

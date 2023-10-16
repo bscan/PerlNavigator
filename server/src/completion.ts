@@ -46,8 +46,7 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     for (; l >= 0 && canShift(text[l]); --l);
     let lCh = "";
     if (l >= 0) {
-	    if (l != position && (text[l] == "$" || text[l] == "@" || text[l] == "%"))
-		lCh = text[l];
+	    if (l != position && (text[l] == "$" || text[l] == "@" || text[l] == "%")) lCh = text[l];
     } else {
         ++l;
     }

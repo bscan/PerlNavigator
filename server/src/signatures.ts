@@ -42,8 +42,7 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
         if (text[l] == ">") if (l - 1 >= 0 && text[l - 1] != "-") break;
     let lCh = "";
     if (l >= 0) {
-	    if (l != r && (text[l] == "$" || text[l] == "@" || text[l] == "%"))
-		lCh = text[l];
+	    if (l != r && (text[l] == "$" || text[l] == "@" || text[l] == "%")) lCh = text[l];
     } else {
         ++l;
     }

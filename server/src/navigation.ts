@@ -31,7 +31,7 @@ export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocum
             // If sending to a different file, let's make sure it exists and clean up the path
             const file = Uri.parse(elemResolved.uri).fsPath;
 
-            if (!isFile(file)) continue; // Make sure the file exists and hasn't been deleted.
+            if (!(await isFile(file))) continue; // Make sure the file exists and hasn't been deleted.
 
             uri = Uri.file(realpathSync(file)).toString(); // Resolve symlinks
         } else {

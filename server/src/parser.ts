@@ -244,7 +244,7 @@ function look_ahead_signatures(state: ParserState): string[] {
             }
         }
         let match;
-        if ((match = stmt.match(/(?:^|{)\s*my\s+(\(\s*[\$@%]\w+\s*(?:,\s*[\$@%]\w+\s*)*\))\s*=\s*\@_/)) || // my ($foo, $bar) = @_
+        if ((match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[\$@%]\w+\s*(?:,\s*[\$@%]\w+\s*)*\))\s*=\s*\@_/)) || // my ($foo, $bar) = @_
             (match = stmt.match(/(?:^|{)\s*my\s+(\s*[\$@%]\w+\s*)=\s*shift\b/)) ||                         // my $foo = shift
             (match = stmt.match(/(?:^|{)\s*my\s*(\(\s*[\$@%]\w+\s*\))\s*=\s*shift\b/))                     // my ($foo) = shift
             ) {

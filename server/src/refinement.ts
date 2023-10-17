@@ -6,13 +6,6 @@ import { parseFromUri } from "./parser";
 import fs = require("fs");
 import Uri from "vscode-uri";
 
-var LRU = require("lru-cache");
-
-// Extremely short 30 second cache of parsed documents. Similar to the one in server.ts, but this is refinement-centric (signatures, navigation).
-// Usually only used for typing multiple signatures, hover over the same place, etc.
-// Parsing is so fast, I'm not sure this is even needed.
-const parsedDocs = new LRU({ max: 10, ttl: 1000 * 30 });
-
 export async function refineElementIfSub(elem: PerlElem, params: TextDocumentPositionParams, perlDoc: PerlDocument): Promise<PerlElem | undefined> {
     if (![PerlSymbolKind.LocalSub, PerlSymbolKind.ImportedSub, PerlSymbolKind.Inherited, PerlSymbolKind.LocalMethod, PerlSymbolKind.Method].includes(elem.type)) {
         return;
@@ -35,14 +28,10 @@ export async function refineElement(elem: PerlElem, perlDoc: PerlDocument): Prom
         const resolvedUri = await getUriFromElement(elem, perlDoc);
         if (!resolvedUri) return refined;
 
-        let doc = parsedDocs.get(resolvedUri);
-        if (!doc) {
-            doc = await parseFromUri(resolvedUri, ParseType.refinement);
-            if (!doc) return refined;
-            parsedDocs.set(resolvedUri, doc);
-        }
+        let doc = await parseFromUri(resolvedUri, ParseType.refinement);
+        if (!doc) return refined;
 
-        let refinedElems = [];
+        let refinedElems: PerlElem[] | undefined;
         if ([PerlSymbolKind.Package, PerlSymbolKind.Class].includes(elem.type)) {
             refinedElems = doc.elems.get(elem.name);
         } else {

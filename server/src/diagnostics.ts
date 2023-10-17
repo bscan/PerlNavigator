@@ -80,7 +80,7 @@ function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): stri
     let module_name_match = module_name_rx.exec(code);
     while (module_name_match != null) {
         const module_name = module_name_match[1];
-        const inc_filename = module_name.replace(/::/g, "/") + ".pm";
+        const inc_filename = module_name.replaceAll("::", "/") + ".pm";
         // make sure the package found actually matches the filename
         if (filePath.match(".*" + inc_filename)) {
             register_inc_path = `\$INC{'${inc_filename}'} = '${filePath}';`;
@@ -97,7 +97,7 @@ function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): stri
 }
 
 function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity, diagnostics: Diagnostic[], filePath: string, perlDoc: PerlDocument): void {
-    violation = violation.replace(/\r/g, ""); // Clean up for Windows
+    violation = violation.replaceAll("\r", ""); // Clean up for Windows
     violation = violation.replace(/, <STDIN> line 1\.$/g, ""); // Remove our stdin nonsense
 
     let output = localizeErrors(violation, filePath, perlDoc);
@@ -108,7 +108,7 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity, diagn
     if (violation.indexOf("=PerlWarning=") != -1) {
         // Downgrade severity for explicitly marked severities
         severity = DiagnosticSeverity.Warning;
-        violation = violation.replace(/=PerlWarning=/g, ""); // Don't display the PerlWarnings
+        violation = violation.replaceAll("=PerlWarning=", ""); // Don't display the PerlWarnings
     }
 
     diagnostics.push({
@@ -237,7 +237,7 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
                 // TODO: Fix this too. Only uses the first workspace folder
                 const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;
                 profileCmd.push("--profile");
-                profileCmd.push(profile.replace(/\$workspaceFolder/g, workspaceUri));
+                profileCmd.push(profile.replaceAll("$workspaceFolder", workspaceUri));
             } else {
                 nLog("You specified $workspaceFolder in your perlcritic path, but didn't include any workspace folders. Ignoring profile.", settings);
             }
@@ -251,7 +251,7 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
 
 function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settings: NavigatorSettings): void {
     // Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy ~||~ Newline
-    const tokens = violation.replace("~||~", "").replace(/\r/g, "").split("~|~");
+    const tokens = violation.replace("~||~", "").replaceAll("\r", "").split("~|~");
     if (tokens.length != 5) {
         return;
     }

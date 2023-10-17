@@ -44,12 +44,7 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     let l = position - 1; // left
     for (; l >= 0 && canShift(text[l]); --l);
-    let lCh = "";
-    if (l >= 0 && (text[l] == "$" || text[l] == "@" || text[l] == "%")) {
-        lCh = text[l];
-    } else {
-        ++l;
-    }
+    if (l < 0 || text[l] != "$" && text[l] != "@" && text[l] != "%") ++l;
     const symbol = text.substring(l, position);
     return { symbol: symbol, charStart: l, charEnd: position };
 }
@@ -84,8 +79,9 @@ function getImportMatches(mods: string[], symbol: string, replace: Range): Compl
 function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): CompletionItem[] {
     let matches: CompletionItem[] = [];
 
-    let qualifiedSymbol = symbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
-    qualifiedSymbol = qualifiedSymbol.replace(/-$/g, ":"); // Maybe I just started typing Module-
+    let qualifiedSymbol = symbol.replaceAll("->", "::"); // Module->method() can be found via Module::method
+    if (qualifiedSymbol.endsWith('-'))
+    	qualifiedSymbol = qualifiedSymbol.replace('-', ':');
 
     let bKnownObj = false;
     // Check if we know the type of this object
@@ -119,7 +115,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): Comp
             const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, "\\$1"); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, "gi"), symbol);
 
-            if (symbol.endsWith("-")) aligned = aligned.replace(new RegExp(`-:`, "gi"), "->"); // Half-arrows count too
+            if (symbol.endsWith("-")) aligned = aligned.replaceAll('-:', "->"); // Half-arrows count too
 
             // Don't send invalid constructs
             // like FOO->BAR::BAZ
@@ -146,7 +142,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): Comp
                 return;
             if (
                 aligned.indexOf("-:") != -1 || // We look things up like this, but don't let them slip through
-                /^\$.*::/.test(aligned)
+		aligned.startsWith('$') && aligned.indexOf("::", 1) != -1
             )
                 // $Foo::Bar, I don't really hunt for these anyway
                 return;
@@ -166,7 +162,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
         // If this is a known object type, we probably aren't importing the package or building a new one.
         if (/(?:::|->)(?:new|import)$/.test(elemName)) return false;
         // If we known the object type (and variable name is not $self), then exclude the double underscore private variables (rare anyway. single underscore kept, but ranked last in the autocomplete)
-        if (/^(?!\$self)\$/.test(origSymbol) && /(?:::|->)__\w+$/.test(elemName)) return false;
+        if (origSymbol.startsWith('$') && !origSymbol.startsWith("$self") && /(?:::|->)__\w+$/.test(elemName)) return false;
         // Otherwise, always autocomplete, even if the module has not been explicitly imported.
         return true;
     }

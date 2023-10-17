@@ -40,12 +40,7 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     for (; l >= 0 && canShift(text[l]); --l)
         // Allow for ->, but not => or > (e.g. $foo->bar, but not $foo=>bar or $foo>bar).
         if (text[l] == ">") if (l - 1 >= 0 && text[l - 1] != "-") break;
-    let lCh = "";
-    if (l >= 0 && (text[l] == "$" || text[l] == "@" || text[l] == "%")) {
-        lCh = text[l];
-    } else {
-        ++l;
-    }
+    if (l < 0 || text[l] != "$" && text[l] != "@" && text[l] != "%") ++l;
     const symbol = text.substring(l, r);
     const currSig = text.substring(r, index);
     return [symbol, currSig];

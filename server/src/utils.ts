@@ -17,7 +17,7 @@ export function getIncPaths(workspaceFolders: WorkspaceFolder[] | null, settings
             if (workspaceFolders) {
                 workspaceFolders.forEach((workspaceFolder) => {
                     const incPath = Uri.parse(workspaceFolder.uri).fsPath;
-                    includePaths = includePaths.concat(["-I", path.replace(/\$workspaceFolder/g, incPath)]);
+                    includePaths = includePaths.concat(["-I", path.replaceAll("$workspaceFolder", incPath)]);
                 });
             } else {
                 nLog("You used $workspaceFolder in your config, but didn't add any workspace folders. Skipping " + path, settings);
@@ -183,7 +183,7 @@ export function lookupSymbol(perlDoc: PerlDocument, modMap: Map<string, string>,
     found = perlDoc.elems.get(symbol.replace(/DBI->new$/, "DBI::connect"));
     if (found?.length) return [found[0]];
 
-    qSymbol = qSymbol.replace(/->/g, "::"); // Module->method() can be found via Module::method
+    qSymbol = qSymbol.replaceAll("->", "::"); // Module->method() can be found via Module::method
     qSymbol = qSymbol.replace(/^main::(\w+)$/g, "$1"); // main::foo is just tagged as foo
 
     found = perlDoc.elems.get(qSymbol);

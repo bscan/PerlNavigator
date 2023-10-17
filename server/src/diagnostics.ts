@@ -82,7 +82,7 @@ function getAdjustedPerlCode(textDocument: TextDocument, filePath: string): stri
         const module_name = module_name_match[1];
         const inc_filename = module_name.replaceAll("::", "/") + ".pm";
         // make sure the package found actually matches the filename
-        if (filePath.match(".*" + inc_filename)) {
+        if (filePath.indexOf(inc_filename) != -1) {
             register_inc_path = `\$INC{'${inc_filename}'} = '${filePath}';`;
             break;
         } else {

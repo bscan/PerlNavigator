@@ -42,7 +42,7 @@ function buildHoverDoc(symbol: string, elem: PerlElem, refined: PerlElem | undef
     if (refined && refined.signature) {
         let signature = refined.signature;
         signature = [...signature];
-        if (symbol.match(/\->/) && refined.type != PerlSymbolKind.LocalMethod) {
+        if (symbol.indexOf("->") != -1 && refined.type != PerlSymbolKind.LocalMethod) {
             signature.shift();
             name = name.replace(/::(\w+)$/, "->$1");
         }

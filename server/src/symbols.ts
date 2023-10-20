@@ -71,7 +71,7 @@ export function getWorkspaceSymbols(params: WorkspaceSymbolParams, defaultMods: 
     return new Promise((resolve, reject) => {
         let symbols: SymbolInformation[] = [];
 
-        const lcQuery = params.query.toLowerCase();
+        // const lcQuery = params.query.toLowerCase(); // Currently unused.
         defaultMods.forEach((modUri: string, modName: string) => {
             if (true) {
                 // Just send the whole list and let the client sort through it with fuzzy search

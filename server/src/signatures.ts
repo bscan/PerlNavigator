@@ -51,7 +51,7 @@ function buildSignature(elem: PerlElem, currentSig: string, symbol: string): Sig
     if (!params) return;
     params = [...params]; // Clone to ensure we don't modify the original
     let activeParameter = (currentSig.match(/,/g) || []).length;
-    if (symbol.match(/->/) && elem.type != PerlSymbolKind.LocalMethod) {
+    if (symbol.indexOf("->") != -1 && elem.type != PerlSymbolKind.LocalMethod) {
         // Subroutine vs method is not relevant, only matters if you called it as a method (except Corinna, for which $self is implicit)
         params.shift();
         // function_name = function_name.replace(/::(\w+)$/, '->$1');

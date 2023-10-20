@@ -200,7 +200,7 @@ function subs(state: ParserState): boolean {
 
         // Define subrountine signatures, but exclude prototypes
         // The declaration continues if the line does not end with ;
-        state.var_continues = !(state.stmt.match(/;$/) || state.stmt.match(/[\)\=\}\{]/));
+        state.var_continues = !(state.stmt.endsWith(';') || state.stmt.match(/[\)\=\}\{]/));
 
         for (const matchvar of vars) {
             signature_params.push(matchvar[1]);
@@ -567,7 +567,7 @@ function PackageEndLine(state: ParserState) {
 
         if (found == false) {
             // If we haven't found the start of the package block, there probably isn't one.
-            if (stmt.match(/;/) || i - start_line > 1) {
+            if (stmt.indexOf(';') != -1 || i - start_line > 1) {
                 break;
             }
         }

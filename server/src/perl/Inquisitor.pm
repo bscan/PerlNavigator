@@ -13,6 +13,12 @@ my @checkPreloaded = qw(List::Util File::Spec Sub::Util Cwd Scalar::Util Class::
 # Mark warnings to detect difference between warnings and errors. Inspired by https://github.com/skaji/syntax-check-perl
 $SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };
 
+# These modules can cause issues because they wipe the symbol table before we get a chance to inspect it.
+# Prevent them from loading. 
+# I hope this doesn't cause any issues, perhaps VERSION numbers or import statements would help here
+$INC{'namespace/clean.pm'} = '';
+$INC{'namespace/autoclean.pm'} = '';
+
 CHECK {
     if(!$ENV{'PERLNAVIGATORTEST'}){
         run();

@@ -3,6 +3,9 @@ use strict;
 use warnings;
 use Data::Dumper qw(Dumper);
 use experimental 'signatures';
+use namespace::autoclean;
+use namespace::clean;
+
 
 sub new {
     my $class = shift;

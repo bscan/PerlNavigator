@@ -40,9 +40,22 @@ function getFunction(position: Position, txtDoc: TextDocument): string[] {
     for (; l >= 0 && canShift(text[l]); --l)
         // Allow for ->, but not => or > (e.g. $foo->bar, but not $foo=>bar or $foo>bar).
         if (text[l] == ">") if (l - 1 >= 0 && text[l - 1] != "-") break;
+        
     if (l < 0 || text[l] != "$" && text[l] != "@" && text[l] != "%") ++l;
-    const symbol = text.substring(l, r);
+
+    let symbol = text.substring(l, r);
     const currSig = text.substring(r, index);
+
+    const prefix = text.substring(0, l);
+
+    if (symbol.match(/^->\w+$/)) { 
+        // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
+        // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
+        let match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
+
+        if (match) symbol = match[1] + symbol;
+    }
+
     return [symbol, currSig];
 }
 

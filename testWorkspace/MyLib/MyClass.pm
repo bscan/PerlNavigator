@@ -19,6 +19,18 @@ sub inherited_method($self, $foo, $bar) {
     print "In inherited_method\n";
 }
 
+
+=head1 NAME
+
+MyClass: Example documentation
+=head1 SYNOPSIS
+
+	use MyClass;
+
+=cut 
+
+
+
 sub duplicate_method_name {
     print "In MyObject duplicate_name\n";
 }
@@ -30,3 +42,8 @@ my $genWarning;
 my $genWarning;
 
 1;
+
+
+=item duplicate_method_name
+
+duplicate_method_name prints some information

@@ -25,9 +25,9 @@ import { perlcompile, perlcritic, perlimports } from "./diagnostics";
 import { cleanupTemporaryAssetPath } from "./assets";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
-import { NavigatorSettings, PerlDocument, PerlElem } from "./types";
+import { NavigatorSettings, PerlDocument, PerlElem, completionElem} from "./types";
 import { getHover } from "./hover";
-import { getCompletions } from "./completion";
+import { getCompletions, getCompletionDoc } from "./completion";
 import { formatDoc, formatRange } from "./formatting";
 import { nLog } from "./utils";
 import { startProgress, endProgress } from "./progress";
@@ -63,7 +63,7 @@ connection.onInitialize((params: InitializeParams) => {
             textDocumentSync: TextDocumentSyncKind.Incremental,
 
             completionProvider: {
-                resolveProvider: false,
+                resolveProvider: true,
                 triggerCharacters: ["$", "@", "%", "-", ">", ":"],
             },
 
@@ -340,6 +340,21 @@ connection.onCompletion((params: TextDocumentPositionParams): CompletionList | u
         isIncomplete: false,
     };
 });
+
+connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionItem> => {
+
+    const perlElem: PerlElem = item.data.perlElem;
+
+    let perlDoc = navSymbols.get(item.data?.docUri);
+    if (!perlDoc) return item;
+
+    const docs = await getCompletionDoc(perlElem, perlDoc);
+    if (docs?.match(/\w/)) {
+        item.documentation = { kind: "markdown", value: docs };;
+    }
+    return item;
+});
+
 
 connection.onHover(async (params) => {
     let document = documents.get(params.textDocument.uri);

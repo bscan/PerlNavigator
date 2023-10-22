@@ -516,6 +516,10 @@ function SubEndLine(state: ParserState, rFilter: RegExp | null = null): number {
             if (rFilter) stmt.replace(rFilter, "");
             // Default argument of empty hash. Other types of hashes may still trip this up
             stmt.replace(/\$\w+\s*=\s*\{\s*\}/, "");
+            if(stmt.match(/;\s*$/)){
+                // "Forward" declaration, such as `sub foo;`
+                return i;
+            }
         }
 
         stmt.split("").forEach((char: string) => {

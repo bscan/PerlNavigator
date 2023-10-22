@@ -6,10 +6,10 @@ use File::Spec;
 use lib "$Bin";
 use experimental 'signatures';
 # These are system test modules
-use Data::Dumper;                    # Module details. Dumper is auto-exported
+use Data::Dumper qw(Dumper);                    # Module details. Dumper is auto-exported
 use Cwd qw(fast_abs_path);           # fast_abs_path is pure perl.
 use MIME::Base64 qw(encode_base64);  # encode_base64 is XS, so the best we can do is find the .pm
-
+use File::Copy;
 # Workspace modules
 use MyLib::NamedPackage qw(exported_sub imported_constant $our_variable);
 use MyLib::MyClass;
@@ -123,6 +123,7 @@ my $unknownObj = $otherObj; # Type hints: $unknownObj isa MyLib::MyOtherClass
 $unknownObj->duplicate_method_name();
 
 MyLib::MyOtherClass->new($my_scalar)->duplicate_method_name();
+MyLib::MyOtherClass->new->duplicate_method_name();
 
 my $mooObj = MyLib::MooClass->new();
 $mooObj->moo_sub();
@@ -166,6 +167,8 @@ print "ObjectPad attributes: " . attributes::get(\&MyLib::ObjectPad::describe) .
 print "\nDone with test script\n";
 
 package SameFilePackage; ## no critic (package)
+
+sub forward_declaration;
 
 sub same_file_package_sub {
     print "In same_file_package_sub\n";

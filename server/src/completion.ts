@@ -1,6 +1,8 @@
 import { TextDocumentPositionParams, CompletionItem, CompletionItemKind, Range, MarkupContent } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
-import { PerlDocument, PerlElem, CompletionPrefix, PerlSymbolKind } from "./types";
+import { PerlDocument, PerlElem, CompletionPrefix, PerlSymbolKind, completionElem, ElemSource} from "./types";
+import { getPod } from "./pod";
+import Uri from "vscode-uri";
 
 export function getCompletions(
     params: TextDocumentPositionParams,
@@ -8,7 +10,6 @@ export function getCompletions(
     txtDoc: TextDocument,
     modMap: Map<string, string>
 ): CompletionItem[] {
-    const mods = Array.from(modMap.keys());
     let position = params.position;
     const start = { line: position.line, character: 0 };
     const end = { line: position.line + 1, character: 0 };
@@ -22,7 +23,7 @@ export function getCompletions(
             end: { line: position.line, character: imPrefix.charEnd },
         };
 
-        const matches = getImportMatches(mods, imPrefix.symbol, replace);
+        const matches = getImportMatches(modMap, imPrefix.symbol, replace, perlDoc);
         return matches;
     } else {
         const prefix = getPrefix(text, index);
@@ -34,9 +35,15 @@ export function getCompletions(
             end: { line: position.line, character: prefix.charEnd },
         };
 
-        const matches = getMatches(perlDoc, prefix.symbol, replace);
+        const matches = getMatches(perlDoc, prefix.symbol, replace, prefix.stripPackage);
         return matches;
     }
+}
+
+
+export async function getCompletionDoc(elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
+    let docs = await getPod(elem, perlDoc);
+    return docs;
 }
 
 // Similar to getSymbol for navigation, but don't "move right".
@@ -44,9 +51,23 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     let l = position - 1; // left
     for (; l >= 0 && canShift(text[l]); --l);
-    if (l < 0 || text[l] != "$" && text[l] != "@" && text[l] != "%") ++l;
-    const symbol = text.substring(l, position);
-    return { symbol: symbol, charStart: l, charEnd: position };
+    let lCh = "";
+
+    let symbol = text.substring(l, position);
+    const prefix = text.substring(0, l);
+    let stripPackage = false;
+    if (symbol.match(/^-(?:>\w*)?$/)) { // Matches -  or -> or ->\w
+        // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
+        // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
+        let match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
+
+        if (match){
+            symbol = match[1] + symbol;
+            stripPackage = true
+        }
+    }
+
+    return { symbol: symbol, charStart: l, charEnd: position, stripPackage: stripPackage};
 }
 
 // First we check if it's an import statement, which is a special type of autocomplete with far more options
@@ -57,26 +78,43 @@ function getImportPrefix(text: string, position: number): CompletionPrefix | und
     if (!partialImport) return;
     const symbol = partialImport[1];
 
-    return { symbol: symbol, charStart: position - symbol.length, charEnd: position };
+    return { symbol: symbol, charStart: position - symbol.length, charEnd: position, stripPackage: false };
 }
 
-function getImportMatches(mods: string[], symbol: string, replace: Range): CompletionItem[] {
+function getImportMatches(modMap: Map<string, string>, symbol: string, replace: Range, perlDoc: PerlDocument): CompletionItem[] {
     const matches: CompletionItem[] = [];
+    const mods = Array.from(modMap.keys());
 
     const lcSymbol = symbol.toLowerCase();
-    mods.forEach((mod) => {
+    modMap.forEach((modFile, mod) => {
         if (mod.toLowerCase().startsWith(lcSymbol)) {
+
+            const modUri = Uri.parse(modFile).toString();
+            const modElem: PerlElem = {
+                name: symbol,
+                type: PerlSymbolKind.Module,
+                typeDetail: "",
+                uri: modUri,
+                package: symbol,
+                line: 0,
+                lineEnd: 0,
+                value: "",
+                source: ElemSource.modHunter,
+            };
+            const newElem: completionElem = {perlElem: modElem, docUri: perlDoc.uri}
+
             matches.push({
                 label: mod,
                 textEdit: { newText: mod, range: replace },
                 kind: CompletionItemKind.Module,
+                data: newElem
             });
         }
     });
     return matches;
 }
 
-function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): CompletionItem[] {
+function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range, stripPackage: boolean): CompletionItem[] {
     let matches: CompletionItem[] = [];
 
     let qualifiedSymbol = symbol.replaceAll("->", "::"); // Module->method() can be found via Module::method
@@ -146,7 +184,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range): Comp
             )
                 // $Foo::Bar, I don't really hunt for these anyway
                 return;
-            matches = matches.concat(buildMatches(aligned, element, replace));
+            matches = matches.concat(buildMatches(aligned, element, replace, stripPackage, perlDoc));
         }
     });
 
@@ -179,7 +217,7 @@ function goodMatch(perlDoc: PerlDocument, elemName: string, qualifiedSymbol: str
     }
 }
 
-function buildMatches(lookupName: string, elem: PerlElem, range: Range): CompletionItem[] {
+function buildMatches(lookupName: string, elem: PerlElem, range: Range, stripPackage: boolean, perlDoc: PerlDocument): CompletionItem[] {
     let kind: CompletionItemKind;
     let detail: string | undefined = undefined;
     let documentation: MarkupContent | undefined = undefined;
@@ -259,13 +297,22 @@ function buildMatches(lookupName: string, elem: PerlElem, range: Range): Complet
     let matches: CompletionItem[] = [];
 
     labelsToBuild.forEach((label) => {
+
+        let replaceText = label;
+        if(stripPackage)
+            // When autocompleting Foo->new(...)->, we need the dropdown to show Foo->func, but the replacement only to be ->func
+            replaceText = replaceText.replace(/^(\w(?:\w|::\w)*)(?=->)/, '');
+
+        const newElem: completionElem = {perlElem: elem, docUri: perlDoc.uri}
+
         matches.push({
             label: label,
-            textEdit: { newText: label, range },
+            textEdit: { newText: replaceText, range },
             kind: kind,
             sortText: getSortText(label),
             detail: detail,
             documentation: documentation,
+            data: newElem, 
         });
     });
 

@@ -1,8 +1,10 @@
-import { TextDocumentPositionParams, Hover } from "vscode-languageserver/node";
+import { TextDocumentPositionParams, Hover, MarkupContent, MarkupKind } from "vscode-languageserver/node";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import { getSymbol, lookupSymbol } from "./utils";
 import { refineElementIfSub } from "./refinement";
+import { getPod } from './pod';
+
 import Uri from "vscode-uri";
 
 export async function getHover(params: TextDocumentPositionParams, perlDoc: PerlDocument, txtDoc: TextDocument, modMap: Map<string, string>): Promise<Hover | undefined> {
@@ -20,11 +22,26 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
 
     const refined = await refineElementIfSub(elem, params, perlDoc);
 
-    let hoverStr = buildHoverDoc(symbol, elem, refined);
-    // Sometimes, there's nothing worth showing.
-    if (!hoverStr) return;
+    let title = buildHoverDoc(symbol, elem, refined);
 
-    const documentation = { contents: hoverStr };
+    // Sometimes, there's nothing worth showing.
+    // I'm assuming we won't get any useful POD if we can't get a useful title. Could be wrong
+    if (!title) return;
+
+    let merged = title;
+    
+    let docs = await getPod(elem, perlDoc);
+
+    if(docs){
+        merged += "\n" + docs;
+    }
+
+    const hoverContent: MarkupContent = {
+        kind: MarkupKind.Markdown,
+        value: merged
+    };
+
+    const documentation: Hover = { contents: hoverContent };
 
     return documentation;
 }

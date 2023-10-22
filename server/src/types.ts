@@ -79,12 +79,18 @@ export interface CompletionPrefix {
     symbol: string;
     charStart: number;
     charEnd: number;
+    stripPackage: boolean;
 }
 
 // Ensure TagKind and PerlSymbolKind have no overlap
 export enum TagKind {
     Canonical2    = '2',
     UseStatement  = 'u', // Reserved: used in pltags, but removed before symbol assignment.
+}
+
+export interface completionElem { 
+    perlElem: PerlElem;
+    docUri: string
 }
 
 export enum PerlSymbolKind {

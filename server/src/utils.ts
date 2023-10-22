@@ -102,12 +102,16 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
         symbol = llChar + symbol; // ${foo} -> $foo
     }
 
+    let match;
     if (symbol.match(/^->\w+$/)) {
         // If you have Foo::Bar->new(...)->func, the extracted symbol will be ->func
         // We can special case this to Foo::Bar->func. The regex allows arguments to new(), including params with matched ()
         let match = prefix.match(/(\w(?:\w|::\w)*)->new\((?:\([^()]*\)|[^()])*\)$/);
 
         if (match) symbol = match[1] + symbol;
+    } else if (match = symbol.match(/^(\w(?:\w|::\w)*)->new->(\w+)$/)) {
+        // If you have Foo::Bar->new->func, the extracted symbol will be Foo::Bar->new->func
+        symbol = match[1] + "->" + match[2];
     }
 
     return symbol;

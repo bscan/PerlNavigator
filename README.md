@@ -12,11 +12,13 @@ Install the vscode extension from here: https://marketplace.visualstudio.com/ite
 ## Currently Implemented Features:
 * Syntax Checking
 * Perl Critic static code analysis/suggestions
-* Smart context-aware autocompletion and navigation
+* Documentation on hover and autocomplete
+* Subroutine signatures
 * Code Navigation ("Go To Definition") anywhere, including to installed modules and compile-time dependencies
 * Code formatting via Perl::Tidy
 * Imports cleanup via perlimports 
 * Outline view
+* Smart context-aware autocompletion and navigation
 * Hover for more details about objects, subs, and modules
 * Syntax highlighting for Object::Pad, Moose, Zydeco, Dancer2, etc.
 * Support for Classes including Moo/Moose style classes

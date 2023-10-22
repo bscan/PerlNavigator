@@ -51,7 +51,8 @@ function getPrefix(text: string, position: number): CompletionPrefix {
     const canShift = (c: string) => /[\w\:\>\-]/.exec(c);
     let l = position - 1; // left
     for (; l >= 0 && canShift(text[l]); --l);
-    let lCh = "";
+    
+    if (l < 0 || text[l] != "$" && text[l] != "@" && text[l] != "%") ++l;
 
     let symbol = text.substring(l, position);
     const prefix = text.substring(0, l);

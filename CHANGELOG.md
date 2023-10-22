@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.6 2023-10-22
+- Bug fix for autocompletion
+
 ## 0.7.5 2023-10-22
 - Documentation available on hover and autcompletion
 - Supress namespace::clean/autoclean which would clean symbol table before inspection

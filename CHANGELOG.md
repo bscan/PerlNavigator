@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.5 2023-10-22
+- Documentation available on hover and autcompletion
+- Supress namespace::clean/autoclean which would clean symbol table before inspection
+- Foo::Bar->new->func works even if new doesn't have parens
+- Fix for parser not recognizing forward subroutine declarations (without body)
+- Pull requests from IAKOBVS focusing on speed improvements and readability 
+
+## 0.7.3 and 0.7.4 
+- Bug fixes related to signatures
+
 ## 0.7.2 2023-10-15
 - Leveraging the new parser for variety of features:
 - Subroutine signatures visible while typing, and on hover (includes support for methods, corinna, etc)

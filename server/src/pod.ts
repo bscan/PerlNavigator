@@ -188,7 +188,7 @@ const convertPODToMarkdown = (pod: string): string => {
 const processHeadings = (line: string): string => {
     // Extract the heading level from the line. This will be a number from 1-6.
     let level = parseInt(line.slice(5, 6));
-    level = Math.min(level, 4); // Maximum 6 indentation levels in Markdown
+    level = Math.min(level, 3); // Maximum 6 indentation levels in Markdown
     // Ensure that the heading level is valid.
     if (isNaN(level) || level < 1 || level > 6) {
         return "";
@@ -227,7 +227,7 @@ const processList = (line: string, state: ConversionState): ConversionState => {
 
         // Remove the '=item' part to get the actual text for the list item.
         let listItem = line.substring(6).trim();
-        listItem = listItem.replace(/^\*/,""); // Doubled up list identifiers
+        listItem = listItem.replace(/^\* /," "); // Doubled up list identifiers
         markdown = `\n- ${listItem}  \n  `; // Unordered list
     }
     // The =back command ends the list.

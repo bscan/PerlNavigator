@@ -319,7 +319,12 @@ const processFormatSpecificBlock = (line: string): string => {
     return markdown;
 };
 
+// Mapping backticks to the Unicode non-character U+FFFF which is not allowed to appear in text
+const tempPlaceholder = '\uFFFF';
+
 const processInlineElements = (line: string): string => {
+
+    line = line.replace(/`/g, tempPlaceholder);
 
     // Handle code (C<code>), while allowing E<> replacements
     line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (match, code) => escapeBackticks(code));
@@ -330,6 +335,9 @@ const processInlineElements = (line: string): string => {
 
     // Handle special characters (E<entity>)
     line = line.replace(/E<([^>]+)>/g, (match, entity) => convertE(entity));
+
+    // Mapping the Unicode non-character U+FFFF back to escaped backticks
+    line = line.replace(new RegExp(tempPlaceholder, 'g'), '\\`');
 
     // Handle bold (B<bold>)
     line = line.replace(/B<([^>]+)>/g, "**$1**");
@@ -398,13 +406,14 @@ const escapeHTML = (str: string): string => {
 };
 
 const escapeBackticks = (str: string): string => {
-    let count = (str.match(/`/g) || []).length;
+    let count = (str.match(new RegExp(tempPlaceholder, 'g')) || []).length;
+    str = str.replace(new RegExp(tempPlaceholder, 'g'), '`'); // Backticks inside don't need to be escaped.
     let delimiters = "`".repeat(count + 1);
     return `${delimiters}${str}${delimiters}`;
 };
 
 const convertE = (content: string): string => {
-
+    
     switch (content) {
         case "lt":
             return "<";

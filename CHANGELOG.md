@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.7 2023-10-22
+- Better POD documentation: display of headers, handling backticks, and fixing bold "items" 
+
 ## 0.7.6 2023-10-22
 - Bug fix for autocompletion
 

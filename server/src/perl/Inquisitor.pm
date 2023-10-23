@@ -18,6 +18,11 @@ $SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };
 # I hope this doesn't cause any issues, perhaps VERSION numbers or import statements would help here
 $INC{'namespace/clean.pm'} = '';
 $INC{'namespace/autoclean.pm'} = '';
+{
+    no strict 'refs';
+    *{'namespace::autoclean::VERSION'} = sub { '0.29' };
+    *{'namespace::clean::VERSION'} = sub { '0.27' };
+}
 
 CHECK {
     if(!$ENV{'PERLNAVIGATORTEST'}){

@@ -33,7 +33,7 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument): Promise<str
     // Split the file into lines and iterate through them
     const lines = fileContent.split("\n");
     for (const line of lines) {
-        if (line.match(/^=cut/)) {
+        if (line.startsWith("=cut")) {
             // =cut lines are not added.
             inPodBlock = false;
         }

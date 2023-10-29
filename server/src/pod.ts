@@ -379,6 +379,9 @@ const processInlineElements = (line: string): string => {
 
     line = line.replaceAll('`', tempPlaceholder);
 
+    // WWW::Mechanize is a good test for this one. Code blocks with embedded link
+    line = line.replace(/C<([^<>]*)L<< (?:.+?\|\/?)?(.+?) >>([^<>]*)>/g, "C<< $1 $2 $3 >>");
+
     // Handle code (C<code>), while allowing E<> replacements
     line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (match, code) => escapeBackticks(code));
 
@@ -393,26 +396,27 @@ const processInlineElements = (line: string): string => {
     line = line.replace(new RegExp(tempPlaceholder, 'g'), '\\`');
 
     // Handle bold (B<bold>)
-    line = line.replace(/B<([^>]+)>/g, "**$1**");
+    line = line.replace(/B<([^<>]+)>/g, "**$1**");
+    line = line.replace(/B<< (.+?) >>/g, "**$1**");
 
     // Handle italics (I<italic>)
-    line = line.replace(/I<([^>]+)>/g, "*$1*");
-    line = line.replace(/I<< (.+?) >>>/g, "*$1*");
+    line = line.replace(/I<([^<>]+)>/g, "*$1*");
+    line = line.replace(/I<< (.+?) >>/g, "*$1*");
 
     // Handle links (L<name>), URLS auto-link in vscode's markdown
     line = line.replace(/L<(http[^>]+)>/g, " $1 ");
 
-    line = line.replace(/L<([^>]+)>/g, "`$1`");
+    line = line.replace(/L<([^<>]+)>/g, "`$1`");
     line = line.replace(/L<< (.*?) >>/g, "`$1`");
 
     // Handle non-breaking spaces (S<text>)
-    line = line.replace(/S<([^>]+)>/g, "$1");
+    line = line.replace(/S<([^<>]+)>/g, "$1");
 
     // Handle file names (F<name>), converting to italics
-    line = line.replace(/F<([^>]+)>/g, "*$1*");
+    line = line.replace(/F<([^<>]+)>/g, "*$1*");
 
     // Handle index entries (X<entry>), ignoring as Markdown doesn't have an index
-    line = line.replace(/X<([^>]+)>/g, "");
+    line = line.replace(/X<([^<>]+)>/g, "");
 
     // Escape HTML entities last since we use them above
     line = escapeHTML(line);

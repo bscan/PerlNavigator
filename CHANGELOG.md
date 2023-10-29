@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.7.9 2023-10-29
+- Improved POD documentation: search for .pod files, better formating of links and code blocks. bug fixes.
+
 ## 0.7.7 2023-10-22
 - Better POD documentation: display of headers, handling backticks, and fixing bold "items" 
 

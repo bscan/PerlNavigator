@@ -41,8 +41,8 @@ export function getCompletions(
 }
 
 
-export async function getCompletionDoc(elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
-    let docs = await getPod(elem, perlDoc);
+export async function getCompletionDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
+    let docs = await getPod(elem, perlDoc, modMap);
     return docs;
 }
 

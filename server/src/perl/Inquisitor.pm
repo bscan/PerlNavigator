@@ -167,7 +167,7 @@ sub resolve_file {
     }
 
     # Moose (but not Moo) attributes return this for a file.
-    if ($file =~ /^accessor [\w:]+ \(defined at ([\w\\\/\.\s]+) line (\d+)\)$/){
+    if ($file =~ /^accessor [\w:]+ \(defined at (.+) line (\d+)\)$/){
         $file = $1;
         $line = $2;
         $subType = 'd';

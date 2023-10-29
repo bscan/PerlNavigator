@@ -1,11 +1,13 @@
 import fs = require("fs");
 import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import Uri from "vscode-uri";
+import { isFile } from "./utils";
 
-export async function getPod(elem: PerlElem, perlDoc: PerlDocument): Promise<string | undefined> {
+export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
     // File may not exists. Return nothing if it doesn't
 
-    const absolutePath = resolvePathForDoc(elem, perlDoc);
+    const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
+
     if(!absolutePath) return;
 
     try {
@@ -64,41 +66,91 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument): Promise<str
             }
         }
 
-        if(meaningFullContent){
+        if(meaningFullContent && podBuffer != ""){
             podContent += podBuffer;
             podBuffer = "";
         }
     }
-
+    
     const markDown = convertPODToMarkdown(podContent);
 
     return markDown;
 }
 
-const resolvePathForDoc = (elem: PerlElem, perlDoc: PerlDocument): string | undefined => {
+
+async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
     let absolutePath = Uri.parse(elem.uri).fsPath;
 
-    const badFile = (c: string) => /\w+\.c$/.test(c);
+    const foundPath = await fsPathOrAlt(absolutePath);
+    if(foundPath){
+        return foundPath;
+    }
 
-    if(badFile(absolutePath)){
-        // Lookup by package or module?
-        if (elem.package) {
-            const elemResolved = perlDoc.elems.get(elem.package);
-            if (elemResolved) {
-                for (let potentialElem of elemResolved) {
-                    const potentialPath = Uri.parse(potentialElem.uri).fsPath;
-                    if (potentialPath.length > 1 && !badFile(potentialPath)) {
-                        absolutePath = potentialPath;
-                        break;
-                    }
+    if (elem.package) {
+        let elemResolved = perlDoc.elems.get(elem.package);
+        
+        if(!elemResolved){
+
+            // Looking up a module by the package name is only convention, but helps for things like POSIX
+            const modUri = modMap.get(elem.package);
+            if(modUri){
+                let modPath = await fsPathOrAlt(Uri.parse(modUri).fsPath);
+                if(modPath){
+                    return modPath;
                 }
             }
-        }
-        if(badFile(absolutePath)){
             return;
         }
+
+
+        for (let potentialElem of elemResolved) {
+            const potentialPath = Uri.parse(potentialElem.uri).fsPath;
+            const foundPackPath = await fsPathOrAlt(potentialPath);
+            if (foundPackPath) {
+                return foundPackPath;
+            }
+        }
     }
-    return absolutePath;
+    if(await badFile(absolutePath)){
+        return;
+    }
+
+}
+
+async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined>{
+
+    if(!fsPath){
+        return;
+    }
+
+    if(/\.pm$/.test(fsPath)){
+        let podPath = fsPath.replace(/\.pm$/, ".pod");
+        if(!await badFile(podPath)){
+            return podPath;
+        }
+    }
+    if(!await badFile(fsPath)){
+        return fsPath;
+    }
+    return;
+
+}
+
+async function badFile(fsPath: string): Promise<boolean> {
+
+    if (!fsPath || fsPath.length <= 1) {
+        return true;
+    }
+
+    if( /\w+\.c$/.test(fsPath) ){
+        return true;
+    }
+
+    if(!(await isFile(fsPath))){
+        return true;
+    }
+
+    return false;
 }
 
 type ConversionState = {
@@ -147,9 +199,9 @@ const convertPODToMarkdown = (pod: string): string => {
         else if (line.startsWith("=head")) {
             const output = processHeadings(line);
 
-            if(output != "\n## NAME\n" && /\w/.test(finalMarkdown)){
+            if(/\w/.test(finalMarkdown) || !/^\n##+ NAME\n$/.test(output)){
                 // I find it a waste of space to include the headline "NAME". We're short on space in the hover 
-                finalMarkdown += processHeadings(line);
+                finalMarkdown += output;
             }
         }
         // List markers and items
@@ -345,9 +397,13 @@ const processInlineElements = (line: string): string => {
 
     // Handle italics (I<italic>)
     line = line.replace(/I<([^>]+)>/g, "*$1*");
+    line = line.replace(/I<< (.+?) >>>/g, "*$1*");
 
-    // Handle links (L<name>), we'll just keep the name for now
-    line = line.replace(/L<([^>]+)>/g, "[$1]");
+    // Handle links (L<name>), URLS auto-link in vscode's markdown
+    line = line.replace(/L<(http[^>]+)>/g, " $1 ");
+
+    line = line.replace(/L<([^>]+)>/g, "`$1`");
+    line = line.replace(/L<< (.*?) >>/g, "`$1`");
 
     // Handle non-breaking spaces (S<text>)
     line = line.replace(/S<([^>]+)>/g, "$1");

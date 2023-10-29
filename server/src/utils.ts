@@ -5,6 +5,7 @@ import { promisify } from "util";
 import { TextDocument, Position } from "vscode-languageserver-textdocument";
 import { PerlDocument, PerlElem, NavigatorSettings, PerlSymbolKind, ElemSource } from "./types";
 import * as path from "path";
+import { promises } from "fs";
 
 export const async_execFile = promisify(execFile);
 
@@ -257,4 +258,14 @@ export function getPerlimportsProfile(settings: NavigatorSettings): string[] {
         profileCmd.push("--config-file", settings.perlimportsProfile);
     }
     return profileCmd;
+}
+
+export async function isFile(file: string): Promise<boolean> {
+    try {
+        const stats = await promises.stat(file);
+        return stats.isFile();
+    } catch (err) {
+        // File or directory doesn't exist
+        return false;
+    }
 }

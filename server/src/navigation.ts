@@ -3,7 +3,7 @@ import { TextDocument } from "vscode-languageserver-textdocument";
 import { PerlDocument, PerlElem, NavigatorSettings, ElemSource, ParseType } from "./types";
 import Uri from "vscode-uri";
 import { realpathSync, existsSync, realpath, promises } from "fs";
-import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog } from "./utils";
+import { getIncPaths, async_execFile, getSymbol, lookupSymbol, nLog, isFile } from "./utils";
 import { dirname, join } from "path";
 import { getPerlAssetsPath } from "./assets";
 import { refineElement } from "./refinement";
@@ -53,15 +53,6 @@ export async function getDefinition(params: DefinitionParams, perlDoc: PerlDocum
     return locationsFound;
 }
 
-async function isFile(file: string): Promise<boolean> {
-    try {
-        const stats = await promises.stat(file);
-        return stats.isFile();
-    } catch (err) {
-        // File or directory doesn't exist
-        return false;
-    }
-}
 
 async function resolveElemForNav(perlDoc: PerlDocument, elem: PerlElem, symbol: string): Promise<PerlElem | undefined> {
     let refined = await refineElement(elem, perlDoc);

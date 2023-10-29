@@ -30,7 +30,7 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
 
     let merged = title;
     
-    let docs = await getPod(elem, perlDoc);
+    let docs = await getPod(elem, perlDoc, modMap);
 
     if(docs){
         merged += "\n" + docs;

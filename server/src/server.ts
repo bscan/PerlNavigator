@@ -348,7 +348,10 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
     let perlDoc = navSymbols.get(item.data?.docUri);
     if (!perlDoc) return item;
 
-    const docs = await getCompletionDoc(perlElem, perlDoc);
+    let mods = availableMods.get("default");
+    if (!mods) mods = new Map();
+    
+    const docs = await getCompletionDoc(perlElem, perlDoc, mods);
     if (docs?.match(/\w/)) {
         item.documentation = { kind: "markdown", value: docs };;
     }

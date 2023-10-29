@@ -33,7 +33,7 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument): Promise<str
     // Split the file into lines and iterate through them
     const lines = fileContent.split("\n");
     for (const line of lines) {
-        if (line.match(/^=cut/)) {
+        if (line.startsWith("=cut")) {
             // =cut lines are not added.
             inPodBlock = false;
         }
@@ -227,7 +227,8 @@ const processList = (line: string, state: ConversionState): ConversionState => {
 
         // Remove the '=item' part to get the actual text for the list item.
         let listItem = line.substring(6).trim();
-        listItem = listItem.replace(/^\* /," "); // Doubled up list identifiers
+	if (listItem.startsWith("* ")) // Doubled up list identifiers
+		listItem = listItem.replace("*", "");
         markdown = `\n- ${listItem}  \n  `; // Unordered list
     }
     // The =back command ends the list.
@@ -324,7 +325,7 @@ const tempPlaceholder = '\uFFFF';
 
 const processInlineElements = (line: string): string => {
 
-    line = line.replace(/`/g, tempPlaceholder);
+    line = line.replaceAll('`', tempPlaceholder);
 
     // Handle code (C<code>), while allowing E<> replacements
     line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (match, code) => escapeBackticks(code));

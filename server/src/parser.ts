@@ -350,7 +350,7 @@ function imports(state: ParserState): boolean {
 
 function autoloads(state: ParserState): boolean {
     let match;
-    if ((match = state.stmt.match(/^\$self\->\{\s*(['"]|)_(\w+)\1\s*\}\s*=/))) {
+    if ((match = state.stmt.match(/^\$self\->\{\s*(['"]|)_(\w+)\1\s*\}\s*(?:\|\||\/\/)?=/))) {
         // Common paradigm is for autoloaders to basically just point to the class variable
         const variable = match[2];
         MakeElem("get_" + variable, PerlSymbolKind.AutoLoadVar, "", state);

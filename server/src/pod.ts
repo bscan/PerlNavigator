@@ -25,11 +25,20 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
     let searchItem;
     if([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)){
         // Search all. Note I'm not really treating packages different from Modules
-    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField].includes(elem.type)){
+    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField, 
+                PerlSymbolKind.LocalMethod, PerlSymbolKind.LocalSub].includes(elem.type)){
         searchItem = elem.name;
         searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, "$1"); // Remove package
     } else {
         return;
+    }
+
+    // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't simply get/set without docs)
+    // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
+    let match, match2;
+    if(searchItem && (match = fileContent.match(`\\n#####+\\n# +${searchItem}\\n((?:(?:#.*| *)\\n)+)sub +${searchItem}\\b`))){
+        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\n)?[\\s#]*$`))))
+            podContent += match[1].replace(/^\s*#+/gm,'');
     }
 
     // Split the file into lines and iterate through them
@@ -43,7 +52,7 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
          if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
             inPodBlock = true;
             meaningFullContent = false;
-            if(line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))){
+            if(searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))){
                 // This is structured so if we hit two relevant block in a row, we keep them both
                 inRelevantBlock = true;
             } else {

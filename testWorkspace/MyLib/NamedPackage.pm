@@ -5,7 +5,7 @@ use warnings;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(exported_sub imported_constant $our_variable);
+our @EXPORT_OK = qw(get_value imported_constant $our_variable);
 
 use constant imported_constant => "I'm an imported constant";
 
@@ -15,9 +15,18 @@ sub can {
     exists $_[0]->{$_[1]};
 }
 
-sub exported_sub {
-    print "In Dir::NamedPackage, sub exported_sub\n";
+######
+# get_value
+# set_value
+
+sub get_value {
+    print "In Dir::NamedPackage, sub get_value\n";
 }
+
+########
+# non_exported_sub
+# Documentation
+# Example
 
 sub non_exported_sub {
     print "In Dir::NamedPackage, sub non_exported_sub\n";

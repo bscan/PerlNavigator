@@ -11,7 +11,7 @@ use Cwd qw(fast_abs_path);           # fast_abs_path is pure perl.
 use MIME::Base64 qw(encode_base64);  # encode_base64 is XS, so the best we can do is find the .pm
 use File::Copy;
 # Workspace modules
-use MyLib::NamedPackage qw(exported_sub imported_constant $our_variable);
+use MyLib::NamedPackage qw(get_value imported_constant $our_variable);
 use MyLib::MyClass;
 use MyLib::MyOtherClass;
 use MyLib::NonPackage;
@@ -94,7 +94,7 @@ SameFilePackage::same_file_package_sub();
 sub_with_sig(2,3,4);
 duplicate_sub_name();
 nonpackage_sub();
-exported_sub();
+get_value();
 MyLib::NamedPackage::non_exported_sub();
 MyLib::NamedPackage::duplicate_sub_name();
 MyLib::SubPackage::subpackage_mod();

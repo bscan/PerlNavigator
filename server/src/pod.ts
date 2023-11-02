@@ -33,16 +33,18 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
         return;
     }
 
+    let markdown = "";
+
     // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't simply get/set without docs)
     // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
     let match, match2;
-    if(searchItem && (match = fileContent.match(`\\n#####+\\n# +${searchItem}\\n((?:(?:#.*| *)\\n)+)sub +${searchItem}\\b`))){
-        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\n)?[\\s#]*$`))))
-            podContent += match[1].replace(/^\s*#+/gm,'');
+    if(searchItem && (match = fileContent.match(`\\r?\\n#(?:####+| \-+) *(?:\\r?\\n# *)*${searchItem}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${searchItem}\\b`))){
+        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`))))
+            markdown += "```text\n" + match[1].replace(/^ *#+ ?/gm,'') + "\n```\n"
     }
 
     // Split the file into lines and iterate through them
-    const lines = fileContent.split("\n");
+    const lines = fileContent.split(/\r?\n/);
     for (const line of lines) {
         if (line.startsWith("=cut")) {
             // =cut lines are not added.
@@ -81,9 +83,9 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
         }
     }
     
-    const markDown = convertPODToMarkdown(podContent);
+    markdown += convertPODToMarkdown(podContent);
 
-    return markDown;
+    return markdown;
 }
 
 

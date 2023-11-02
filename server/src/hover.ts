@@ -33,7 +33,9 @@ export async function getHover(params: TextDocumentPositionParams, perlDoc: Perl
     let docs = await getPod(elem, perlDoc, modMap);
 
     if(docs){
-        merged += "\n" + docs;
+        if(!docs.startsWith("\n"))
+            docs = "\n" + docs; // Markdown requires two newlines to make one
+        merged += `\n${docs}`;
     }
 
     const hoverContent: MarkupContent = {

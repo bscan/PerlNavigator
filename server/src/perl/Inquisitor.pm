@@ -213,14 +213,16 @@ sub dump_vars_to_main {
         my $sFullPath = $fullPackage . $thing;
         maybe_print_sub_info($sFullPath, $thing, '', $package); 
 
-        if (defined ${$sFullPath}) {
-            my $value = ${$sFullPath};
+        if (defined( my $value = eval {${$sFullPath}} ) ) {
             print_tag("\$$thing", "c", '', '', '', '', $value);
-        } elsif (@{$sFullPath}) {
+        }
+        if (my $aref = *{$sFullPath}{'ARRAY'}) {
             next if $sFullPath =~ /^main::ARGV$/;
-            my $value = join(', ', map({ defined($_) ? $_ : "" } @{$sFullPath}));
+            # TODO: Check if aref is tied to prevent arbitrary functions from running
+            my $value = join(', ', map({ defined($_) ? $_ : "" } eval { @$aref }));
             print_tag("\@$thing", "c", '', '', '', '', $value);
-        } elsif (%{$sFullPath} ) {
+        }
+        if (*{$sFullPath}{'HASH'} ) {
             next if ($thing =~ /::/);
             # Hashes are usually large and unordered, with less interesting stuff in them. Reconsider printing values if you find a good use-case.
             print_tag("%$thing", "h", '', '', '', '', '');

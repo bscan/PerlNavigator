@@ -5,11 +5,13 @@ use warnings;
 
 require Exporter;
 our @ISA = qw(Exporter);
-our @EXPORT_OK = qw(get_value imported_constant $our_variable);
+our @EXPORT_OK = qw(get_value imported_constant $our_variable @our_variable %our_variable);
 
 use constant imported_constant => "I'm an imported constant";
 
 our $our_variable = "The World is ours";
+our @our_variable = (3,4,5);
+our %our_variable = (foo=>'bar');
 
 sub can {
     exists $_[0]->{$_[1]};

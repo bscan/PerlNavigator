@@ -39,8 +39,14 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
     // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
     let match, match2;
     if(searchItem && (match = fileContent.match(`\\r?\\n#(?:####+| \-+) *(?:\\r?\\n# *)*${searchItem}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${searchItem}\\b`))){
-        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`))))
-            markdown += "```text\n" + match[1].replace(/^ *#+ ?/gm,'') + "\n```\n"
+        // Ensure it's not an empty get/set pair.
+        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`)))){
+            let content = match[1].replace(/^ *#+ ?/gm,'');
+            content = content.replace(/^\s+|\s+$/g,'');
+            if(content){ // It may still be empty for non-get functions
+                markdown += "```text\n" + content + "\n```\n"
+            }
+        }
     }
 
     // Split the file into lines and iterate through them

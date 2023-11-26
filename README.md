@@ -116,17 +116,14 @@ This config uses company-mode, but is not required.
 ```
 
 #### Emacs lsp-mode
-You can also use lsp-mode with emacs if you prefer. You can use something similar to the following configuration. Additional details [here](https://emacs-lsp.github.io/lsp-mode/page/lsp-perlnavigator/) 
+You can also use lsp-mode with emacs if you prefer. No special configuration is required for lsp-mode. Perlnavigator is the default Perl language server in lsp-mode. If you have `perlnavigator` on your path (e,g. because you did `sudo npm install -g perlnavigator-server` or downloaded an executable from the latest releases), lsp-mode will find the executable automatically.
+
+If you need to configure can use something similar to the following configuration. Additional details [here](https://emacs-lsp.github.io/lsp-mode/page/lsp-perlnavigator/) 
 ``` lisp
-  (require 'lsp-mode)
-(add-to-list 'lsp-language-id-configuration '(perl-mode . "perl"))
-(add-to-list 'lsp-language-id-configuration '(cperl-mode . "perl"))
-(lsp-register-client
-(make-lsp-client :new-connection (lsp-stdio-connection '("node" "/home/username/src/PerlNavigator/server/out/server.js" "--stdio"))
-;; :activation-fn (lsp-activate-on "perl")
-:major-modes '(cperl-mode perl-mode)
-:priority 10
-:server-id 'perl-ls))
+(use-package lsp-mode
+  ...
+  :custom (lsp-perlnavigator-executable (expand-file-name "~/path/to/perlnavigator))
+  ...)
 ```
 
 ### Neovim

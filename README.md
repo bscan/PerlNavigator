@@ -199,6 +199,27 @@ For the Kate editor, you'll need to `Configure Kate -> LSP Client` and add a con
 }
 ```
 
+### LiteXL
+For the LiteXL editor, you need to download the [LSP plugin](https://github.com/lite-xl/lite-xl-lsp/) first.
+Then in your init.lua file, add something similar to the following.
+
+```
+local lsp = require "plugins.lsp"
+
+lsp.add_server {
+  name = "perlnavigator",
+  language = "Perl",
+  file_patterns = { "%.pl$", "%.pm$" },
+  command = { "perlnavigator" },
+  settings = {
+    perlnavigator = {
+      -- The following setting is only needed if you want to set a custom perl path. It already defaults to "perl"
+      perlPath = "perl"
+    }
+  }
+}
+```
+
 ## Raku / Other Projects
 For those interested in a Raku language server, check out: https://github.com/bscan/RakuNavigator
 

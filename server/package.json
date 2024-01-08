@@ -21,7 +21,7 @@
 		"vscode-oniguruma": "^2.0.1"
 	},
 	"scripts": {},
-	"main": "./src/out/server.js",
+	"main": "./src/dist/serverMain.js",
 	"bin": {
 		"perlnavigator": "./bin/perlnavigator"
 	},

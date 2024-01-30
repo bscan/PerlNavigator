@@ -1,10 +1,8 @@
 {
 	"information_for_contributors": [
-		"This file has been converted from https://github.com/textmate/perl.tmbundle/blob/master/Syntaxes/Perl.plist",
-		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
-		"Once accepted there, we are happy to receive an update request."
+		"This file was originally converted from https://github.com/textmate/perl.tmbundle/blob/master/Syntaxes/Perl.plist",
+		"It also includes a variety of fixes"
 	],
-	"version": "https://github.com/textmate/perl.tmbundle/commit/a85927a902d6e5d7805f56a653f324d34dfad53a",
 	"name": "Perl",
 	"scopeName": "source.perl",
 	"comment": "\n\tTODO:\tInclude RegExp syntax\n",
@@ -125,29 +123,38 @@
 				},
 				{
 					"begin": "(qr)\\s*\\(",
-					"captures": {
+					"beginCaptures": {
 						"0": {
-							"name": "punctuation.definition.string.perl"
+							"name": "string.regexp.compile"
 						},
 						"1": {
 							"name": "support.function.perl"
 						}
 					},
 					"end": "\\)",
-					"name": "string.regexp.compile.nested_parens.perl",
+					"endCaptures": {
+						"0": {
+							"name": "string.regexp.compile.end"
+						}
+					},
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w\\\\'\\{\\[\\(\\<])"
+							"match": "\\$(?=[^\\s\\w\\\\'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
 						},
 						{
 							"include": "#escaped_char"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
-							"include": "#nested_parens_interpolated"
+							"include": "#nested_parens_interpolated_regex"
+						},
+						{
+							"match": ".",
+							"name": "string.regexp.compile"
 						}
 					]
 				},
@@ -202,7 +209,7 @@
 		},
 		{
 			"applyEndPatternLast": 1,
-			"begin": "(?<!\\{|\\+|\\-)\\b(?=m\\s*[^\\sa-zA-Z0-9])",
+			"begin": "(?<!\\{|\\+|\\-|\\->)\\b(?=m\\s*[^\\sa-zA-Z0-9])",
 			"comment": "string.regexp.find-m.perl",
 			"end": "((([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)]|\\s*$))",
 			"endCaptures": {
@@ -332,17 +339,16 @@
 					]
 				},
 				{
-					"begin": "\\G(?<!\\{|\\+|\\-)(m)(?!_)\\s*([^\\sa-zA-Z0-9'\\{\\[\\(\\<])",
+					"begin": "\\G(?<!\\{|\\+|\\-|\\->)(m)(?!_)\\s*([^\\sa-zA-Z0-9'\\{\\[\\(\\<])",
 					"captures": {
 						"0": {
-							"name": "punctuation.definition.string.perl"
+							"name": "string.regexp.find-m.other.perl"
 						},
 						"1": {
 							"name": "support.function.perl"
 						}
 					},
 					"end": "\\2",
-					"name": "string.regexp.find-m.simple-delimiter.perl",
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
@@ -359,16 +365,16 @@
 							"begin": "\\[",
 							"beginCaptures": {
 								"1": {
-									"name": "punctuation.definition.character-class.begin.perl"
+									"name": "string.regexp.find-m.character-class.begin.perl"
 								}
 							},
 							"end": "\\]",
 							"endCaptures": {
 								"1": {
-									"name": "punctuation.definition.character-class.end.perl"
+									"name": "string.regexp.find-m.character-class.end.perl"
 								}
 							},
-							"name": "constant.other.character-class.set.perl",
+							"name": "string.regexp.find-m.character-class.set.perl",
 							"patterns": [
 								{
 									"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
@@ -381,7 +387,11 @@
 							]
 						},
 						{
-							"include": "#nested_parens_interpolated"
+							"include": "#nested_parens_interpolated_regex"
+						},
+						{
+							"match": ".",
+							"name": "string.regexp.find-m.other.perl"
 						}
 					]
 				}
@@ -389,7 +399,7 @@
 		},
 		{
 			"applyEndPatternLast": 1,
-			"begin": "\\b(?=(?<!\\&)(s)(\\s+\\S|\\s*[;\\,\\{\\}\\(\\)\\[<]|$))",
+			"begin": "\\b(?=(?<!\\&|\\->)(s)(\\s+\\S|\\s*[;\\,\\{\\}\\(\\)\\[<]|$))",
 			"comment": "string.regexp.replace.perl",
 			"end": "((([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\{\\}\\)\\]>]|\\s*$))",
 			"endCaptures": {
@@ -612,9 +622,9 @@
 			]
 		},
 		{
-			"begin": "\\b(?=s([^\\sa-zA-Z0-9\\[({<]).*\\1([egimosxradlupcn]*)([\\}\\)\\;\\,]|\\s+))",
+			"begin": "(?<!\\->)\\b(?=s([^\\sa-zA-Z0-9\\[({<]).*\\1([egimosxradlupcn]*)([\\}\\)\\;\\,\\.]|\\s+))",
 			"comment": "string.regexp.replaceXXX",
-			"end": "((([egimosxradlupcn]*)))(?=([\\}\\)\\;\\,]|\\s+|\\s*$))",
+			"end": "((([egimosxradlupcn]*)))(?=([\\}\\)\\;\\,\\.]|\\s+|\\s*$))",
 			"endCaptures": {
 				"1": {
 					"name": "string.regexp.replace.perl"
@@ -628,20 +638,31 @@
 			},
 			"patterns": [
 				{
-					"begin": "(s\\s*)([^\\sa-zA-Z0-9\\[({<])",
+					"begin": "(?<!\\->)(s\\s*)([^\\sa-zA-Z0-9\\[({<])",
 					"captures": {
 						"0": {
-							"name": "punctuation.definition.string.perl"
+							"name": "string.regexp.replaceXXX.start.perl"
 						},
 						"1": {
 							"name": "support.function.perl"
 						}
 					},
 					"end": "(?=\\2)",
-					"name": "string.regexp.replaceXXX.simple_delimiter.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[^\\s\\w\\\\'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char"
+						},
+						{
+							"include": "#variable"
+						},
+						{
+							"match": ".",
+							"name": "string.regexp.replaceXXX.other.perl"
 						}
 					]
 				},
@@ -665,24 +686,27 @@
 					"begin": "([^\\sa-zA-Z0-9\\[({<])",
 					"captures": {
 						"0": {
-							"name": "punctuation.definition.string.perl"
+							"name": "string.regexp.replaceXXX.end.perl"
 						}
 					},
 					"end": "\\1",
-					"name": "string.regexp.replaceXXX.format.simple_delimiter.perl",
 					"patterns": [
 						{
 							"include": "#escaped_char"
 						},
 						{
 							"include": "#variable"
+						},
+						{
+							"match": ".",
+							"name": "string.regexp.replaceXXX.other.perl"
 						}
 					]
 				}
 			]
 		},
 		{
-			"begin": "\\b(?=(?<!\\\\)s\\s*([^\\s\\w\\[({<>]))",
+			"begin": "\\b(?=(?<!\\\\|\\->)s\\s*([^\\s\\w\\[({<>]))",
 			"comment": "string.regexp.replace.extended",
 			"end": "((([egimosradlupc]*x[egimosradlupc]*)))\\b",
 			"endCaptures": {
@@ -751,7 +775,7 @@
 			]
 		},
 		{
-			"begin": "(?<=\\(|\\{|~|&|\\||if|unless|^)\\s*((\\/))",
+			"begin": "(?<=\\(|=|!|\\{|~|&|\\||\\bif|\\bunless|\\band|\\bor|\\bsplit|\\bgrep|^)\\s*((\\/))(?!\\/=)",
 			"beginCaptures": {
 				"1": {
 					"name": "string.regexp.find.perl"
@@ -760,8 +784,7 @@
 					"name": "punctuation.definition.string.perl"
 				}
 			},
-			"contentName": "string.regexp.find.perl",
-			"end": "((\\1([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)]|\\s*$))",
+			"end": "((\\1([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)\\.]|\\s*$))",
 			"endCaptures": {
 				"1": {
 					"name": "string.regexp.find.perl"
@@ -784,6 +807,10 @@
 				},
 				{
 					"include": "#variable"
+				},
+				{
+					"match": ".",
+					"name": "string.regexp.find.other.perl"
 				}
 			]
 		},
@@ -823,7 +850,7 @@
 					"name": "storage.type.method.perl"
 				}
 			},
-			"match": "\\b(sub)(?:\\s+([-a-zA-Z0-9_]+))?\\s*(?:\\([\\$\\@\\*;]*\\))?[^\\w\\{]",
+			"match": "\\b(sub)(?:\\s+([-a-zA-Z0-9_]+))?\\s*(?:\\([\\$\\@\\*;]*\\)|\\b)",
 			"name": "meta.function.perl"
 		},
 		{
@@ -897,7 +924,7 @@
 			]
 		},
 		{
-			"match": "(?<!->)\\b(continue|default|die|do|else|elsif|exit|for|foreach|given|goto|if|last|next|redo|return|select|unless|until|wait|when|while|switch|case|require|use|eval)\\b",
+			"match": "(?<!->)\\b(continue|default|die|do|else|elsif|exit|for|foreach|given|goto|if|last|next|redo|return|select|unless|until|wait|when|while|require|use|eval|evalbytes)\\b",
 			"name": "keyword.control.perl"
 		},
 		{
@@ -909,7 +936,7 @@
 			"name": "keyword.operator.filetest.perl"
 		},
 		{
-			"match": "\\b(and|or|xor|as|not)\\b",
+			"match": "\\b(and|or|xor|not)\\b",
 			"name": "keyword.operator.logical.perl"
 		},
 		{
@@ -923,22 +950,25 @@
 			"begin": "\\bqq\\s*([^\\(\\{\\[\\<\\w\\s])",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.perl"
+					"name": "string.quoted.qq.begin.perl"
 				}
 			},
 			"end": "\\1",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.end.perl"
+					"name": "string.quoted.qq.end.perl"
 				}
 			},
-			"name": "string.quoted.other.qq.perl",
 			"patterns": [
 				{
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
+				},
+				{
+					"match":".",
+					"name": "string.quoted.other.qq.perl"
 				}
 			]
 		},
@@ -946,22 +976,25 @@
 			"begin": "\\bqx\\s*([^'\\(\\{\\[\\<\\w\\s])",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.perl"
+					"name": "string.quoted.qx.begin.perl"
 				}
 			},
 			"end": "\\1",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.end.perl"
+					"name": "string.quoted.qx.end.perl"
 				}
 			},
-			"name": "string.interpolated.qx.perl",
 			"patterns": [
 				{
 					"include": "#escaped_char"
 				},
 				{
 					"include": "#variable"
+				},
+				{
+					"match":".",
+					"name": "string.quoted.other.qx.perl"
 				}
 			]
 		},
@@ -989,22 +1022,25 @@
 			"begin": "\"",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.perl"
+					"name": "string.quoted.double.perl"
 				}
 			},
 			"end": "\"",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.end.perl"
+					"name": "string.quoted.double.perl"
 				}
 			},
-			"name": "string.quoted.double.perl",
 			"patterns": [
 				{
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
+				},
+				{
+					"match":".",
+					"name": "string.quoted.double.perl"
 				}
 			]
 		},
@@ -1071,25 +1107,28 @@
 			"begin": "(?<!->)\\bqq\\s*\\(",
 			"beginCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.begin.perl"
+					"name": "string.interpolated.qq.perl"
 				}
 			},
 			"end": "\\)",
 			"endCaptures": {
 				"0": {
-					"name": "punctuation.definition.string.end.perl"
+					"name": "string.interpolated.qq.perl"
 				}
 			},
-			"name": "string.quoted.other.qq-paren.perl",
 			"patterns": [
 				{
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#nested_parens_interpolated"
+					"include": "#nested_parens_interpolated_string"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
+				},
+				{
+					"match": ".",
+					"name": "string.interpolated.qq.perl"
 				}
 			]
 		},
@@ -1115,7 +1154,7 @@
 					"include": "#nested_braces_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1141,7 +1180,7 @@
 					"include": "#nested_brackets_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1167,7 +1206,7 @@
 					"include": "#nested_ltgt_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1190,10 +1229,10 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#nested_parens_interpolated"
+					"include": "#nested_parens_interpolated_string"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1219,7 +1258,7 @@
 					"include": "#nested_braces_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1245,7 +1284,7 @@
 					"include": "#nested_brackets_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1271,7 +1310,7 @@
 					"include": "#nested_ltgt_interpolated"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1403,7 +1442,7 @@
 			"match": "\\b(x)\\s*(\\d+)\\b"
 		},
 		{
-			"match": "\\b(ARGV|DATA|ENV|SIG|STDERR|STDIN|STDOUT|atan2|bind|binmode|bless|caller|chdir|chmod|chomp|chop|chown|chr|chroot|close|closedir|cmp|connect|cos|crypt|dbmclose|dbmopen|defined|delete|dump|each|endgrent|endhostent|endnetent|endprotoent|endpwent|endservent|eof|eq|eval|exec|exists|exp|fcntl|fileno|flock|fork|formline|ge|getc|getgrent|getgrgid|getgrnam|gethostbyaddr|gethostbyname|gethostent|getlogin|getnetbyaddr|getnetbyname|getnetent|getpeername|getpgrp|getppid|getpriority|getprotobyname|getprotobynumber|getprotoent|getpwent|getpwnam|getpwuid|getservbyname|getservbyport|getservent|getsockname|getsockopt|glob|gmtime|grep|gt|hex|import|index|int|ioctl|join|keys|kill|lc|lcfirst|le|length|link|listen|local|localtime|log|lstat|lt|m|map|mkdir|msgctl|msgget|msgrcv|msgsnd|ne|no|oct|open|opendir|ord|pack|pipe|pop|pos|print|printf|push|quotemeta|rand|read|readdir|readlink|recv|ref|rename|reset|reverse|rewinddir|rindex|rmdir|s|say|scalar|seek|seekdir|semctl|semget|semop|send|setgrent|sethostent|setnetent|setpgrp|setpriority|setprotoent|setpwent|setservent|setsockopt|shift|shmctl|shmget|shmread|shmwrite|shutdown|sin|sleep|socket|socketpair|sort|splice|split|sprintf|sqrt|srand|stat|study|substr|symlink|syscall|sysopen|sysread|system|syswrite|tell|telldir|tie|tied|time|times|tr|truncate|uc|ucfirst|umask|undef|unlink|unpack|unshift|untie|utime|values|vec|waitpid|wantarray|warn|write|y)\\b",
+			"match": "(?<!->)\\b(ARGV|DATA|ENV|SIG|STDERR|STDIN|STDOUT|abs|accept|alarm|atan2|bind|binmode|bless|caller|chdir|chmod|chomp|chop|chown|chr|chroot|close|closedir|cmp|connect|cos|crypt|dbmclose|dbmopen|defined|delete|dump|each|endgrent|endhostent|endnetent|endprotoent|endpwent|endservent|eof|eq|exec|exists|exp|fc|fcntl|fileno|flock|fork|format|formline|ge|getc|getgrent|getgrgid|getgrnam|gethostbyaddr|gethostbyname|gethostent|getlogin|getnetbyaddr|getnetbyname|getnetent|getpeername|getpgrp|getppid|getpriority|getprotobyname|getprotobynumber|getprotoent|getpwent|getpwnam|getpwuid|getservbyname|getservbyport|getservent|getsockname|getsockopt|glob|gmtime|grep|gt|hex|import|index|int|ioctl|join|keys|kill|lc|lcfirst|le|length|link|listen|localtime|lock|log|lstat|lt|m|map|mkdir|msgctl|msgget|msgrcv|msgsnd|ne|no|oct|open|opendir|ord|pack|pipe|pop|pos|print|printf|prototype|push|quotemeta|rand|read|readdir|readline|readlink|readpipe|recv|ref|rename|reset|reverse|rewinddir|rindex|rmdir|s|say|scalar|seek|seekdir|semctl|semget|semop|send|setgrent|sethostent|setnetent|setpgrp|setpriority|setprotoent|setpwent|setservent|setsockopt|shift|shmctl|shmget|shmread|shmwrite|shutdown|sin|sleep|socket|socketpair|sort|splice|split|sprintf|sqrt|srand|stat|study|substr|symlink|syscall|sysopen|sysread|sysseek|system|syswrite|tell|telldir|tie|tied|time|times|tr|truncate|uc|ucfirst|umask|undef|unlink|unpack|unshift|untie|utime|values|vec|waitpid|wantarray|warn|write|x|y)\\b",
 			"name": "support.function.perl"
 		},
 		{
@@ -2503,7 +2542,7 @@
 					]
 				},
 				{
-					"begin": "((((<<(~)?) *)((?![=\\d\\$\\( ])[^;,'\"`\\s\\)]*)()))(.*)\\n?",
+					"begin": "((((<<(~)?))((?![=\\d\\$\\( ])[^;,'\"`\\s\\)]*)()))(.*)\\n?",
 					"beginCaptures": {
 						"1": {
 							"name": "string.unquoted.heredoc.interpolated.perl"
@@ -2753,10 +2792,80 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"include": "#nested_parens_interpolated"
+				}
+			]
+		},
+		"nested_parens_interpolated_regex": {
+			"comment": "Same as nested_parens_interpolated, but character classes set to display as regex",
+			"begin": "(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "string.regexp.format.nested_parens.perl"
+				}
+			},
+			"end": "(\\))",
+			"endCaptures": {
+				"1": {
+					"name": "string.regexp.format.nested_parens.perl"
+				}
+			},
+			"patterns": [
+				{
+					"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+					"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+					"name": "keyword.control.anchor.perl"
+				},
+				{
+					"include": "#escaped_char"
+				},
+				{
+					"include": "#interp_variable"
+				},
+				{
+					"include": "#nested_parens_interpolated_regex"
+				},
+				{
+					"match": ".",
+					"name": "string.regexp.format.nested_parens.perl"
+				}
+			]
+		},
+		"nested_parens_interpolated_string": {
+			"comment": "Same as nested_parens_interpolated, but character classes set to display as string",
+			"begin": "(\\()",
+			"beginCaptures": {
+				"1": {
+					"name": "string.quoted.format.nested_parens.perl"
+				}
+			},
+			"end": "(\\))",
+			"endCaptures": {
+				"1": {
+					"name": "string.quoted.format.nested_parens.perl"
+				}
+			},
+			"patterns": [
+				{
+					"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+					"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+					"name": "keyword.control.anchor.perl"
+				},
+				{
+					"include": "#escaped_char"
+				},
+				{
+					"include": "#interp_variable"
+				},
+				{
+					"include": "#nested_parens_interpolated_string"
+				},
+				{
+					"match": ".",
+					"name": "string.quoted.format.nested_parens.perl"
 				}
 			]
 		},
@@ -2875,6 +2984,103 @@
 							"name": "punctuation.definition.variable.perl"
 						}
 					},
+					"match": "(\\%(#)?)([\\p{L}\\p{M}_\\$]|::)([\\p{L}\\p{M}_\\$]|::)*\\b",
+					"name": "variable.other.readwrite.global.perl"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.variable.perl"
+						}
+					},
+					"match": "(\\%(#)?)[0-9_]\\b",
+					"name": "variable.other.readwrite.global.special.perl"
+				},
+				{
+					"include": "#interp_variable"
+				}
+			]
+		},
+		"interp_variable": {
+			"patterns": [
+				{
+					"captures": {
+						"1": {
+							"name": "variable.other.readwrite.global.perl"
+						},
+						"2": {
+							"name": "keyword.operator.comparison.perl"
+						},
+						"3": {
+							"name": "interpolated.punctuation.perl"
+						},
+						"4": {
+							"name": "constant.other.key.perl"
+						},
+						"5": {
+							"name": "interpolated.punctuation.perl"
+						},
+						"6": {
+							"name": "keyword.operator.comparison.perl"
+						},
+						"7": {
+							"name": "interpolated.punctuation.perl"
+						},
+						"8": {
+							"name": "constant.other.key.perl"
+						},
+						"9": {
+							"name": "interpolated.punctuation.perl"
+						}
+					},
+					"match": "(\\$[\\p{L}\\p{M}_\\$][\\p{L}\\p{M}0-9_\\$]*)((?:->)?)(\\{)([\\p{L}\\p{M}0-9_]+)(\\})((?:->)?)(\\{)([\\p{L}\\p{M}0-9_]+)(\\})"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "variable.other.readwrite.global.perl"
+						},
+						"2": {
+							"name": "keyword.operator.comparison.perl"
+						},
+						"3": {
+							"name": "interpolated.punctuation.perl"
+						},
+						"4": {
+							"name": "constant.other.key.perl"
+						},
+						"5": {
+							"name": "interpolated.punctuation.perl"
+						}
+					},
+					"match": "(\\$[\\p{L}\\p{M}_\\$][\\p{L}\\p{M}0-9_\\$]*)((?:->)?)(\\{)([\\p{L}\\p{M}0-9_]+)(\\})"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "variable.other.readwrite.global.perl"
+						},
+						"2": {
+							"name": "keyword.operator.comparison.perl"
+						},
+						"3": {
+							"name": "interpolated.punctuation.perl"
+						},
+						"4": {
+							"name": "variable.other.key.perl"
+						},
+						"5": {
+							"name": "interpolated.punctuation.perl"
+						}
+					},
+					"match": "(\\$[\\p{L}\\p{M}_\\$][\\p{L}\\p{M}0-9_\\$]*)((?:->)?)(\\{)(\\$[\\p{L}\\p{M}0-9_]+)(\\})"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.variable.perl"
+						}
+					},
 					"match": "(\\$)&(?![A-Za-z0-9_])",
 					"name": "variable.other.regexp.match.perl"
 				},
@@ -2938,6 +3144,15 @@
 							"name": "punctuation.definition.variable.perl"
 						}
 					},
+					"match": "(\\$)\\^[A-Z](?![A-Za-z0-9_])",
+					"name": "variable.other.predefined.perl"
+				},
+				{
+					"captures": {
+						"1": {
+							"name": "punctuation.definition.variable.perl"
+						}
+					},
 					"match": "(\\$)[0-9]+(?![A-Za-z0-9_])",
 					"name": "variable.other.subpattern.perl"
 				},
@@ -2947,7 +3162,7 @@
 							"name": "punctuation.definition.variable.perl"
 						}
 					},
-					"match": "([\\$\\@\\%](#)?)([a-zA-Zx7f-xff\\$]|::)([a-zA-Z0-9_x7f-xff\\$]|::)*\\b",
+					"match": "([\\$\\@](#)?)([\\p{L}\\p{M}_\\$]|::)([\\p{L}\\p{M}0-9_\\$]|::)*\\b",
 					"name": "variable.other.readwrite.global.perl"
 				},
 				{
@@ -2959,7 +3174,7 @@
 							"name": "punctuation.definition.variable.perl"
 						}
 					},
-					"match": "(\\$\\{)(?:[a-zA-Zx7f-xff\\$]|::)(?:[a-zA-Z0-9_x7f-xff\\$]|::)*(\\})",
+					"match": "(\\$\\{)(?:\\^?[\\p{L}\\p{M}_\\$]|::)(?:[\\p{L}\\p{M}0-9_\\$]|::)*(\\})",
 					"name": "variable.other.readwrite.global.perl"
 				},
 				{
@@ -2968,9 +3183,30 @@
 							"name": "punctuation.definition.variable.perl"
 						}
 					},
-					"match": "([\\$\\@\\%](#)?)[0-9_]\\b",
+					"match": "([\\$\\@](#)?)[0-9_]\\b",
 					"name": "variable.other.readwrite.global.special.perl"
-				}
+				},
+				{
+					"begin": "[\\$\\@\\%\\&]\\{",
+					"beginCaptures": {
+					  "0": {
+						"name": "punctuation.definition.variable.perl"
+					  }
+					},
+					"contentName": "meta.embedded.block.perl",
+					"end": "\\}",
+					"endCaptures": {
+					  "0": {
+						"name": "punctuation.definition.variable.perl"
+					  }
+					},
+					"name": "variable.other.readwrite.global.perl",
+					"patterns": [
+					  {
+						"include": "$self"
+					  }
+					]
+				  }		  
 			]
 		}
 	}

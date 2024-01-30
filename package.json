@@ -211,7 +211,8 @@
 				"path": "./server/perl.tmLanguage.json",
 				"unbalancedBracketScopes": [
 					"variable.other.predefined.perl",
-					"constant.character.escape.regex.perl"
+					"constant.character.escape.regex.perl",
+					"punctuation.definition.variable.perl"
 				  ]
 			},
 			{

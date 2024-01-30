@@ -34,7 +34,7 @@
 		},
 		{
 			"applyEndPatternLast": 1,
-			"begin": "\\b(?=qr\\s*[^\\s\\w])",
+			"begin": "\\b(?=qr\\s*(?!=>)[^\\s\\w])",
 			"comment": "string.regexp.compile.perl",
 			"end": "((([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)]|\\s*$))",
 			"endCaptures": {
@@ -177,7 +177,7 @@
 					]
 				},
 				{
-					"begin": "(qr)\\s*([^\\s\\w'\\{\\[\\(\\<])",
+					"begin": "(qr)\\s*(?!=>)([^\\s\\w'\\{\\[\\(\\<])",
 					"captures": {
 						"0": {
 							"name": "punctuation.definition.string.perl"
@@ -2823,6 +2823,32 @@
 					"include": "#escaped_char"
 				},
 				{
+					"comment": "Honestly, I don't think this is needed and it's not present in =~ // regexes without the m. If you remove character classes, also remove nested parens in non-paren based regexes",
+					"begin": "\\[",
+					"beginCaptures": {
+						"1": {
+							"name": "string.regexp.nested.character-class.begin.perl"
+						}
+					},
+					"end": "\\]",
+					"endCaptures": {
+						"1": {
+							"name": "string.regexp.nested.character-class.end.perl"
+						}
+					},
+					"name": "string.regexp.nested.character-class.set.perl",
+					"patterns": [
+						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
+							"include": "#escaped_char"
+						}
+					]
+				},
+				{
 					"include": "#interp_variable"
 				},
 				{
@@ -3145,7 +3171,7 @@
 						}
 					},
 					"match": "(\\$)\\^[A-Z](?![A-Za-z0-9_])",
-					"name": "variable.other.predefined.perl"
+					"name": "variable.other.predefined.caret.perl"
 				},
 				{
 					"captures": {

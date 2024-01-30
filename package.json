@@ -208,7 +208,10 @@
 			{
 				"language": "perl",
 				"scopeName": "source.perl",
-				"path": "./server/perl.tmLanguage.json"
+				"path": "./server/perl.tmLanguage.json",
+				"unbalancedBracketScopes": [
+					"variable.other.predefined.perl"
+				  ]
 			},
 			{
 			  "injectTo": [

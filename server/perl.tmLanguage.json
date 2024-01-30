@@ -63,7 +63,7 @@
 					"name": "string.regexp.compile.nested_braces.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -87,7 +87,7 @@
 					"name": "string.regexp.compile.nested_brackets.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -111,7 +111,7 @@
 					"name": "string.regexp.compile.nested_ltgt.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -144,7 +144,7 @@
 							"name": "keyword.control.anchor.perl"
 						},
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#interp_variable"
@@ -172,7 +172,7 @@
 					"name": "string.regexp.compile.single-quote.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						}
 					]
 				},
@@ -195,7 +195,7 @@
 							"name": "keyword.control.anchor.perl"
 						},
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -238,7 +238,7 @@
 					"name": "string.regexp.find-m.nested_braces.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -262,7 +262,7 @@
 					"name": "string.regexp.find-m.nested_brackets.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -286,7 +286,7 @@
 					"name": "string.regexp.find-m.nested_ltgt.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -310,7 +310,7 @@
 					"name": "string.regexp.find-m.nested_parens.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -334,7 +334,7 @@
 					"name": "string.regexp.find-m.single-quote.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						}
 					]
 				},
@@ -356,7 +356,7 @@
 							"name": "keyword.control.anchor.perl"
 						},
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -382,7 +382,7 @@
 									"name": "keyword.control.anchor.perl"
 								},
 								{
-									"include": "#escaped_char"
+									"include": "#escaped_char_regex"
 								}
 							]
 						},
@@ -428,7 +428,7 @@
 					"name": "string.regexp.nested_braces.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#nested_braces"
@@ -449,7 +449,7 @@
 					"name": "string.regexp.nested_brackets.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#nested_brackets"
@@ -470,7 +470,7 @@
 					"name": "string.regexp.nested_ltgt.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#nested_ltgt"
@@ -491,7 +491,7 @@
 					"name": "string.regexp.nested_parens.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#nested_parens"
@@ -509,7 +509,7 @@
 					"name": "string.regexp.format.nested_braces.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -530,7 +530,7 @@
 					"name": "string.regexp.format.nested_brackets.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -551,7 +551,7 @@
 					"name": "string.regexp.format.nested_ltgt.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -572,7 +572,7 @@
 					"name": "string.regexp.format.nested_parens.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -609,7 +609,7 @@
 					"name": "string.regexp.format.simple_delimiter.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -655,7 +655,7 @@
 							"name": "keyword.control.anchor.perl"
 						},
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -692,7 +692,7 @@
 					"end": "\\1",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -735,7 +735,7 @@
 					"name": "string.regexp.replace.extended.simple_delimiter.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						}
 					]
 				},
@@ -750,7 +750,7 @@
 					"name": "string.regexp.replace.extended.simple_delimiter.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						}
 					]
 				},
@@ -765,7 +765,7 @@
 					"name": "string.regexp.replace.extended.simple_delimiter.perl",
 					"patterns": [
 						{
-							"include": "#escaped_char"
+							"include": "#escaped_char_regex"
 						},
 						{
 							"include": "#variable"
@@ -803,7 +803,7 @@
 					"name": "keyword.control.anchor.perl"
 				},
 				{
-					"include": "#escaped_char"
+					"include": "#escaped_char_regex"
 				},
 				{
 					"include": "#variable"
@@ -1508,6 +1508,46 @@
 				{
 					"match": "\\\\.",
 					"name": "constant.character.escape.perl"
+				}
+			]
+		},
+		"escaped_char_regex": {
+			"patterns": [
+				{
+					"match": "\\\\\\d+",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\c[^\\s\\\\]",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\g(?:\\{(?:\\w*|-\\d+)\\}|\\d+)",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\k(?:\\{\\w*\\}|<\\w*>|'\\w*')",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\N\\{[^\\}]*\\}",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\o\\{\\d*\\}",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\(?:p|P)(?:\\{\\w*\\}|P)",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\x(?:[0-9a-zA-Z]{2}|\\{\\w*\\})?",
+					"name": "constant.character.escape.regex.perl"
+				},
+				{
+					"match": "\\\\.",
+					"name": "constant.character.escape.regex.perl"
 				}
 			]
 		},

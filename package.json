@@ -210,7 +210,8 @@
 				"scopeName": "source.perl",
 				"path": "./server/perl.tmLanguage.json",
 				"unbalancedBracketScopes": [
-					"variable.other.predefined.perl"
+					"variable.other.predefined.perl",
+					"constant.character.escape.regex.perl"
 				  ]
 			},
 			{

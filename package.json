@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.7.13",
+	"version": "0.8.0",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -205,6 +205,11 @@
 			}
 		},
 		"grammars": [
+			{
+				"language": "perl",
+				"scopeName": "source.perl",
+				"path": "./server/perl.tmLanguage.json"
+			},
 			{
 			  "injectTo": [
 				"source.perl"

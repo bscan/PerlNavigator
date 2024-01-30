@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 2024-01-29
+- Override base vscode textmate grammars for better syntax highlighting
+- Webpack extension for speed
+
+## 0.7.11 2023-11-22
+- Bumping required node version to 16 because of replaceAll compatibility
+- Bug fixes on POD documentation format
+- Inquisitor fixes on tied hashes
+
 ## 0.7.9 2023-10-29
 - Improved POD documentation: search for .pod files, better formating of links and code blocks. bug fixes.
 

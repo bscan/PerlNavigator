@@ -63,10 +63,15 @@
 					"name": "string.regexp.compile.nested_braces.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_braces_interpolated"
@@ -87,10 +92,15 @@
 					"name": "string.regexp.compile.nested_brackets.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_brackets_interpolated"
@@ -111,10 +121,15 @@
 					"name": "string.regexp.compile.nested_ltgt.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_ltgt_interpolated"
@@ -198,7 +213,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_parens_interpolated"
@@ -241,7 +256,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_braces_interpolated"
@@ -265,7 +280,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_brackets_interpolated"
@@ -289,7 +304,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_ltgt_interpolated"
@@ -313,7 +328,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_parens_interpolated"
@@ -359,7 +374,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"begin": "\\[",
@@ -512,7 +527,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_braces_interpolated"
@@ -533,7 +548,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_brackets_interpolated"
@@ -554,7 +569,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_ltgt_interpolated"
@@ -575,7 +590,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"include": "#nested_parens_interpolated"
@@ -612,7 +627,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						}
 					]
 				},
@@ -658,7 +673,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"match": ".",
@@ -695,7 +710,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						},
 						{
 							"match": ".",
@@ -768,7 +783,7 @@
 							"include": "#escaped_char_regex"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						}
 					]
 				}
@@ -799,14 +814,14 @@
 			"patterns": [
 				{
 					"comment": "This is to prevent thinks like /foo$/ to treat $/ as a variable",
-					"match": "\\$(?=\\/)",
+					"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
 					"name": "keyword.control.anchor.perl"
 				},
 				{
 					"include": "#escaped_char_regex"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"match": ".",
@@ -850,7 +865,7 @@
 					"name": "storage.type.method.perl"
 				}
 			},
-			"match": "\\b(sub)(?:\\s+([-a-zA-Z0-9_]+))?\\s*(?:\\([\\$\\@\\*;]*\\)|\\b)",
+			"match": "\\b(sub)(?:\\s+([-a-zA-Z0-9_]+))?\\s*(?:\\([\\$\\@\\*%&;\\s+]*\\)|\\b)",
 			"name": "meta.function.perl"
 		},
 		{
@@ -990,7 +1005,7 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"match":".",
@@ -1099,7 +1114,7 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				}
 			]
 		},
@@ -1947,7 +1962,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "text.html.basic"
@@ -2000,7 +2015,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "text.xml"
@@ -2053,7 +2068,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.css"
@@ -2106,7 +2121,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.js"
@@ -2159,7 +2174,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.sql"
@@ -2212,7 +2227,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.postscript"
@@ -2259,7 +2274,7 @@
 							"include": "#escaped_char"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						}
 					]
 				},
@@ -2307,7 +2322,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "text.html.basic"
@@ -2360,7 +2375,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "text.xml"
@@ -2413,7 +2428,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.css"
@@ -2466,7 +2481,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.js"
@@ -2519,7 +2534,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.sql"
@@ -2572,7 +2587,7 @@
 									"include": "#escaped_char"
 								},
 								{
-									"include": "#variable"
+									"include": "#interp_variable"
 								},
 								{
 									"include": "source.postscript"
@@ -2619,7 +2634,7 @@
 							"include": "#escaped_char"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						}
 					]
 				},
@@ -2661,7 +2676,7 @@
 							"include": "#escaped_char"
 						},
 						{
-							"include": "#variable"
+							"include": "#interp_variable"
 						}
 					]
 				}
@@ -2722,7 +2737,7 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"include": "#nested_braces_interpolated"
@@ -2759,7 +2774,7 @@
 					"include": "#escaped_char"
 				},
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"include": "#nested_brackets_interpolated"
@@ -2790,7 +2805,7 @@
 			"end": ">",
 			"patterns": [
 				{
-					"include": "#variable"
+					"include": "#interp_variable"
 				},
 				{
 					"include": "#nested_ltgt_interpolated"

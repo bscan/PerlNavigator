@@ -114,6 +114,7 @@ const defaultSettings: NavigatorSettings = {
     perlimportsLintEnabled: false,
     perlimportsTidyEnabled: false,
     perltidyEnabled: true,
+    perlCompileEnabled: true,
     severity5: "warning",
     severity4: "info",
     severity3: "hint",

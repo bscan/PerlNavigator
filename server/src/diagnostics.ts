@@ -11,6 +11,13 @@ import { parseDocument } from "./parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<CompilationResults | void> {
+    
+    const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
+
+    if (!settings.perlCompileEnabled){
+        const parsedDoc = await parsingPromise;
+        return { diags: [], perlDoc: parsedDoc };
+    }
     let perlParams: string[] = [...settings.perlParams, "-c"];
     const filePath = Uri.parse(textDocument.uri).fsPath;
 
@@ -19,7 +26,6 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     perlParams = perlParams.concat(getInquisitor());
     nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
 
-    const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
 
     let output: string;
     let stdout: string;

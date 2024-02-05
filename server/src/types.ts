@@ -19,6 +19,7 @@ export interface NavigatorSettings {
     perlimportsProfile: string;
     perltidyEnabled: boolean;
     perltidyProfile: string;
+    perlCompileEnabled: boolean;
     severity5: string;
     severity4: string;
     severity3: string;

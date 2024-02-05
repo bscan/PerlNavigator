@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.8.0",
+	"version": "0.8.1",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -107,6 +107,12 @@
 					"scope": "resource",
 					"type": "string",
 					"description": "Regex pattern with policies to include for perl critic (normally in profile)"
+				},
+				"perlnavigator.perlCompileEnabled": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Enable running perl -c on your code"
 				},
 				"perlnavigator.severity5": {
 					"scope": "resource",

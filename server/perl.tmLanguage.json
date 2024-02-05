@@ -64,7 +64,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -93,7 +93,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -122,7 +122,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -155,7 +155,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w\\\\'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\s\\w\\\\'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -206,7 +206,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\s\\w'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -253,6 +253,11 @@
 					"name": "string.regexp.find-m.nested_braces.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[\\(\\)\\|])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char_regex"
 						},
 						{
@@ -276,6 +281,11 @@
 					"end": "\\]",
 					"name": "string.regexp.find-m.nested_brackets.perl",
 					"patterns": [
+						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[\\(\\)\\|])",
+							"name": "keyword.control.anchor.perl"
+						},
 						{
 							"include": "#escaped_char_regex"
 						},
@@ -301,6 +311,11 @@
 					"name": "string.regexp.find-m.nested_ltgt.perl",
 					"patterns": [
 						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[\\(\\)\\|])",
+							"name": "keyword.control.anchor.perl"
+						},
+						{
 							"include": "#escaped_char_regex"
 						},
 						{
@@ -324,6 +339,11 @@
 					"end": "\\)",
 					"name": "string.regexp.find-m.nested_parens.perl",
 					"patterns": [
+						{
+							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
+							"match": "\\$(?=[\\(\\)\\|])",
+							"name": "keyword.control.anchor.perl"
+						},
 						{
 							"include": "#escaped_char_regex"
 						},
@@ -367,7 +387,7 @@
 					"patterns": [
 						{
 							"comment": "This is to prevent thinks like qr/foo$/ to treat $/ as a variable",
-							"match": "\\$(?=[^\\sa-zA-Z0-9'\\{\\[\\(\\<])",
+							"match": "\\$(?=[^\\sa-zA-Z0-9'\\{\\[\\<])",
 							"name": "keyword.control.anchor.perl"
 						},
 						{
@@ -398,6 +418,9 @@
 								},
 								{
 									"include": "#escaped_char_regex"
+								},
+								{
+									"include": "#interp_variable"
 								}
 							]
 						},
@@ -416,7 +439,7 @@
 			"applyEndPatternLast": 1,
 			"begin": "\\b(?=(?<!\\&|\\->)(s)(\\s+\\S|\\s*[;\\,\\{\\}\\(\\)\\[<]|$))",
 			"comment": "string.regexp.replace.perl",
-			"end": "((([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\{\\}\\)\\]>]|\\s*$))",
+			"end": "(?<=[^\\s\\w\\[({<;])((([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\{\\}\\)\\]>]|\\s*$))",
 			"endCaptures": {
 				"1": {
 					"name": "string.regexp.replace.perl"
@@ -425,7 +448,7 @@
 					"name": "punctuation.definition.string.perl"
 				},
 				"3": {
-					"name": "keyword.control.regexp-option.perl"
+					"name": "keyword.control.regexp-option.perlTEST"
 				}
 			},
 			"patterns": [
@@ -614,7 +637,7 @@
 					]
 				},
 				{
-					"begin": "([^\\s\\w\\[({<;])",
+					"begin": "([^\\s\\w\\[({<;\\$])",
 					"captures": {
 						"0": {
 							"name": "punctuation.definition.string.perl"
@@ -632,7 +655,8 @@
 					]
 				},
 				{
-					"match": "\\s+"
+					"comment": "This is intended to match the space between the two 'sections', such as s{foo} {bar}",
+					"match": "(?<=[^\\s\\w\\[({<;\\$])\\s+(?=[^\\s\\w\\])}>;\\$])"
 				}
 			]
 		},
@@ -814,7 +838,7 @@
 			"patterns": [
 				{
 					"comment": "This is to prevent thinks like /foo$/ to treat $/ as a variable",
-					"match": "\\$(?=[^\\s\\w'\\{\\[\\(\\<])",
+					"match": "\\$(?=[\\(\\)\\/\\|])", 
 					"name": "keyword.control.anchor.perl"
 				},
 				{
@@ -850,7 +874,7 @@
 					"name": "entity.name.type.class.perl"
 				}
 			},
-			"match": "^\\s*(package)\\s+([^\\s;]+)",
+			"match": "^\\s*(package)\\s+([^\\s;#]+)",
 			"name": "meta.class.perl"
 		},
 		{
@@ -907,17 +931,33 @@
 					"name": "support.function.perl"
 				},
 				"2": {
-					"name": "punctuation.definition.string.perl"
+					"name": "string.tr.replace.perl"
+				},
+				"3": {
+					"name": "string.tr.replace.perl"
+				},
+				"4": {
+					"name": "string.tr.replace.perl"
 				},
 				"5": {
-					"name": "punctuation.definition.string.perl"
+					"name": "string.tr.replace.perl"
 				},
-				"8": {
-					"name": "punctuation.definition.string.perl"
+				"6": {
+					"name": "string.tr.replace.perl"
 				}
 			},
-			"match": "\\b(tr|y)\\s*([^A-Za-z0-9\\s])(.*?)(?<!\\\\)(\\\\{2})*(\\2)(.*?)(?<!\\\\)(\\\\{2})*(\\2)",
-			"name": "string.regexp.replace.perl"
+			"match": "\\b(tr|y)\\s*([^A-Za-z0-9\\s])(.*?)(?<!\\\\)(\\2)(.*?)(?<!\\\\)(\\2)"
+		},
+		{
+			"captures": {
+				"1": {
+					"name": "support.function.perl"
+				},
+				"2": {
+					"name": "string.tr.replace.perl"
+				}
+			},
+			"match": "\\b(tr|y)({[^}]*?}\\s?{[^}]*?})"
 		},
 		{
 			"match": "\\b(__FILE__|__LINE__|__PACKAGE__|__SUB__)\\b",
@@ -939,7 +979,7 @@
 			]
 		},
 		{
-			"match": "(?<!->)\\b(continue|default|die|do|else|elsif|exit|for|foreach|given|goto|if|last|next|redo|return|select|unless|until|wait|when|while|require|use|eval|evalbytes)\\b",
+			"match": "(?<!->|::)\\b(continue|default|die|do|else|elsif|exit|for|foreach|given|goto|if|last|next|redo|return|select|unless|until|wait|when|while|require|use|eval|evalbytes|package)\\b",
 			"name": "keyword.control.perl"
 		},
 		{
@@ -1457,7 +1497,7 @@
 			"match": "\\b(x)\\s*(\\d+)\\b"
 		},
 		{
-			"match": "(?<!->)\\b(ARGV|DATA|ENV|SIG|STDERR|STDIN|STDOUT|abs|accept|alarm|atan2|bind|binmode|bless|caller|chdir|chmod|chomp|chop|chown|chr|chroot|close|closedir|cmp|connect|cos|crypt|dbmclose|dbmopen|defined|delete|dump|each|endgrent|endhostent|endnetent|endprotoent|endpwent|endservent|eof|eq|exec|exists|exp|fc|fcntl|fileno|flock|fork|format|formline|ge|getc|getgrent|getgrgid|getgrnam|gethostbyaddr|gethostbyname|gethostent|getlogin|getnetbyaddr|getnetbyname|getnetent|getpeername|getpgrp|getppid|getpriority|getprotobyname|getprotobynumber|getprotoent|getpwent|getpwnam|getpwuid|getservbyname|getservbyport|getservent|getsockname|getsockopt|glob|gmtime|grep|gt|hex|import|index|int|ioctl|join|keys|kill|lc|lcfirst|le|length|link|listen|localtime|lock|log|lstat|lt|m|map|mkdir|msgctl|msgget|msgrcv|msgsnd|ne|no|oct|open|opendir|ord|pack|pipe|pop|pos|print|printf|prototype|push|quotemeta|rand|read|readdir|readline|readlink|readpipe|recv|ref|rename|reset|reverse|rewinddir|rindex|rmdir|s|say|scalar|seek|seekdir|semctl|semget|semop|send|setgrent|sethostent|setnetent|setpgrp|setpriority|setprotoent|setpwent|setservent|setsockopt|shift|shmctl|shmget|shmread|shmwrite|shutdown|sin|sleep|socket|socketpair|sort|splice|split|sprintf|sqrt|srand|stat|study|substr|symlink|syscall|sysopen|sysread|sysseek|system|syswrite|tell|telldir|tie|tied|time|times|tr|truncate|uc|ucfirst|umask|undef|unlink|unpack|unshift|untie|utime|values|vec|waitpid|wantarray|warn|write|x|y)\\b",
+			"match": "(?<!->|::)\\b(ARGV|DATA|ENV|SIG|STDERR|STDIN|STDOUT|abs|accept|alarm|atan2|bind|binmode|bless|caller|chdir|chmod|chomp|chop|chown|chr|chroot|close|closedir|cmp|connect|cos|crypt|dbmclose|dbmopen|defined|delete|dump|each|endgrent|endhostent|endnetent|endprotoent|endpwent|endservent|eof|eq|exec|exists|exp|fc|fcntl|fileno|flock|fork|format|formline|ge|getc|getgrent|getgrgid|getgrnam|gethostbyaddr|gethostbyname|gethostent|getlogin|getnetbyaddr|getnetbyname|getnetent|getpeername|getpgrp|getppid|getpriority|getprotobyname|getprotobynumber|getprotoent|getpwent|getpwnam|getpwuid|getservbyname|getservbyport|getservent|getsockname|getsockopt|glob|gmtime|grep|gt|hex|import|index|int|ioctl|join|keys|kill|lc|lcfirst|le|length|link|listen|localtime|lock|log|lstat|lt|m|map|mkdir|msgctl|msgget|msgrcv|msgsnd|ne|no|oct|open|opendir|ord|pack|pipe|pop|pos|print|printf|prototype|push|quotemeta|rand|read|readdir|readline|readlink|readpipe|recv|ref|rename|reset|reverse|rewinddir|rindex|rmdir|s|say|scalar|seek|seekdir|semctl|semget|semop|send|setgrent|sethostent|setnetent|setpgrp|setpriority|setprotoent|setpwent|setservent|setsockopt|shift|shmctl|shmget|shmread|shmwrite|shutdown|sin|sleep|socket|socketpair|sort|splice|split|sprintf|sqrt|srand|stat|study|substr|symlink|syscall|sysopen|sysread|sysseek|system|syswrite|tell|telldir|tie|tied|time|times|tr|truncate|uc|ucfirst|umask|undef|unlink|unpack|unshift|untie|utime|values|vec|waitpid|wantarray|warn|write|x|y)\\b",
 			"name": "support.function.perl"
 		},
 		{
@@ -3268,7 +3308,7 @@
 					"name": "variable.other.readwrite.global.special.perl"
 				},
 				{
-					"begin": "[\\$\\@\\%\\&]\\{",
+					"begin": "[\\$\\@\\%\\&]\\{(?=[^{]*})",
 					"beginCaptures": {
 					  "0": {
 						"name": "punctuation.definition.variable.perl"

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.1 2024-02-05
+- More vscode specific syntax highlighting fixes
+- Allow disabling "perl -c" via settings. Now that more parsing is done in the node layer, the experience is still decent without "perl -c". 
+
 ## 0.8.0 2024-01-29
 - Override base vscode textmate grammars for better syntax highlighting
 - Webpack extension for speed

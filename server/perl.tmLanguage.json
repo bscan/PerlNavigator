@@ -814,16 +814,22 @@
 			]
 		},
 		{
-			"begin": "(?<=\\(|=|!|\\{|~|&|\\||\\bif|\\bunless|\\band|\\bor|\\bsplit|\\bgrep|^)\\s*((\\/))(?!\\/=)",
+			"begin": "(?<=\\(|=|!|\\{|~|&|\\||\\bif|\\bunless|\\band|\\bor|\\bsplit|\\bgrep)\\s*((\\/))(?!\\/=)|(?<=^)\\s*((\\/))(?!\\/)",
 			"beginCaptures": {
 				"1": {
 					"name": "string.regexp.find.perl"
 				},
 				"2": {
 					"name": "punctuation.definition.string.perl"
+				},
+				"3": {
+					"name": "string.regexp.find.perl"
+				},
+				"4": {
+					"name": "punctuation.definition.string.perl"
 				}
 			},
-			"end": "((\\1([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)\\.]|\\s*$))",
+			"end": "((\\/([egimosxradlupcn]*)))(?=(\\s+\\S|\\s*[;\\,\\#\\{\\}\\)\\.]|\\s*$))",
 			"endCaptures": {
 				"1": {
 					"name": "string.regexp.find.perl"

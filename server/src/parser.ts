@@ -513,9 +513,9 @@ function SubEndLine(state: ParserState, rFilter: RegExp | null = null): number {
         let stmt = state.codeArray[i];
 
         if (i == state.line_number) {
-            if (rFilter) stmt.replace(rFilter, "");
+            if (rFilter) stmt = stmt.replace(rFilter, "");
             // Default argument of empty hash. Other types of hashes may still trip this up
-            stmt.replace(/\$\w+\s*=\s*\{\s*\}/, "");
+            stmt = stmt.replace(/\$\w+\s*=\s*\{\s*\}/, "");
             if(stmt.match(/;\s*$/)){
                 // "Forward" declaration, such as `sub foo;`
                 return i;

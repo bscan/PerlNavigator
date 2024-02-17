@@ -814,6 +814,7 @@
 			]
 		},
 		{
+			"comment": "Finds bare // regex while avoiding //= operator. Following a newline, an empty // is assumed to be the defined-or operator.",
 			"begin": "(?<=\\(|=|!|\\{|~|&|\\||\\bif|\\bunless|\\band|\\bor|\\bsplit|\\bgrep)\\s*((\\/))(?!\\/=)|(?<=^)\\s*((\\/))(?!\\/)",
 			"beginCaptures": {
 				"1": {
@@ -3295,10 +3296,10 @@
 				{
 					"captures": {
 						"1": {
-							"name": "punctuation.definition.variable.perl"
+							"name": "variable.other.predefined.perl"
 						},
 						"2": {
-							"name": "punctuation.definition.variable.perl"
+							"name": "variable.other.predefined.perl"
 						}
 					},
 					"match": "(\\$\\{)(?:\\^?[\\p{L}\\p{M}_\\$]|::)(?:[\\p{L}\\p{M}0-9_\\$]|::)*(\\})",
@@ -3317,14 +3318,14 @@
 					"begin": "[\\$\\@\\%\\&]\\{(?=[^{]*})",
 					"beginCaptures": {
 					  "0": {
-						"name": "punctuation.definition.variable.perl"
+						"name": "variable.other.predefined.perl"
 					  }
 					},
 					"contentName": "meta.embedded.block.perl",
 					"end": "\\}",
 					"endCaptures": {
 					  "0": {
-						"name": "punctuation.definition.variable.perl"
+						"name": "variable.other.predefined.perl"
 					  }
 					},
 					"name": "variable.other.readwrite.global.perl",

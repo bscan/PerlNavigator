@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.2 2024-02-17
+- More vscode specific highlighting fixes
+- Fix bug in parser around default arguments in subs
+
 ## 0.8.1 2024-02-05
 - More vscode specific syntax highlighting fixes
 - Allow disabling "perl -c" via settings. Now that more parsing is done in the node layer, the experience is still decent without "perl -c". 

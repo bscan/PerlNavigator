@@ -24,6 +24,7 @@ sub get_modules {
                     push @files, $_ if -f $_ and /\.pm$/ },
             no_chdir => 1,
             follow_fast => 1,  # May generate duplicates
+            follow_skip => 2,  # Don't if we observe duplicates
         },
         @find_dirs
     );
@@ -85,7 +86,7 @@ sub myuniq {
 my $modsFound = get_modules();
 
 # Generally, having keywords like "if" provide hover or definitions as a module is more confusing than helpful.
-my @modsToSkip = ('if', 'open', 'sort');
+my @modsToSkip = ('if', 'open', 'sort', 'next');
 delete $modsFound->{$_} foreach @modsToSkip;
 
 print "Dumping Mods\n";

@@ -2,8 +2,10 @@
 !images/camel_icon.png
 !syntaxes
 !LICENSE
+!CHANGELOG.md
 !client/dist/*
 !server/dist/*
+!browser-ext/dist/*
 !server/src/perl
 !perlimports.toml
 !server/perl.tmLanguage.json

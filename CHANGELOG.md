@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.8.3 2024-03-01
+- ModHunter fix from @drgrice1
+- Include changelog in bundle
+- Fix browser version
+
 ## 0.8.2 2024-02-17
 - More vscode specific highlighting fixes
 - Fix bug in parser around default arguments in subs

@@ -151,7 +151,7 @@ function getMatches(perlDoc: PerlDocument, symbol: string, replace: Range, strip
         if (goodMatch(perlDoc, elemName, qualifiedSymbol, symbol, bKnownObj)) {
             // Hooray, it's a match!
             // You may have asked for FOO::BAR->BAZ or $qux->BAZ and I found FOO::BAR::BAZ. Let's put back the arrow or variable before sending
-            const quotedSymbol = qualifiedSymbol.replace(/([\$])/g, "\\$1"); // quotemeta for $self->FOO
+            const quotedSymbol = qualifiedSymbol.replaceAll("$", "\\$"); // quotemeta for $self->FOO
             let aligned = elemName.replace(new RegExp(`^${quotedSymbol}`, "gi"), symbol);
 
             if (symbol.endsWith("-")) aligned = aligned.replaceAll('-:', "->"); // Half-arrows count too

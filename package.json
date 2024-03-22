@@ -40,6 +40,18 @@
 					"default": [],
 					"description": "Pass miscellaneous command line arguments to pass to the perl executable"
 				},
+				"perlnavigator.perlEnv": {
+					"scope": "resource",
+					"type": "object",
+					"default": {},
+					"description": "Pass environment variables to the perl executable. Skipped if undefined."
+				},
+				"perlnavigator.perlEnvAdd": {
+					"scope": "resource",
+					"type": "boolean",
+					"default": true,
+					"description": "Add environment variables to current environment, or totally replace (perlEnv related)."
+				},
 				"perlnavigator.enableWarnings": {
 					"scope": "resource",
 					"type": "boolean",

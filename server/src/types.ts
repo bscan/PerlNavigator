@@ -20,6 +20,8 @@ export interface NavigatorSettings {
     perltidyEnabled: boolean;
     perltidyProfile: string;
     perlCompileEnabled: boolean;
+    perlEnv: undefined | { [key: string]: string };
+    perlEnvAdd: boolean;
     severity5: string;
     severity4: string;
     severity3: string;

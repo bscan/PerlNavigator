@@ -87,6 +87,19 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
             "command": ["node", "C:\\temp\\PerlNavigator\\server\\out\\server.js","--stdio"],
             "selector": "source.perl",
         },
+        "settings": {
+            // "perlnavigator.perltidyProfile": "~/.perltidyrc",
+            // "perlnavigator.perlcriticProfile": "~/.perlcriticrc",
+            // "perlnavigator.perlEnvAdd": false, // default: true
+            // "perlnavigator.perlEnv": {
+            //     "KOHA_CONF": "/home/user/git/KohaCommunity/t/data/koha-conf.xml",
+            // },
+            // "perlnavigator.perlPath": "~/perl5/perlbrew/perls/perl-5.38.2/bin",
+            // "perlnavigator.perlcriticSeverity": 1,
+            // "perlnavigator.includePaths": [ "~/git/KohaCommunity", "~/git/KohaCommunity/lib" ],
+            // "perlnavigator.perlcriticEnabled": true,
+            // "perlnavigator.enableWarnings": true,
+        },
     }
 }
 ```

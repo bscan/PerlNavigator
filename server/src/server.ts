@@ -17,6 +17,7 @@ import {
     TextEdit,
 } from "vscode-languageserver/node";
 import { basename } from "path";
+import { homedir } from "os";
 import { TextDocument } from "vscode-languageserver-textdocument";
 import { PublishDiagnosticsParams } from "vscode-languageserver-protocol";
 
@@ -115,6 +116,8 @@ const defaultSettings: NavigatorSettings = {
     perlimportsTidyEnabled: false,
     perltidyEnabled: true,
     perlCompileEnabled: true,
+    perlEnv: undefined,
+    perlEnvAdd: true,
     severity5: "warning",
     severity4: "info",
     severity3: "hint",
@@ -190,6 +193,19 @@ async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
     }
 }
 
+function expandTildePaths(paths: string, settings: NavigatorSettings): string {
+    const path = paths;
+    // Consider that this not a Windows feature,
+    // so, Windows "%USERPROFILE%" currently is ignored (and rarely used).
+    if (path.startsWith("~/")) {
+        const newPath = homedir() + path.slice(1);
+        nLog("Expanding tilde path '" + path + "' to '" + newPath + "'", settings);
+        return newPath;
+    } else {
+        return path;
+    }
+}
+
 async function getDocumentSettings(resource: string): Promise<NavigatorSettings> {
     if (!hasConfigurationCapability) {
         return globalSettings;
@@ -202,6 +218,26 @@ async function getDocumentSettings(resource: string): Promise<NavigatorSettings>
         });
         if (!result) return globalSettings;
         const resolvedSettings = { ...globalSettings, ...result };
+
+        if(resolvedSettings.includePaths) {
+            resolvedSettings.includePaths = resolvedSettings.includePaths.map((path: string) => expandTildePaths(path, resolvedSettings));
+        }
+        if(resolvedSettings.perlPath) {
+            resolvedSettings.perlPath = expandTildePaths(resolvedSettings.perlPath, resolvedSettings);
+        }
+        if(resolvedSettings.perlimportsProfile) {
+            resolvedSettings.perlimportsProfile = expandTildePaths(resolvedSettings.perlimportsProfile, resolvedSettings);
+        }
+        if(resolvedSettings.perltidyProfile) {
+            resolvedSettings.perltidyProfile = expandTildePaths(resolvedSettings.perltidyProfile, resolvedSettings);
+        }
+        if(resolvedSettings.perlcriticProfile) {
+            resolvedSettings.perlcriticProfile = expandTildePaths(resolvedSettings.perlcriticProfile, resolvedSettings);
+        }
+        if(resolvedSettings.perlEnv) {
+            resolvedSettings.perlEnv = Object.fromEntries(Object.entries(resolvedSettings.perlEnv).map(([key, value]) => [key, expandTildePaths(value, resolvedSettings)]));
+        }
+
         documentSettings.set(resource, resolvedSettings);
         return resolvedSettings;
     }

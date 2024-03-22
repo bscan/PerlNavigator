@@ -19,6 +19,8 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
         return { diags: [], perlDoc: parsedDoc };
     }
     let perlParams: string[] = [...settings.perlParams, "-c"];
+    let perlEnv = settings.perlEnv;
+    let perlEnvAdd = settings.perlEnvAdd;
     const filePath = Uri.parse(textDocument.uri).fsPath;
 
     if (settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
@@ -33,14 +35,26 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     const diagnostics: Diagnostic[] = [];
     const code = getAdjustedPerlCode(textDocument, filePath);
     try {
-        const process = async_execFile(settings.perlPath, perlParams, { timeout: 10000, maxBuffer: 20 * 1024 * 1024 });
-        process?.child?.stdin?.on("error", (error: any) => {
+        let options: {
+            timeout: number;
+            maxBuffer: number;
+            env?: { [key: string]: string | undefined };
+        } = { timeout: 10000, maxBuffer: 20 * 1024 * 1024 };
+        if (perlEnv) {
+            if (perlEnvAdd) {
+                options.env = { ...process.env, ...perlEnv };
+            } else {
+                options.env = perlEnv;
+            }
+        }
+        const perlProcess = async_execFile(settings.perlPath, perlParams, options);
+        perlProcess?.child?.stdin?.on("error", (error: any) => {
             nLog("Perl Compilation Error Caught: ", settings);
             nLog(error, settings);
         });
-        process?.child?.stdin?.write(code);
-        process?.child?.stdin?.end();
-        const out = await process;
+        perlProcess?.child?.stdin?.write(code);
+        perlProcess?.child?.stdin?.end();
+        const out = await perlProcess;
 
         output = out.stderr;
         stdout = out.stdout;

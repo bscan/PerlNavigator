@@ -122,7 +122,7 @@ const defaultSettings: NavigatorSettings = {
     severity1: "hint",
     includePaths: [],
     includeLib: true,
-    logging: false, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
+    logging: true, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
     enableProgress: false,
 };
 
@@ -351,7 +351,7 @@ connection.onCompletionResolve(async (item: CompletionItem): Promise<CompletionI
 
     let mods = availableMods.get("default");
     if (!mods) mods = new Map();
-    
+
     const docs = await getCompletionDoc(perlElem, perlDoc, mods);
     if (docs?.match(/\w/)) {
         item.documentation = { kind: "markdown", value: docs };;

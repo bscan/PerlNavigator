@@ -33,7 +33,7 @@ try {
     $exit_code = App::perlimports::CLI->new->run;
 }
 catch {
-    print STDERR $_;
+    print $_;
     $exit_code = 1;
 };
 

@@ -470,7 +470,7 @@ const escapeHTML = (str: string): string => {
 
     if (backtickCount % 2 !== 0 || segments.length % 2 === 0) {
         // Handle the unbalanced backticks here
-        str = str.replace(/`/g, "");
+        str = str.replaceAll("`", "");
     }
 
     // Escape special characters and create a regex pattern

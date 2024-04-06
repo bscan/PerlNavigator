@@ -72,7 +72,7 @@ jobs:
         asset_content_type: application/octet-stream      
   
   publish-release:
-    needs: [create-release]
+    needs: [build-release]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

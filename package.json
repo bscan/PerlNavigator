@@ -407,7 +407,8 @@
 		"scripts": "server/dist/serverMain.js",
 		"assets": [
 			"server/src/**/*",
-			"server/node_modules/vscode-oniguruma/release/onig.wasm"
+			"server/node_modules/vscode-oniguruma/release/onig.wasm",
+			"server/perl.tmLanguage.json"
 		],
 		"targets": [
 			"node16-linux-x64",

@@ -229,137 +229,137 @@
 				"path": "./server/perl.tmLanguage.json",
 				"unbalancedBracketScopes": [
 					"variable.other.predefined.perl"
-				  ]
-			},
-			{
-			  "injectTo": [
-				"source.perl"
-			  ],
-			  "scopeName": "source.perl.frameworks",
-			  "path": "./syntaxes/perl-scopes.json"
-			},
-			{
-			  "injectTo": [
-				"source.perl"
-			  ],
-			  "scopeName": "source.perl.package.moose",
-			  "path": "./syntaxes/moose.json"
+				]
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
+				],
+				"scopeName": "source.perl.frameworks",
+				"path": "./syntaxes/perl-scopes.json"
+			},
+			{
+				"injectTo": [
+					"source.perl"
+				],
+				"scopeName": "source.perl.package.moose",
+				"path": "./syntaxes/moose.json"
+			},
+			{
+				"injectTo": [
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.dataclass",
 				"path": "./syntaxes/dataclass.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.objectpad",
 				"path": "./syntaxes/object-pad.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.moops",
 				"path": "./syntaxes/moops.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.zydeco",
 				"path": "./syntaxes/zydeco.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.mars",
 				"path": "./syntaxes/mars.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.async",
 				"path": "./syntaxes/async.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.trycatch",
 				"path": "./syntaxes/trycatch.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.v536",
 				"path": "./syntaxes/v536.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.v510",
 				"path": "./syntaxes/v510.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.isa",
 				"path": "./syntaxes/isa.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.state",
 				"path": "./syntaxes/state.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.defer",
 				"path": "./syntaxes/defer.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.dynamically",
 				"path": "./syntaxes/dynamically.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.funcparams",
 				"path": "./syntaxes/funcparams.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.dios",
 				"path": "./syntaxes/dios.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.match",
 				"path": "./syntaxes/match.json"
 			},
 			{
 				"injectTo": [
-				  "source.perl"
+					"source.perl"
 				],
 				"scopeName": "source.perl.package.dancer",
 				"path": "./syntaxes/dancer.json"
@@ -388,19 +388,19 @@
 	},
 	"devDependencies": {
 		"@types/mocha": "^10.0.1",
-		"@types/node": "^15.0.0",
+		"@types/node": "^18.11.18",
+		"@types/webpack-env": "^1.16.0",
 		"@typescript-eslint/eslint-plugin": "^4.23.0",
 		"@typescript-eslint/parser": "^4.23.0",
-		"@types/webpack-env": "^1.16.0",
 		"@vscode/test-web": "*",
 		"eslint": "^7.26.0",
 		"mocha": "^10.2.0",
+		"path-browserify": "^1.0.1",
 		"pkg": "^5.8.0",
+		"ts-loader": "^9.3.0",
 		"typescript": "^4.8.4",
 		"webpack": "^5.76.1",
-		"webpack-cli": "^4.7.0",
-		"ts-loader": "^9.3.0",
-		"path-browserify": "^1.0.1"
+		"webpack-cli": "^4.7.0"
 	},
 	"bin": "server/dist/serverMain.js",
 	"pkg": {

@@ -25,7 +25,7 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
 
     if (settings.enableWarnings) perlParams = perlParams.concat(["-Mwarnings", "-M-warnings=redefine"]); // Force enable some warnings.
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
-    perlParams = perlParams.concat(getInquisitor());
+    perlParams = perlParams.concat(await getInquisitor());
     nLog("Starting perl compilation check with the equivalent of: " + settings.perlPath + " " + perlParams.join(" ") + " " + filePath, settings);
 
 
@@ -56,14 +56,14 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
         perlProcess?.child?.stdin?.end();
         const out = await perlProcess;
 
-        output = out.stderr;
-        stdout = out.stdout;
+        output = out.stderr.toString();
+        stdout = out.stdout.toString();
         severity = DiagnosticSeverity.Warning;
     } catch (error: any) {
         // TODO: Check if we overflowed the buffer.
         if ("stderr" in error && "stdout" in error) {
-            output = error.stderr;
-            stdout = error.stdout;
+            output = error.stderr.toString();
+            stdout = error.stdout.toString();
             severity = DiagnosticSeverity.Error;
         } else {
             nLog("Perlcompile failed with unknown error", settings);
@@ -85,8 +85,8 @@ export async function perlcompile(textDocument: TextDocument, workspaceFolders: 
     return { diags: uniq_diagnostics, perlDoc: mergedDoc };
 }
 
-function getInquisitor(): string[] {
-    const inq_path = getPerlAssetsPath();
+async function getInquisitor(): Promise<string[]> {
+    const inq_path = await getPerlAssetsPath();
     let inq: string[] = ["-I", inq_path, "-MInquisitor"];
     return inq;
 }
@@ -175,7 +175,7 @@ function localizeErrors(violation: string, filePath: string, perlDoc: PerlDocume
 
 export async function perlcritic(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if (!settings.perlcriticEnabled) return [];
-    const critic_path = join(getPerlAssetsPath(), "criticWrapper.pl");
+    const critic_path = join(await getPerlAssetsPath(), "criticWrapper.pl");
     let criticParams: string[] = [...settings.perlParams, critic_path].concat(getCriticProfile(workspaceFolders, settings));
     criticParams = criticParams.concat(["--file", Uri.parse(textDocument.uri).fsPath]);
 
@@ -215,7 +215,7 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
 
 export async function perlimports(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if (!settings.perlimportsLintEnabled) return [];
-    const importsPath = join(getPerlAssetsPath(), "perlimportsWrapper.pl");
+    const importsPath = join(await getPerlAssetsPath(), "perlimportsWrapper.pl");
     const cliParams = [...settings.perlParams, importsPath, ...getPerlimportsProfile(settings), "--lint", "--json", "--filename", Uri.parse(textDocument.uri).fsPath];
 
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);

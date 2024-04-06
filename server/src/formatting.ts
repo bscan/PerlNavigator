@@ -75,7 +75,7 @@ async function maybeReturnEdits(
 
 async function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): Promise<string | undefined> {
     if (!settings.perlimportsTidyEnabled) return;
-    const importsPath = join(getPerlAssetsPath(), "perlimportsWrapper.pl");
+    const importsPath = join(await getPerlAssetsPath(), "perlimportsWrapper.pl");
     let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
     cliParams = cliParams.concat(["--filename", Uri.parse(doc.uri).fsPath]);
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
@@ -98,7 +98,7 @@ async function perlimports(doc: TextDocument, code: string, settings: NavigatorS
 
 async function perltidy(code: string, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): Promise<string | undefined> {
     if (!settings.perltidyEnabled) return;
-    const tidy_path = join(getPerlAssetsPath(), "tidyWrapper.pl");
+    const tidy_path = join(await getPerlAssetsPath(), "tidyWrapper.pl");
     let tidyParams: string[] = [tidy_path].concat(getTidyProfile(workspaceFolders, settings));
 
     nLog("Now starting perltidy with: " + tidyParams.join(" "), settings);

@@ -129,7 +129,7 @@ function badFile(uri: string): boolean {
 export async function getAvailableMods(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Map<string, string>> {
     let perlParams = settings.perlParams;
     perlParams = perlParams.concat(getIncPaths(workspaceFolders, settings));
-    const modHunterPath = join(getPerlAssetsPath(), "lib_bs22", "ModHunter.pl");
+    const modHunterPath = join(await getPerlAssetsPath(), "lib_bs22", "ModHunter.pl");
     perlParams.push(modHunterPath);
     nLog("Starting to look for perl modules with " + perlParams.join(" "), settings);
 

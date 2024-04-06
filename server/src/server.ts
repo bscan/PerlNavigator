@@ -33,6 +33,7 @@ import { formatDoc, formatRange } from "./formatting";
 import { nLog } from "./utils";
 import { startProgress, endProgress } from "./progress";
 import { getSignature } from "./signatures";
+import { getPerlAssetsPath } from "./assets";
 
 var LRU = require("lru-cache");
 
@@ -51,7 +52,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 
-connection.onInitialize((params: InitializeParams) => {
+connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
 
     // Does the client support the `workspace/configuration` request?
@@ -87,6 +88,7 @@ connection.onInitialize((params: InitializeParams) => {
             },
         };
     }
+    await getPerlAssetsPath(); // Ensures assets are unpacked. Should this be in onInitialized?
     return result;
 });
 

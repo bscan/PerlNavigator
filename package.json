@@ -4,7 +4,7 @@
 	"description": "Code navigation, autocompletion, syntax checking, and linting for Perl",
 	"author": "bscan",
 	"license": "MIT",
-	"version": "0.8.7",
+	"version": "0.8.8",
 	"icon": "images/camel_icon.png",
 	"repository": {
 		"type": "git",
@@ -405,7 +405,10 @@
 	"bin": "server/dist/serverMain.js",
 	"pkg": {
 		"scripts": "server/dist/serverMain.js",
-		"assets": "server/src/**/*",
+		"assets": [
+			"server/src/**/*",
+			"server/node_modules/vscode-oniguruma/release/onig.wasm"
+		],
 		"targets": [
 			"node16-linux-x64",
 			"node16-macos-x64",

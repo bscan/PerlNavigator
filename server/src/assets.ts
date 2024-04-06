@@ -10,7 +10,6 @@ function extractAssetsIfNecessary(): string {
     if (!haveExtractedAssets) {
         pkgAssetPath = mkdtempSync(join(tmpdir(), "perl-navigator"));
         let assets: string[] = [
-            "src/perl/Inquisitor.pm",
             "src/perl/lib_bs22/Class/Inspector.pm",
             "src/perl/lib_bs22/Devel/Symdump.pm",
             "src/perl/lib_bs22/Devel/Symdump/Export.pm",
@@ -23,6 +22,7 @@ function extractAssetsIfNecessary(): string {
             "src/perl/criticWrapper.pl",
             "src/perl/defaultCriticProfile",
             "src/perl/tidyWrapper.pl",
+            "src/perl/perlimportsWrapper.pl",
         ];
 
         assets.forEach((asset) => {

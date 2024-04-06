@@ -125,7 +125,7 @@ const defaultSettings: NavigatorSettings = {
     severity1: "hint",
     includePaths: [],
     includeLib: true,
-    logging: true, // Get logging from vscode, but turn it off elsewhere. Sublime Text seems to struggle with it on Windows
+    logging: true,
     enableProgress: false,
 };
 
@@ -433,7 +433,7 @@ connection.onWorkspaceSymbol((params) => {
 
 connection.onDocumentFormatting(async (params) => {
     let document = documents.get(params.textDocument.uri);
-    let settings = documentSettings.get(params.textDocument.uri);
+    const settings = await getDocumentSettings(params.textDocument.uri);
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
     if (!document || !settings) return;
@@ -443,7 +443,7 @@ connection.onDocumentFormatting(async (params) => {
 
 connection.onDocumentRangeFormatting(async (params) => {
     let document = documents.get(params.textDocument.uri);
-    let settings = documentSettings.get(params.textDocument.uri);
+    const settings = await getDocumentSettings(params.textDocument.uri);
     const workspaceFolders = await getWorkspaceFoldersSafe();
 
     if (!document || !settings) return;

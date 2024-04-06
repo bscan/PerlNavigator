@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.4 2024-04-05
+- Perl::Tidy fix from @Ekopalypse
+- Logging enabled by default, from @WhoIsSethDaniel
+- Better logging for perlimports, from  @oalders and @WhoIsSethDaniel
+- Replacing regex with string operations for speed and readability. From @IAKOBVS
+- Auto-expansion of tilde paths in linux, from @nugged
+- Ability to add environment variables for perl, from @nugged
+
 ## 0.8.3 2024-03-01
 - ModHunter fix from @drgrice1
 - Include changelog in bundle

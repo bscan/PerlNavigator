@@ -147,11 +147,12 @@ install Perl Navigator.
 
 The simplest configuration is the following:
 ```lua
-require'lspconfig'.perlnavigator.setup{}
+require'lspconfig'.perlnavigator.setup{ cmd = { "perlnavigator" } }
 ```
-A configuration with a number of options set looks like:
+A configuration with a number of options set looks some like the following. The depends if you installed globally or not.
 ```lua
 require'lspconfig'.perlnavigator.setup{
+    cmd = { "perlnavigator" },
     settings = {
       perlnavigator = {
           perlPath = 'perl',

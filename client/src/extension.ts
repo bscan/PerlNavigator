@@ -4,7 +4,8 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
-import { workspace, ExtensionContext } from 'vscode';
+import * as child_process from 'child_process';
+import { workspace, ExtensionContext, tests, TestRunProfileKind, TestMessage } from 'vscode';
 
 import {
 	LanguageClient,
@@ -48,6 +49,38 @@ export function activate(context: ExtensionContext) {
 			// fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
 		}
 	};
+	
+	const controller = tests.createTestController('perlTestController', 'Perl Test Controller');
+	context.subscriptions.push(controller);
+	
+	workspace.findFiles('**/*.t').then((files) => {
+		for (const file of files) {
+			const testItem = controller.createTestItem(file.fsPath, file.fsPath, file);
+			controller.items.add(testItem);
+		}
+	});
+	
+	controller.createRunProfile('Run Tests', TestRunProfileKind.Run, (request, token) => {
+		const run = controller.createTestRun(request);
+	
+		for (const test of request.include) {
+			run.started(test);
+	
+			child_process.exec(`prove ${test.uri.fsPath}`, (error, stdout, stderr) => {
+				if (error) {
+					run.failed(test, new TestMessage(`Error: ${error.message}`));
+				} else if (stderr) {
+					run.failed(test, new TestMessage(`Error: ${stderr}`));
+					run.appendOutput(stderr, undefined, test);
+				} else {
+					run.passed(test);
+				}
+				run.appendOutput(stdout, undefined, test);
+	
+				run.end();
+			});
+		}
+	}, true)
 
 	// Create the language client and start the client.
 	client = new LanguageClient(

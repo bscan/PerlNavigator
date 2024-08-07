@@ -16,12 +16,17 @@ $SIG{__WARN__} = sub { warn '=PerlWarning=', @_ };
 # These modules can cause issues because they wipe the symbol table before we get a chance to inspect it.
 # Prevent them from loading. 
 # I hope this doesn't cause any issues, perhaps VERSION numbers or import statements would help here
+#
+# See https://perldoc.perl.org/perldelta#Calling-the-import-method-of-an-unknown-package-produces-a-warning
+# for a discussion of why the stub imports are necessary as of Perl 5.40
 $INC{'namespace/clean.pm'} = '';
 $INC{'namespace/autoclean.pm'} = '';
 {
     no strict 'refs';
     *{'namespace::autoclean::VERSION'} = sub { '0.29' };
     *{'namespace::clean::VERSION'} = sub { '0.27' };
+    *{'namespace::autoclean::import'} = sub { };
+    *{'namespace::clean::import'} = sub { };
 }
 
 CHECK {

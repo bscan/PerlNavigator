@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.8.15 2024-08-19
+- Fixes for Perl 5.40 from @oalders
+
+## 0.8.14 2024-04-06
+- Fixing bundling issues and various other webpack issues
+
 ## 0.8.4 2024-04-05
 - Perl::Tidy fix from @Ekopalypse
 - Logging enabled by default, from @WhoIsSethDaniel

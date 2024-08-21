@@ -253,7 +253,7 @@ function fields(state: ParserState) : boolean {
 
     let match;
     // Moo/Moose/Object::Pad/Moops/Corinna attributes
-    if ((match = state.stmt.match(/^(?:has|field)(?:\s+|\()["']?([\$@%]?\w+)\b/))) { 
+    if ((match = state.stmt.match(/^(?:has|field)(?:\s+|\()["']?\+?([\$@%]?\w+)\b/))) {
         const attr = match[1];
         let type;
         if(attr.match(/^\w/)){

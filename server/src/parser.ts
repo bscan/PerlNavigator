@@ -596,7 +596,6 @@ function PackageEndLine(state: ParserState) {
 
 // Resolve the path to the vscode-oniguruma package
 const onigurumaPkgPath = path.dirname(require.resolve('vscode-oniguruma/package.json'));
-console.log(onigurumaPkgPath);
 // Construct the path to onig.wasm
 const onigWasmPath = path.join(onigurumaPkgPath, 'release', 'onig.wasm');
 // Read the file

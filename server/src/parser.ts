@@ -594,12 +594,16 @@ function PackageEndLine(state: ParserState) {
     return state.codeArray.length;
 }
 
-// Resolve the path to the vscode-oniguruma package
-const onigurumaPkgPath = path.dirname(require.resolve('vscode-oniguruma/package.json'));
-// Construct the path to onig.wasm
-const onigWasmPath = path.join(onigurumaPkgPath, 'release', 'onig.wasm');
+// we first try to find by absolute path, which is needed in webpack
+let onigWasmPath = path.join(__dirname, "./../node_modules/vscode-oniguruma/release/onig.wasm")
+if (!fs.existsSync(onigWasmPath)) {
+  // dynmacially retrieve the path to onig.wasm (we need to eval the require to stop webpack from
+  // bundling the wasm, which doesn't werk)
+  onigWasmPath = eval('require.resolve')('vscode-oniguruma/release/onig.wasm');
+}
 // Read the file
 const wasmBin = fs.readFileSync(onigWasmPath).buffer;
+
 const vscodeOnigurumaLib = oniguruma.loadWASM(wasmBin).then(() => {
     return {
         createOnigScanner(patterns: any) {

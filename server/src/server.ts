@@ -51,6 +51,7 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
+let rootUri = '';
 
 connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
@@ -87,6 +88,11 @@ connection.onInitialize(async (params: InitializeParams) => {
                 supported: true,
             },
         };
+    } else {
+        process.stderr.write("No hasWorkspaceFolderCapability in onInitialize().\n");
+        if (params.rootUri!=null) {
+            rootUri = params.rootUri;
+        }
     }
     await getPerlAssetsPath(); // Ensures assets are unpacked. Should this be in onInitialized?
     return result;
@@ -184,15 +190,30 @@ async function dispatchForMods(textDocument: TextDocument) {
 }
 
 async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
-    try {
-        const workspaceFolders = await connection.workspace.getWorkspaceFolders();
-        if (!workspaceFolders) {
+    process.stderr.write("Now in getWorkspaceFoldersSafe().\n");
+    if (hasWorkspaceFolderCapability) {
+        process.stderr.write("getWorkspaceFoldersSafe() has hasWorkspaceFolderCapability.\n");
+        try {
+            const workspaceFolders = await connection.workspace.getWorkspaceFolders();
+            if (!workspaceFolders) {
+                return [];
+            } else {
+                return workspaceFolders;
+            }
+        } catch (error) {
             return [];
-        } else {
-            return workspaceFolders;
         }
-    } catch (error) {
-        return [];
+    } else {
+        process.stderr.write("No hasWorkspaceFolderCapability in getWorkspaceFoldersSafe() .\n");
+        if (rootUri!=null) {
+            const dummyFolder: WorkspaceFolder = {
+                    uri: rootUri,
+                    name: rootUri,
+            }
+            return [dummyFolder];
+        } else {
+            return [];
+        }
     }
 }
 

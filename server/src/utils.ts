@@ -54,7 +54,7 @@ export function getSymbol(position: Position, txtDoc: TextDocument) {
     const index = txtDoc.offsetAt(position) - txtDoc.offsetAt(start);
 
     const leftRg = /[\p{L}\p{N}_:>-]/u;
-    const rightRg = /[\p{L}\p{N}_]/u;
+    const rightRg = /[\p{L}\p{N}_:]/u;
 
     const leftAllow = (c: string) => leftRg.exec(c);
     const rightAllow = (c: string) => rightRg.exec(c);

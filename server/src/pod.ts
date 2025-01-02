@@ -1998,12 +1998,15 @@ const processInlineElements = (line: string): string => {
 
     // Handle non-breaking spaces (S<text>)
     line = line.replace(/S<([^<>]+)>/g, "$1");
+    line = line.replace(/S<<+\s+(.+?)\s+>+>/g, "$1");
 
     // Handle file names (F<name>), converting to italics
     line = line.replace(/F<([^<>]+)>/g, "*$1*");
+    line = line.replace(/F<<+\s+(.+?)\s+>+>/g, "*$1*");
 
     // Handle index entries (X<entry>), ignoring as Markdown doesn't have an index
     line = line.replace(/X<([^<>]+)>/g, "");
+    line = line.replace(/X<<+\s+(.+?)\s+>+>/g, "$1");
 
     return line;
 };

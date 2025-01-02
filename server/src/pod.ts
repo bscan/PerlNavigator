@@ -3,97 +3,1821 @@ import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import Uri from "vscode-uri";
 import { isFile } from "./utils";
 
-export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
-    // File may not exists. Return nothing if it doesn't
+// Error types
 
-    const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
+export type PodParseError = RawPodParseError | PodProcessingError;
 
-    if(!absolutePath) return;
+export interface RawPodParseError {
+    kind: "parseerror";
+    message: string;
+    lineNo: number;
+}
 
-    try {
-        var fileContent = await fs.promises.readFile(absolutePath, "utf8");
-    } catch {
-        return;
+export interface PodProcessingError {
+    kind: "processingerror";
+    message: string;
+}
+
+/** A paragraph whose first line matches `^[ \t]`.
+ *
+ * May also be *inside* `=begin [formatname]` and `=end [formatname]` commands,
+ * as long as [formatname] starts with a colon `:`.
+ */
+export interface VerbatimParagraph {
+    kind: "verbatim";
+    lineNo?: number;
+    lines: Array<string>;
+}
+
+/** Not a CommandParagraph and not a VerbatimParagraph. Basically just
+ * arbitrary text.
+ *
+ * May also be *inside* `=begin [formatname]` and `=end [formatname]` commands,
+ * as long as [formatname] starts with a colon `:`.
+ */
+export interface OrdinaryParagraph {
+    kind: "ordinary";
+    lineNo?: number;
+    lines: Array<string>;
+}
+
+/** Contents *inside* `=begin [formatname] [parameter]` and `=end [formatname]`
+ * commands, as long as [formatname] does *not* start with a colon `:`.
+ */
+export interface DataParagraph {
+    kind: "data";
+    lineNo?: number;
+    lines: Array<string>;
+}
+
+// Concrete command paragraphs
+//
+// Note: `=pod` and `=cut` aren't typed here, as they're already represented
+// by a `PodBlock`.
+
+export const enum HeaderLevel {
+    One = 1,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+}
+
+/** Represents `=head1` until `=head6`.
+ */
+export interface HeaderParagraph {
+    kind: "head";
+    lineNo?: number;
+    level: HeaderLevel;
+    contents: string;
+}
+
+/** Represents `=over`.
+ */
+export interface OverParagraph {
+    kind: "over";
+    lineNo?: number;
+    level: number; // non-zero and `4` by default
+}
+
+/** Represents `=back`.
+ */
+export interface BackParagraph {
+    kind: "back";
+    lineNo?: number;
+}
+
+/** Represents `=item *` or a plain `=item`.
+ * May be followed by text.
+ */
+export interface UnordererdItemParagraph {
+    kind: "unordereditem";
+    lineNo?: number;
+    lines?: Array<string>;
+}
+
+/** `=item N` or `=item N.` where `N` is any whole number.
+ * May be followed by text.
+ */
+export interface OrderedItemParagraph {
+    kind: "ordereditem";
+    num: number;
+    lineNo?: number;
+    lines?: Array<string>;
+}
+
+/** Represents `=encoding [encodingname]` - currently parsed, but unused.
+ */
+export interface EncodingParagraph {
+    kind: "encoding";
+    lineNo?: number;
+    name: string;
+}
+
+/** Represents `=begin [formatname] [parameter]`.
+ */
+export interface BeginParagraph {
+    kind: "begin";
+    lineNo?: number;
+    formatname: string;
+    parameter: string;
+}
+
+/** Represents `=end [formatname]`.
+ */
+export interface EndParagraph {
+    kind: "end";
+    lineNo?: number;
+    formatname: string;
+}
+
+/** Represents `=for [formatname] [contents]`.
+ * If `formatname` begins with a colon `:`, `contents` will be interpreted
+ * as an ordinary paragraph.
+ *
+ * If it doesn't begin with a colon, `contents` will be interpreted as a data
+ * paragraph.
+ */
+export interface ForParagraph {
+    kind: "for";
+    lineNo?: number;
+    formatname: string;
+    lines: Array<string>;
+}
+
+/** Yielded if none of the other command paragraphs match.
+ */
+export interface UnknownCommandParagraph {
+    kind: "unknown";
+    lineNo?: number;
+    cmd: string;
+    contents: string;
+}
+
+export type CommandParagraph = HeaderParagraph
+    | OverParagraph
+    | BackParagraph
+    | UnordererdItemParagraph
+    | OrderedItemParagraph
+    | EncodingParagraph
+    | BeginParagraph
+    | EndParagraph
+    | ForParagraph
+    | UnknownCommandParagraph;
+
+export type PodParagraph = CommandParagraph
+    | VerbatimParagraph
+    | OrdinaryParagraph
+    | DataParagraph;
+
+/** Represents the "raw" raw paragraphs between `=pod ... =cut` commands.
+ * "Raw" here means that all kinds of paragraphs can appear anywhere and in any
+ * order -- no checks (beyond parsing the paragraphs correctly) are performed.
+ *
+ * During the parser's second pass, the paragraphs in this block are then
+ * checked for their validity, e.g. whether `=over` is followed by a `=back`
+ * and so on, before processing the block into a `PodBlock`.
+ *
+ * Repeated occurrences of `=pod` and `=cut` commands are ignored when this
+ * block is being constructed.
+ */
+export interface RawPodBlock {
+    kind: "rawpodblock";
+    lineNo?: number;
+    paragraphs: Array<PodParagraph>;
+}
+
+export type PodBlockContent = VerbatimParagraph
+    | OrdinaryParagraph
+    | HeaderParagraph
+    | UnordererdItemParagraph
+    | OrderedItemParagraph
+    | EncodingParagraph
+    | UnknownCommandParagraph
+    | OverBlock
+    | DataBlock
+    | NormalDataBlock;
+
+/** Represents a list of paragraphs and other blocks between `=pod ... =cut` commands.
+ *
+ * This kind of block is created by processing a `RawPodBlock` during the parser's
+ * second pass.
+ */
+export interface PodBlock {
+    kind: "podblock";
+    lineNo?: number;
+    paragraphs: Array<PodBlockContent>;
+}
+
+export type OverBlockContent = VerbatimParagraph
+    | OrdinaryParagraph
+    | UnordererdItemParagraph
+    | OrderedItemParagraph
+    | EncodingParagraph
+    | UnknownCommandParagraph
+    | OverBlock
+    | DataBlock
+    | NormalDataBlock;
+
+/** Represents an `=over` ... `=back` block.
+ * - Cannot be empty
+ * - Cannot contain headers (HeaderParagraphs)
+ */
+export interface OverBlock {
+    kind: "overblock";
+    lineNo?: number;
+    level: number; // non-zero and `4` by default
+    paragraphs: Array<OverBlockContent>;
+}
+
+export type DataBlockContent = DataParagraph
+    | DataBlock
+    | NormalDataBlock;
+
+/** Represents a `=begin [formatname] [parameter]` ... `=end [formatname]` block.
+ * `formatname` must not begin with a colon `:`.
+ *
+ * This may also represents a `=for [formatname] text...` command.
+ *
+ * Other command paragraphs may *not* appear inside this type of block.
+ * Verbatim and ordinary paragraphs become data paragraphs.
+ */
+export interface DataBlock {
+    kind: "datablock";
+    lineNo?: number;
+    formatname: string;
+    parameter: string;
+    paragraphs: Array<DataBlockContent>;
+}
+
+/** Like a `DataBlock`, but `formatname` begins with a colon `:`.
+ * This means that the contents inside the `=begin ... =end` block are subject
+ * to normal processing.
+ */
+export interface NormalDataBlock {
+    kind: "normaldatablock";
+    lineNo?: number;
+    formatname: string;
+    parameter: string;
+    paragraphs: Array<PodBlockContent>;
+}
+
+/** Represents a POD document which hasn't yet been processed further.
+ */
+export interface RawPodDocument {
+    kind: "rawpoddocument",
+    blocks: Array<RawPodBlock>;
+}
+
+/** A completely parsed and processed POD document.
+ */
+export interface PodDocument {
+    kind: "poddocument",
+    blocks: Array<PodBlock>;
+}
+
+/** Tracks the state for parsing POD content from a file.
+ * See {@link parse} for more information.
+ */
+export class RawPodParser {
+    #lineIter: Generator<string, void, undefined> = this.#makeLineIter([]);
+    #currentLineNo: number = 0;
+    #currentBlock?: RawPodBlock = undefined;
+    #parsedBlocks: Array<RawPodBlock> = [];
+
+    /** Parses and returns POD content from the given file contents.
+     * Note that this returns a {@link RawPodDocument} on success, which contains
+     * POD content that hasn't been processed and checked for validity yet.
+     * This is done via the {@link PodProcessor}.
+     */
+    parse(fileContents: string): RawPodDocument | RawPodParseError {
+        const lines = fileContents.split(/\r?\n/);
+
+        // Reset state
+        this.#lineIter = this.#makeLineIter(lines);
+        this.#currentLineNo = 0;
+        this.#currentBlock = undefined;
+        this.#parsedBlocks = [];
+
+        let line: string | undefined;
+        while (true) {
+            line = this.#getNextLine();
+
+            // EOF
+            if (line === undefined) {
+                break;
+            }
+
+            // line is empty
+            if (line === "") {
+                continue;
+            }
+
+            if (/^=[a-zA-Z]/.test(line)) {
+                if (line.startsWith("=cut")) {
+                    if (this.#currentBlock !== undefined) {
+                        this.#parsedBlocks.push(this.#currentBlock);
+                        this.#currentBlock = undefined;
+                    }
+
+                    // ignoring repeated `=cut`s here, because they don't really matter
+
+                    this.#skipUntilEmptyLine();
+                    continue;
+                }
+
+                if (this.#currentBlock === undefined) {
+                    this.#currentBlock = { kind: "rawpodblock", lineNo: this.#currentLineNo, paragraphs: [] };
+                }
+
+                if (line.startsWith("=pod")) {
+                    this.#skipUntilEmptyLine();
+                    continue;
+                }
+
+                // other command paragraphs
+                let paraResult = this.#tryParseCommand(line);
+
+                if (paraResult.kind === "parseerror") {
+                    return paraResult;
+                }
+
+                // no need to skip to an empty line here, as that is handled for
+                // each paragraph in tryParseCommand
+
+                this.#currentBlock.paragraphs.push(paraResult);
+                continue;
+            }
+
+            if (this.#currentBlock === undefined) {
+                continue;
+            }
+
+            if (/^[ \t]/.test(line)) {
+                let para = this.#parseVerbatim(line);
+
+                this.#currentBlock.paragraphs.push(para);
+                continue;
+            }
+
+            let para = this.#parseOrdinary(line);
+            this.#currentBlock.paragraphs.push(para);
+        }
+
+        if (this.#currentBlock !== undefined) {
+            const lineNo = this.#currentBlock.lineNo as number;
+            return {
+                kind: "parseerror",
+                lineNo: lineNo,
+                message: `"=pod ... =cut" region beginning at line ${lineNo} was never closed (missing "=cut")`
+            };
+        }
+
+        return {
+            kind: "rawpoddocument",
+            blocks: this.#parsedBlocks,
+        };
     }
 
-    // Initialize state variables
-    let inPodBlock = false;
-    let inRelevantBlock = true;
-    let podContent = "";
-    let podBuffer = ""; // We "buffer" pod when searching to avoid empty sections
-    let meaningFullContent = false;
-    let searchItem;
-    if([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)){
-        // Search all. Note I'm not really treating packages different from Modules
-    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField, 
-                PerlSymbolKind.LocalMethod, PerlSymbolKind.LocalSub].includes(elem.type)){
-        searchItem = elem.name;
-        searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, "$1"); // Remove package
-    } else {
-        return;
+    *#makeLineIter(lines: string[]) {
+        yield* lines;
     }
 
-    let markdown = "";
+    #getNextLine(): string | undefined {
+        let { value, done } = this.#lineIter.next();
 
-    // Quick search for leading comments of a very specific form with comment blocks the preceed a sub (and aren't simply get/set without docs)
-    // These regexes are painful, but I didn't want to mix this with the line-by-line POD parsing which would overcomplicate that piece
+        if (done || value === undefined) {
+            return;
+        }
+
+        this.#currentLineNo++;
+
+        return value;
+    }
+
+    #skipUntilEmptyLine(): void {
+        let line: string | undefined;
+
+        while (true) {
+            line = this.#getNextLine();
+
+            if (!line) {
+                return;
+            }
+        }
+    }
+
+    #appendNextLineUntilEmptyLine(
+        content: string,
+        trimOpts: { trimStart?: boolean, trimEnd?: boolean } = {}
+    ): string {
+        let line: string | undefined;
+
+        while (line = this.#getNextLine()) {
+            if (trimOpts.trimStart && trimOpts.trimEnd) {
+                line = line.trim();
+            } else if (trimOpts.trimStart) {
+                line = line.trimStart();
+            } else if (trimOpts.trimEnd) {
+                line = line.trimEnd();
+            }
+
+            content += " " + line;
+        }
+
+        return content;
+    }
+
+
+    static #parsedLevelToHeaderLevel(matchedLevel: string): HeaderLevel | undefined {
+        const level = parseInt(matchedLevel);
+
+        if (isNaN(level)) {
+            return;
+        }
+
+        const levels = [
+            undefined,
+            HeaderLevel.One,
+            HeaderLevel.Two,
+            HeaderLevel.Three,
+            HeaderLevel.Four,
+            HeaderLevel.Five,
+            HeaderLevel.Six,
+        ] as const;
+
+        return levels[level];
+    }
+
+    /** Tries to parse a command paragraph.
+     * The passed `line` is expected to have matched `/^=[a-zA-Z]/` beforehand.
+     */
+    #tryParseCommand(line: string): PodParagraph | RawPodParseError {
+        line = line.trimEnd();
+        const lineNo = this.#currentLineNo;
+
+        let matchResult;
+
+        // =head[1-6]
+        matchResult = [...line.matchAll(/^=head(?<level>[1-6])(\s+(?<contents>.*))?/g)][0];
+        if (matchResult !== undefined) {
+            // Casts here are fine, because we only match expected level in regex
+            const matchedLevel = matchResult.groups?.level as string;
+            const level = RawPodParser.#parsedLevelToHeaderLevel(matchedLevel) as HeaderLevel;
+
+            let contents = matchResult.groups?.contents || "";
+            contents = this.#appendNextLineUntilEmptyLine(
+                contents, { trimStart: true, trimEnd: true }
+            );
+
+            let para: HeaderParagraph = {
+                kind: "head",
+                lineNo: lineNo,
+                contents: contents,
+                level: level,
+            };
+
+            return para;
+        }
+
+        // =item
+        // =item\s+*
+        // =item\s+\d+\.?
+        // =item\s+[text...]
+        matchResult = [...line.matchAll(/^=item(\s+((?<asterisk>\*)\s*|((?<num>\d+)\.?\s*))?)?(?<text>.*)?/g)][0];
+        if (matchResult !== undefined) {
+            // =item *
+            let asterisk = matchResult.groups?.asterisk;
+            if (asterisk) {
+                let text = matchResult.groups?.text;
+
+                let para: UnordererdItemParagraph = {
+                    kind: "unordereditem",
+                    lineNo: lineNo,
+                };
+
+                if (text) {
+                    this.#appendNextLineUntilEmptyLine(text, { trimStart: true, trimEnd: true });
+                    para.lines = [text];
+                } else {
+                    this.#skipUntilEmptyLine();
+                }
+
+                return para;
+            }
+
+            // =item N.
+            let num = matchResult.groups?.num;
+            if (num) {
+                let text = matchResult.groups?.text;
+
+                let para: OrderedItemParagraph = {
+                    kind: "ordereditem",
+                    num: parseInt(num),
+                    lineNo: lineNo,
+                };
+
+                if (text) {
+                    this.#appendNextLineUntilEmptyLine(text, { trimStart: true, trimEnd: true });
+                    para.lines = [text];
+                } else {
+                    this.#skipUntilEmptyLine();
+                }
+
+                return para;
+            }
+
+            // =item Lorem ipsum dolor ...
+            let text = matchResult.groups?.text;
+            if (text) {
+                let currentLine: string | undefined = text;
+                let lines: Array<string> = [];
+
+                while (currentLine) {
+                    lines.push(currentLine.trim());
+
+                    currentLine = this.#getNextLine();
+                }
+
+                let para: UnordererdItemParagraph = {
+                    kind: "unordereditem",
+                    lineNo: lineNo,
+                    lines: lines,
+                };
+
+                return para;
+            }
+
+            // =item
+            let para: UnordererdItemParagraph = {
+                kind: "unordereditem",
+                lineNo: lineNo,
+            };
+
+            this.#skipUntilEmptyLine();
+
+            return para;
+        }
+
+        // =encoding
+        matchResult = [...line.matchAll(/^=encoding\s+(?<name>\S+)/g)][0];
+        if (matchResult !== undefined) {
+            let name = matchResult.groups?.name || "";
+
+            this.#skipUntilEmptyLine();
+
+            let para: EncodingParagraph = {
+                kind: "encoding",
+                lineNo: lineNo,
+                name: name,
+            };
+
+            return para;
+        }
+
+        // =over
+        matchResult = [...line.matchAll(/^=over(\s+(?<num>\d+(\.\d*)?))?/g)][0];
+        if (matchResult !== undefined) {
+            let matchedLevel = matchResult.groups?.num;
+
+            let level: number = 0;
+
+            if (matchedLevel !== undefined) {
+                level = parseFloat(matchedLevel);
+            }
+
+            const defaultOverLevel = 4;
+
+            level = level > 0 ? level : defaultOverLevel;
+
+            this.#skipUntilEmptyLine();
+
+            let para: OverParagraph = {
+                kind: "over",
+                lineNo: lineNo,
+                level: level,
+            };
+
+            return para;
+        }
+
+        // =back
+        if (line.startsWith("=back")) {
+            this.#skipUntilEmptyLine();
+
+            let para: BackParagraph = {
+                kind: "back",
+                lineNo: lineNo,
+            };
+
+            return para;
+        }
+
+        // =begin
+        matchResult = [
+            ...line.matchAll(
+                /^=begin(\s+(?<formatname>:?[-a-zA-Z0-9_]+)(\s+(?<parameter>.*))?)?/g
+            )
+        ][0];
+        if (matchResult !== undefined) {
+            if (matchResult.groups?.formatname === undefined) {
+                return {
+                    kind: "parseerror",
+                    lineNo: lineNo,
+                    message: `"=begin" command at line ${lineNo} does not contain any format name`,
+                };
+            }
+
+            let parameter = matchResult.groups?.parameter || "";
+            parameter = this.#appendNextLineUntilEmptyLine(parameter).trim();
+
+            let para: BeginParagraph = {
+                kind: "begin",
+                lineNo: lineNo,
+                formatname: matchResult.groups?.formatname?.trim() as string,
+                parameter: parameter,
+            };
+
+            return para;
+        }
+
+        // =end
+        matchResult = [...line.matchAll(/^=end(\s+(?<formatname>:?[-a-zA-Z0-9_]+))?/g)][0];
+        if (matchResult !== undefined) {
+            if (matchResult.groups?.formatname === undefined) {
+                return {
+                    kind: "parseerror",
+                    lineNo: lineNo,
+                    message: `"=end" command at line ${lineNo} does not contain any format name`,
+                };
+            }
+
+            this.#skipUntilEmptyLine();
+
+            let para: EndParagraph = {
+                kind: "end",
+                lineNo: lineNo,
+                formatname: matchResult.groups?.formatname?.trim() as string,
+            };
+
+            return para;
+        }
+
+        // =for
+        matchResult = [
+            ...line.matchAll(/^=for(\s+(?<formatname>:?[-a-zA-Z0-9_]+)(\s+(?<contents>.*))?)?/g)
+        ][0];
+        if (matchResult !== undefined) {
+            if (matchResult.groups?.formatname === undefined) {
+                return {
+                    kind: "parseerror",
+                    lineNo: lineNo,
+                    message: `"=for" command at line ${lineNo} does not contain any format name`,
+                };
+            }
+
+            let contents = matchResult.groups?.contents.trim() || "";
+
+            // similar to parsing an ordinary or verbatim paragraph
+            let currentLine: string | undefined = contents;
+            let lines: Array<string> = [];
+
+            while (currentLine) {
+                lines.push(currentLine.trimEnd());
+
+                currentLine = this.#getNextLine();
+            }
+
+            let para: ForParagraph = {
+                kind: "for",
+                lineNo: lineNo,
+                formatname: matchResult.groups?.formatname?.trim() as string,
+                lines: lines,
+            };
+
+            return para;
+        }
+
+        // unknown command paragraph; just parse it so we can toss it later
+        matchResult = [...line.matchAll(/^=(?<cmd>\S+)(\s+(?<contents>.*))?/g)][0];
+        if (matchResult !== undefined) {
+            let contents = matchResult.groups?.contents || "";
+            contents = this.#appendNextLineUntilEmptyLine(contents);
+
+            let para: UnknownCommandParagraph = {
+                kind: "unknown",
+                lineNo: lineNo,
+                cmd: matchResult.groups?.cmd as string,
+                contents: contents,
+            };
+
+            return para;
+        }
+
+        return {
+            kind: "parseerror",
+            lineNo: lineNo,
+            message: `failed to parse command from line ${lineNo}: "${line}" is not recognized as command paragraph`,
+        };
+    }
+
+    /** Parses a verbatim paragraph.
+     * The passed `line` is expected to have matched `/^[ \t]/` beforehand.
+     */
+    #parseVerbatim(line: string): VerbatimParagraph {
+        let currentLine: string | undefined = line;
+        const lineNo = this.#currentLineNo;
+
+        let lines: Array<string> = [];
+
+        // breaks if undefined or empty line
+        while (currentLine) {
+            lines.push(currentLine.trimEnd());
+
+            currentLine = this.#getNextLine();
+        }
+
+        return {
+            kind: "verbatim",
+            lineNo: lineNo,
+            lines: lines,
+        };
+    }
+
+    /** Parses an ordinary paragraph.
+     * The passed `line` is expected to have matched neither`/^=[a-zA-Z]` or
+     * `/^[ \t]` beforehand.
+     */
+    #parseOrdinary(line: string): OrdinaryParagraph {
+        let currentLine: string | undefined = line;
+        const lineNo = this.#currentLineNo;
+
+        let lines: Array<string> = [];
+
+        // breaks if undefined or empty line
+        while (currentLine) {
+            lines.push(currentLine);
+
+            currentLine = this.#getNextLine();
+        }
+
+        return {
+            kind: "ordinary",
+            lineNo: lineNo,
+            lines: lines,
+        };
+    }
+}
+
+/** Tracks the state for processing a {@link RawPodDocument} into a proper
+ * {@link PodDocument}.
+ */
+export class PodProcessor {
+    #blockIter: Generator<RawPodBlock, void, undefined> = this.#makeBlockIter([]);
+    #processedBlocks: Array<PodBlock> = [];
+
+    /** Processes a {@link RawPodDocument} into a proper {@link PodDocument}.
+     *
+     * This checks whether the given raw document is valid (conforms as much to
+     * the POD specification as possible) and also merges certain paragraphs for
+     * ease of use.
+     */
+    process(document: RawPodDocument): PodDocument | PodProcessingError {
+        // Reset state
+        this.#blockIter = this.#makeBlockIter(document.blocks);
+        this.#processedBlocks = [];
+
+        const blockProcessor = new PodBlockProcessor();
+
+        let currentBlock = this.#getNextBlock();
+        while (currentBlock) {
+            const processedBlockResult = blockProcessor.process(currentBlock);
+
+            if (processedBlockResult.kind === "processingerror") {
+                return processedBlockResult;
+            }
+
+            this.#processedBlocks.push(processedBlockResult);
+            currentBlock = this.#getNextBlock();
+        }
+
+        return {
+            kind: "poddocument",
+            blocks: this.#processedBlocks,
+        };
+    }
+
+    *#makeBlockIter(rawBlocks: Array<RawPodBlock>) {
+        yield* rawBlocks;
+    }
+
+    #getNextBlock(): RawPodBlock | undefined {
+        let { value, done } = this.#blockIter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    }
+}
+
+/** Inner workings of {@link PodProcessor}. */
+class PodBlockProcessor {
+    #paragraphIter: Generator<PodParagraph, void, undefined> = this.#makeParagraphIter([]);
+    #podBlock: PodBlock = { kind: "podblock", paragraphs: [] };
+
+    *#makeParagraphIter(paragraphs: Array<PodParagraph>) {
+        yield* paragraphs;
+    }
+
+    #getNextParagraph(): PodParagraph | undefined {
+        let { value, done } = this.#paragraphIter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    }
+
+    process(block: RawPodBlock): PodBlock | PodProcessingError {
+        // Reset state
+        this.#paragraphIter = this.#makeParagraphIter(block.paragraphs);
+        this.#podBlock = { kind: "podblock", paragraphs: [] };
+
+        let para: PodParagraph | undefined;
+        let previousPara: PodParagraph | undefined;
+
+        while (true) {
+            previousPara = para;
+            para = this.#getNextParagraph();
+
+            if (!para) {
+                break;
+            }
+
+            switch (para.kind) {
+                case "verbatim":
+                    const lastPara = this.#podBlock.paragraphs[this.#podBlock.paragraphs.length - 1];
+
+                    // Merge verbatim paragraphs for easier conversion later.
+                    if (lastPara && lastPara.kind === "verbatim") {
+                        let mergedLines = [...lastPara.lines, "", ...para.lines];
+
+                        let mergedVerbatim: VerbatimParagraph = {
+                            kind: "verbatim",
+                            lineNo: lastPara.lineNo,
+                            lines: mergedLines,
+                        };
+
+                        this.#podBlock.paragraphs[this.#podBlock.paragraphs.length - 1] = mergedVerbatim;
+                        break;
+                    }
+
+                    this.#podBlock.paragraphs.push(para);
+                    break;
+                case "ordinary":
+                case "unordereditem":
+                case "ordereditem":
+                case "head":
+                    this.#podBlock.paragraphs.push(para);
+                    break;
+                case "data":
+                    return {
+                        kind: "processingerror",
+                        message: 'encountered unexpected data paragraph',
+                    };
+                case "over":
+                    let overBlockResult = this.#enterOverBlock(para);
+
+                    if (overBlockResult.kind === "processingerror") {
+                        return overBlockResult;
+                    }
+
+                    this.#podBlock.paragraphs.push(overBlockResult);
+                    break;
+                case "back":
+                    return {
+                        kind: "processingerror",
+                        message: "'=back' does not have matching '=over'",
+                    };
+                case "begin":
+                    let dataBlockResult = this.#enterDataBlock(para);
+
+                    if (dataBlockResult.kind === "processingerror") {
+                        return dataBlockResult;
+                    }
+
+                    this.#podBlock.paragraphs.push(dataBlockResult);
+                    break;
+                case "end":
+                    return {
+                        kind: "processingerror",
+                        message: `'=end ${para.formatname}' does not have matching '=begin ${para.formatname}'`,
+                    };
+                case "for":
+                    let forDataBlock = this.#buildDataBlockFromForPara(para);
+
+                    this.#podBlock.paragraphs.push(forDataBlock);
+
+                    break;
+                case "encoding": // ignored
+                case "unknown":  // ignored
+                    break;
+                default:
+                    const _exhaustiveCheck: never = para;
+                    return _exhaustiveCheck;
+            }
+        }
+
+        return this.#podBlock;
+    }
+
+    // `level` must be non-zero.
+    #enterOverBlock(paragraph: OverParagraph): OverBlock | PodProcessingError {
+        let overBlock: OverBlock = {
+            kind: "overblock",
+            lineNo: paragraph.lineNo,
+            level: paragraph.level,
+            paragraphs: [],
+        };
+
+        let isProcessingBlock = true;
+        let para: PodParagraph | undefined;
+
+        while (isProcessingBlock) {
+            para = this.#getNextParagraph();
+
+            if (para === undefined) {
+                return {
+                    kind: "processingerror",
+                    message: 'unexpected end of paragraphs while processing "=over ... =back" block',
+                };
+            }
+
+            switch (para.kind) {
+                case "verbatim":
+                    const lastPara = overBlock.paragraphs[overBlock.paragraphs.length - 1];
+
+                    // Merge verbatim paragraphs for easier conversion later.
+                    if (lastPara && lastPara.kind === "verbatim") {
+                        let mergedLines = [...lastPara.lines, "", ...para.lines];
+
+                        let mergedVerbatim: VerbatimParagraph = {
+                            kind: "verbatim",
+                            lineNo: lastPara.lineNo,
+                            lines: mergedLines,
+                        };
+
+                        overBlock.paragraphs[overBlock.paragraphs.length - 1] = mergedVerbatim;
+                        break;
+                    }
+
+                    overBlock.paragraphs.push(para);
+                    break;
+                case "ordinary":
+                case "unordereditem":
+                case "ordereditem":
+                    overBlock.paragraphs.push(para);
+                    break;
+                case "head":
+                    return {
+                        kind: "processingerror",
+                        message: `encountered invalid paragraph in "=over ... =back" block: "=head${para.level} ${para.contents}"`
+                    };
+                case "data":
+                    return {
+                        kind: "processingerror",
+                        message: 'encountered unexpected data paragraph in "=over ... =back" block',
+                    };
+                case "over":
+                    let nestedOverBlockResult = this.#enterOverBlock(para);
+
+                    if (nestedOverBlockResult.kind === "processingerror") {
+                        return nestedOverBlockResult;
+                    }
+
+                    overBlock.paragraphs.push(nestedOverBlockResult);
+                    break;
+                case "back":
+                    isProcessingBlock = false;
+                    break;
+                case "begin":
+                    let nestedDataBlockResult = this.#enterDataBlock(para);
+
+                    if (nestedDataBlockResult.kind === "processingerror") {
+                        return nestedDataBlockResult;
+                    }
+
+                    overBlock.paragraphs.push(nestedDataBlockResult);
+                    break;
+                case "end":
+                    return {
+                        kind: "processingerror",
+                        message: `'=end ${para.formatname}' does not have matching '=begin ${para.formatname}'`,
+                    };
+                case "for":
+                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
+
+                    overBlock.paragraphs.push(nestedForDataBlock);
+                case "encoding": // ignored
+                case "unknown":  // ignored
+                    break;
+                default:
+                    const _exhaustiveCheck: never = para;
+                    return _exhaustiveCheck;
+            }
+        }
+
+        return overBlock;
+    }
+
+    #enterDataBlock(paragraph: BeginParagraph): DataBlock | NormalDataBlock | PodProcessingError {
+        if (paragraph.formatname.startsWith(":")) {
+            return this.#buildNormalDataBlock(paragraph);
+        } else {
+            return this.#buildDataBlock(paragraph);
+        }
+    }
+
+    #buildDataBlock(paragraph: BeginParagraph): DataBlock | PodProcessingError {
+        let dataBlock: DataBlock = {
+            kind: "datablock",
+            formatname: paragraph.formatname,
+            parameter: paragraph.parameter,
+            paragraphs: [],
+        };
+
+        let isProcessingBlock = true;
+        let para: PodParagraph | undefined;
+
+        while (isProcessingBlock) {
+            para = this.#getNextParagraph();
+
+            if (para === undefined) {
+                return {
+                    kind: "processingerror",
+                    message: `unexpected end of paragraphs while processing "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
+                };
+            }
+
+            switch (para.kind) {
+                case "ordinary":
+                case "verbatim":
+                    const lastPara = dataBlock.paragraphs[dataBlock.paragraphs.length - 1];
+
+                    // Ordinary and verbatim paragraphs are merged into the previous data paragraph.
+                    if (lastPara && lastPara.kind === "data") {
+                        let mergedLines = [...lastPara.lines, "", ...para.lines];
+
+                        let mergedData: DataParagraph = {
+                            kind: "data",
+                            lineNo: lastPara.lineNo,
+                            lines: mergedLines,
+                        };
+
+                        dataBlock.paragraphs[dataBlock.paragraphs.length - 1] = mergedData;
+                        break;
+                    }
+
+                    let dataPara: DataParagraph = {
+                        kind: "data",
+                        lines: para.lines,
+                    };
+
+                    dataBlock.paragraphs.push(dataPara);
+
+                    break;
+                case "data":
+                    return {
+                        kind: "processingerror",
+                        message: `pre-existing data paragraph in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
+                    };
+                case "encoding":
+                case "unordereditem":
+                case "ordereditem":
+                case "head":
+                case "over":
+                case "back":
+                case "unknown":
+                    return {
+                        kind: "processingerror",
+                        message: `unexpected command paragraph "${para.kind}" in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
+                    };
+                case "begin":
+                    let nestedDataBlockResult = this.#enterDataBlock(para);
+
+                    if (nestedDataBlockResult.kind === "processingerror") {
+                        return nestedDataBlockResult;
+                    }
+
+                    dataBlock.paragraphs.push(nestedDataBlockResult);
+                    break;
+                case "end":
+                    const [beginFmtName, endFmtName] = [dataBlock.formatname.trim(), para.formatname.trim()];
+
+                    if (beginFmtName !== endFmtName) {
+                        return {
+                            kind: "processingerror",
+                            message: `"=end ${endFmtName}" does not match "=begin ${beginFmtName}"`,
+                        };
+                    }
+
+                    isProcessingBlock = false;
+                    break;
+                case "for":
+                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
+
+                    dataBlock.paragraphs.push(nestedForDataBlock);
+                    break;
+                default:
+                    const _exhaustiveCheck: never = para;
+                    return _exhaustiveCheck;
+            }
+        }
+
+        return dataBlock;
+    }
+
+    #buildNormalDataBlock(paragraph: BeginParagraph): NormalDataBlock | PodProcessingError {
+        let dataBlock: NormalDataBlock = {
+            kind: "normaldatablock",
+            formatname: paragraph.formatname,
+            parameter: paragraph.parameter,
+            paragraphs: [],
+        };
+
+        let isProcessingBlock = true;
+        let para: PodParagraph | undefined;
+
+        while (isProcessingBlock) {
+            para = this.#getNextParagraph();
+
+            if (para === undefined) {
+                return {
+                    kind: "processingerror",
+                    message: `unexpected end of paragraphs while processing "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
+                };
+            }
+
+            switch (para.kind) {
+                case "verbatim":
+                    const lastPara = dataBlock.paragraphs[dataBlock.paragraphs.length - 1];
+
+                    // Merge verbatim paragraphs for easier conversion later.
+                    if (lastPara && lastPara.kind === "verbatim") {
+                        let mergedLines = [...lastPara.lines, "", ...para.lines];
+
+                        let mergedVerbatim: VerbatimParagraph = {
+                            kind: "verbatim",
+                            lineNo: lastPara.lineNo,
+                            lines: mergedLines,
+                        };
+
+                        dataBlock.paragraphs[dataBlock.paragraphs.length - 1] = mergedVerbatim;
+                        break;
+                    }
+
+                    dataBlock.paragraphs.push(para);
+                    break;
+                case "ordinary":
+                case "unordereditem":
+                case "ordereditem":
+                case "head":
+                    dataBlock.paragraphs.push(para);
+                    break;
+                case "data":
+                    return {
+                        kind: "processingerror",
+                        message: `unexpected data paragraph in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
+                    };
+                case "over":
+                    let overBlockResult = this.#enterOverBlock(para);
+
+                    if (overBlockResult.kind === "processingerror") {
+                        return overBlockResult;
+                    }
+
+                    dataBlock.paragraphs.push(overBlockResult);
+                    break;
+                case "back":
+                    return {
+                        kind: "processingerror",
+                        message: "'=back' does not have matching '=over'",
+                    };
+                case "begin":
+                    let dataBlockResult = this.#enterDataBlock(para);
+
+                    if (dataBlockResult.kind === "processingerror") {
+                        return dataBlockResult;
+                    }
+
+                    dataBlock.paragraphs.push(dataBlockResult);
+                    break;
+                case "end":
+                    const [beginFmtName, endFmtName] = [dataBlock.formatname.trim(), para.formatname.trim()];
+
+                    if (beginFmtName !== endFmtName) {
+                        return {
+                            kind: "processingerror",
+                            message: `"=end ${endFmtName}" does not match "=begin ${beginFmtName}"`,
+                        };
+                    }
+
+                    isProcessingBlock = false;
+                    break;
+                case "for":
+                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
+
+                    dataBlock.paragraphs.push(nestedForDataBlock);
+                    break;
+                case "encoding": // ignored
+                case "unknown":  // ignored
+                    break;
+                default:
+                    const _exhaustiveCheck: never = para;
+                    return _exhaustiveCheck;
+            }
+        }
+
+        return dataBlock;
+    }
+
+    #buildDataBlockFromForPara(paragraph: ForParagraph): DataBlock | NormalDataBlock {
+        if (paragraph.formatname.startsWith(":")) {
+            let innerPara: OrdinaryParagraph = {
+                kind: "ordinary",
+                lines: paragraph.lines,
+            };
+
+            return {
+                kind: "normaldatablock",
+                formatname: paragraph.formatname,
+                parameter: "",
+                paragraphs: [innerPara],
+            };
+        }
+
+        let innerPara: DataParagraph = {
+            kind: "data",
+            lines: paragraph.lines,
+        };
+
+        return {
+            kind: "datablock",
+            formatname: paragraph.formatname,
+            parameter: "",
+            paragraphs: [innerPara],
+        };
+    }
+}
+
+/** Tracks the state for converting a {@link PodDocument} or {@link PodBlock}
+ * into Markdown.
+ */
+export class PodToMarkdownConverter {
+    #blockContentIter: Generator<PodBlockContent, void, undefined> = this.#makeBlockContentIter([]);
+    #overBlockIndentLevels: Array<number> = [];
+
+    /** Converts a {@link PodDocument} or {@link PodBlock} to Markdown. */
+    convert(pod: PodDocument | PodBlock): string {
+        let blocks: Array<PodBlock>;
+
+        if (pod.kind === "poddocument") {
+            blocks = pod.blocks;
+        } else {
+            blocks = [pod];
+        }
+
+        // Reset state
+        this.#blockContentIter = this.#makeBlockContentIter(blocks);
+        this.#overBlockIndentLevels = [];
+
+        // Need to wrap getNextBlockContent into closure here,
+        // otherwise we get an access violation
+        const markdownLines = this.#convertContentUntilDone(
+            () => this.#getNextBlockContent()
+        );
+
+        let finalLines: Array<string> = [];
+
+        for (const line of markdownLines) {
+            let processedLine = line;
+
+            if (processedLine.trim() === "") {
+                processedLine = "";
+            }
+
+            finalLines.push(processedLine);
+        }
+
+        if (finalLines.length === 0) {
+            return "";
+        }
+
+        return finalLines.join("\n").trimEnd() + "\n";
+    }
+
+    #convertContentUntilDone(
+        getNext: () => PodBlockContent | undefined,
+    ): Array<string> {
+        let lines: Array<string> = [];
+
+        let content: PodBlockContent | undefined;
+        let previousContent: PodBlockContent | undefined;
+
+        while (true) {
+            previousContent = content;
+            content = getNext();
+
+            if (!content) {
+                break;
+            }
+
+            if (!previousContent) {
+                lines.push(...this.#convertBlockContent(content, getNext));
+                continue;
+            }
+
+            if (isOverBlockWithItem(content)) {
+                if (!isItem(previousContent)) {
+                    ensureLastLineEmpty(lines);
+                    lines.push(...this.#convertBlockContent(content, getNext));
+                    continue;
+                }
+
+                lines.push(...this.#convertBlockContent(content, getNext));
+                continue;
+            }
+
+            // Consecutive list items are rendered without an empty line inbetween.
+            // Keeps the list visually coherent.
+            if (!(isItem(content) && isItem(previousContent))) {
+                ensureLastLineEmpty(lines);
+                lines.push(...this.#convertBlockContent(content, getNext));
+                continue;
+            }
+
+            lines.push(...this.#convertBlockContent(content, getNext));
+        }
+
+        return lines;
+    }
+
+    *#makeBlockContentIter(blocks: Array<PodBlock>) {
+        for (const block of blocks) {
+            yield* block.paragraphs;
+        }
+    }
+
+    #getNextBlockContent(): PodBlockContent | undefined {
+        let { value, done } = this.#blockContentIter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    }
+
+    #convertBlockContent(
+        content: PodBlockContent,
+        getNext: () => PodBlockContent | undefined,
+    ): Array<string> {
+        switch (content.kind) {
+            case "verbatim":
+                return this.#convertVerbatimPara(content);
+            case "ordinary":
+                return this.#convertOrdinaryPara(content);
+            case "head":
+                return this.#convertHeaderPara(content);
+            case "unordereditem":
+            case "ordereditem":
+                return this.#convertItemPara(content, getNext);
+            case "overblock":
+                return this.#convertOverBlock(content);
+            case "datablock":
+                return this.#convertDataBlock(content);
+            case "normaldatablock":
+                return this.#convertNormalDataBlock(content);
+            case "encoding": // ignored
+            case "unknown":  // ignored
+                return [];
+            default:
+                const _exhaustiveCheck: never = content;
+                return _exhaustiveCheck;
+        }
+    }
+
+    #convertVerbatimPara(verbatimPara: VerbatimParagraph): Array<string> {
+        return [
+            "```",
+            ...verbatimPara.lines.map((line) => tabsToSpaces(line, 8)),
+            "```",
+        ];
+    }
+
+    #convertOrdinaryPara(ordinaryPara: OrdinaryParagraph): Array<string> {
+        return ordinaryPara.lines
+            .map((line) => tabsToSpaces(line, 8))
+            .map(processInlineElements);
+    }
+
+    #convertHeaderPara(headerPara: HeaderParagraph): Array<string> {
+        return [
+            "#".repeat(headerPara.level) + " " + processInlineElements(headerPara.contents)
+        ];
+    }
+
+    #convertItemPara(
+        itemPara: UnordererdItemParagraph | OrderedItemParagraph,
+        getNext: () => PodBlockContent | undefined,
+    ): Array<string> {
+        let itemBeginning: string;
+
+        if (itemPara.kind === "unordereditem") {
+            itemBeginning = "-";
+        } else {
+            itemBeginning = `${itemPara.num}.`;
+        }
+
+        const indentAndFormatList = (arr: Array<string>): Array<string> => {
+            if (arr.length === 0) {
+                return arr;
+            }
+
+            let newArr: Array<string> = [];
+
+            newArr.push(itemBeginning + " " + arr[0]);
+            const indentLevel = itemBeginning.length + 1;
+
+            for (const line of arr.slice(1)) {
+                newArr.push(" ".repeat(indentLevel) + line);
+            }
+
+            return newArr;
+        };
+
+        if (itemPara.lines && itemPara.lines.length > 0) {
+            return indentAndFormatList(itemPara.lines.map(processInlineElements));
+        }
+
+        let nextContent = getNext();
+
+        if (!nextContent) {
+            return [itemBeginning];
+        }
+
+        if (nextContent.kind === "unordereditem" || nextContent.kind === "ordereditem") {
+            return [
+                itemBeginning,
+                ...this.#convertItemPara(nextContent, getNext),
+            ];
+        }
+
+        return indentAndFormatList(this.#convertBlockContent(nextContent, getNext));
+    }
+
+    #convertOverBlock(block: OverBlock): Array<string> {
+        const currentIndentLevel: number = Math.round(block.level);
+        this.#overBlockIndentLevels.push(currentIndentLevel);
+
+        const indentList = (arr: Array<string>): Array<string> => {
+            let newArr: Array<string> = [];
+
+            const adjustedIndentLevel = this.#overBlockIndentLevels
+                .reduce((a, b) => a + b, 0) - currentIndentLevel;
+
+            if (adjustedIndentLevel === 0) {
+                return arr;
+            }
+
+            for (const line of arr) {
+                newArr.push(" ".repeat(adjustedIndentLevel) + line);
+            }
+
+            return newArr;
+        }
+
+        const overBlockIter = function* (): Generator<OverBlockContent, void, undefined> {
+            yield* block.paragraphs;
+        };
+
+        const iter = overBlockIter();
+
+        const getNext = () => {
+            let { value, done } = iter.next();
+
+            if (done || value === undefined) {
+                return;
+            }
+
+            return value;
+        };
+
+        let lines: Array<string> = this.#convertContentUntilDone(getNext);
+
+        if (lines[0]?.trim() === "") {
+            lines.shift();
+        }
+
+        if (lines[lines.length - 1]?.trim() === "") {
+            lines.pop();
+        }
+
+        let result = indentList(lines);
+        this.#overBlockIndentLevels.pop();
+        return result;
+    }
+
+    #convertDataBlock(block: DataBlock): Array<string> {
+        const dataBlockIter = function* (): Generator<DataBlockContent, void, undefined> {
+            yield* block.paragraphs;
+        };
+
+        const iter = dataBlockIter();
+
+        const getNext = () => {
+            let { value, done } = iter.next();
+
+            if (done || value === undefined) {
+                return;
+            }
+
+            return value;
+        };
+
+        let dataStart: string;
+        let dataEnd: string;
+
+        const formatname = block.formatname.trim();
+        switch (formatname) {
+            case "code":
+                dataStart = "```perl";
+                dataEnd = "```";
+                break;
+            case "html":
+                dataStart = "```html";
+                dataEnd = "```";
+                break;
+            case "text":
+                dataStart = "";
+                dataEnd = "";
+                break;
+            default:
+                dataStart = `<!-- begin ${formatname} -->`;
+                dataEnd = `<!-- end ${formatname} -->`
+        }
+
+        let lines: Array<string> = [];
+        let dataBlockPara: DataBlockContent | undefined;
+
+        lines.push(dataStart);
+
+        while (dataBlockPara = getNext()) {
+            switch (dataBlockPara.kind) {
+                case "data":
+                    lines.push(...dataBlockPara.lines);
+                    break;
+                case "datablock":
+                    lines.push(dataEnd);
+                    lines.push(...this.#convertDataBlock(dataBlockPara));
+                    lines.push(dataStart);
+                    break;
+                case "normaldatablock":
+                    lines.push(dataEnd);
+                    lines.push(...this.#convertNormalDataBlock(dataBlockPara));
+                    lines.push(dataStart);
+                    break;
+                default:
+                    const _exhaustiveCheck: never = dataBlockPara;
+                    return _exhaustiveCheck;
+            }
+        }
+
+        lines.push(dataEnd);
+
+        return lines;
+    }
+
+    #convertNormalDataBlock(block: NormalDataBlock): Array<string> {
+        const normalDataBlockIter = function* (): Generator<PodBlockContent, void, undefined> {
+            yield* block.paragraphs;
+        };
+
+        const iter = normalDataBlockIter();
+
+        const getNext = () => {
+            let { value, done } = iter.next();
+
+            if (done || value === undefined) {
+                return;
+            }
+
+            return value;
+        };
+
+        return this.#convertContentUntilDone(getNext);
+    }
+}
+
+/** Appends an empty line if the last element in the list isn't an empty line already. */
+function ensureLastLineEmpty(list: Array<string>) {
+    if (list.at(-1)?.trim() !== "") {
+        list.push("");
+    }
+}
+
+function isItem(content: PodBlockContent): boolean {
+    return ["unordereditem", "ordereditem"].includes(content.kind);
+}
+
+function isOverBlockWithItem(content: PodBlockContent): boolean {
+    if (content.kind === "overblock") {
+        const firstBlockContent = content.paragraphs.at(0);
+        if (firstBlockContent && isItem(firstBlockContent)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function tabsToSpaces(line: string, spacesPerTab: number = 4): string {
+    return line.replaceAll("\t", " ".repeat(spacesPerTab));
+}
+
+/** Quick search for leading comments of a very specific form with comment
+ * blocks that preceed a sub (and aren't simply get/set without docs).
+ *
+ * Separate function in order to avoid overcomplicating the line-by-line POD parsing.
+ */
+function quickSearchByComment(symbolName: string, fileContent: string): string | undefined {
     let match, match2;
-    if(searchItem && (match = fileContent.match(`\\r?\\n#(?:####+| \-+) *(?:\\r?\\n# *)*${searchItem}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${searchItem}\\b`))){
+
+    let markdown: string | undefined;
+
+    if (match = fileContent.match(`\\r?\\n#(?:####+| \-+) *(?:\\r?\\n# *)*${symbolName}\\r?\\n((?:(?:#.*| *)\\r?\\n)+)sub +${symbolName}\\b`)) {
         // Ensure it's not an empty get/set pair.
-        if(!( (match2 = searchItem.match(/^get_(\w+)$/)) && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`)))){
+        if (
+            !( 
+                (match2 = symbolName.match(/^get_(\w+)$/))
+                && match[1].match(new RegExp(`^(?:# +set_${match2[1]}\\r?\\n)?[\\s#]*$`))
+            )
+        ) {
             let content = match[1].replace(/^ *#+ ?/gm,'');
             content = content.replace(/^\s+|\s+$/g,'');
-            if(content){ // It may still be empty for non-get functions
-                markdown += "```text\n" + content + "\n```\n"
+
+            // May still be empty for non-get functions
+            if (content) {
+                markdown = "```text\n" + content + "\n```\n";
             }
         }
     }
-
-    // Split the file into lines and iterate through them
-    const lines = fileContent.split(/\r?\n/);
-    for (const line of lines) {
-        if (line.startsWith("=cut")) {
-            // =cut lines are not added.
-            inPodBlock = false;
-        }
-
-         if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
-            inPodBlock = true;
-            meaningFullContent = false;
-            if(searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))){
-                // This is structured so if we hit two relevant block in a row, we keep them both
-                inRelevantBlock = true;
-            } else {
-                inRelevantBlock = false;
-                podBuffer = "";
-            }
-        } else if(line.match(/\w/)){
-            // For this section, we found something that's not a header and has content
-            meaningFullContent = true;
-        }
-
-        if(inPodBlock){
-            if(searchItem){
-                if(inRelevantBlock) {
-                    podBuffer += line + "\n";   
-                }
-            }
-            else {
-                podContent += line + "\n";
-            }
-        }
-
-        if(meaningFullContent && podBuffer != ""){
-            podContent += podBuffer;
-            podBuffer = "";
-        }
-    }
-    
-    markdown += convertPODToMarkdown(podContent);
 
     return markdown;
 }
 
+function lookupSymbolInPod(symbolName: string, podDoc: PodDocument): PodDocument | undefined {
+    const podDocIter = function* (
+        doc: PodDocument
+    ): Generator<PodBlockContent, void, undefined> {
+        for (const block of doc.blocks) {
+            for (const content of block.paragraphs) {
+                yield content;
+            }
+        }
+    }
+
+    const iter = podDocIter(podDoc);
+    const getNextContent = () => {
+        const { value, done } = iter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    };
+
+    let currentContent: PodBlockContent | undefined; 
+    let foundHeader: HeaderParagraph | undefined;
+    let extractedContents: Array<PodBlockContent> = [];
+
+    while (currentContent = getNextContent()) {
+        if (foundHeader) {
+            if (currentContent.kind === "head" && currentContent.level <= foundHeader.level) {
+                break;
+            }
+
+            extractedContents.push(currentContent);
+        }
+
+        if (
+            currentContent.kind === "head" 
+            && currentContent.contents.match(new RegExp(`^\\s*(\\$.*->)?${symbolName}(\\(.*\\))?\\b`))
+        ) {
+            foundHeader = currentContent;
+            extractedContents.push(currentContent);
+        }
+    }
+
+    if (extractedContents.length === 0) {
+        return;
+    }
+
+    return {
+        kind: "poddocument",
+        blocks: [
+            {
+                kind: "podblock",
+                paragraphs: extractedContents,
+            },
+        ],
+    };
+}
+
+export async function getPod(
+    elem: PerlElem,
+    perlDoc: PerlDocument,
+    modMap: Map<string, string>
+): Promise<string | undefined> {
+    let symbolName: string | undefined;
+
+    switch (elem.type) {
+        case PerlSymbolKind.Module:
+        case PerlSymbolKind.Package:
+            break;
+        case PerlSymbolKind.ImportedSub:
+        case PerlSymbolKind.Inherited:
+        case PerlSymbolKind.PathedField:
+        case PerlSymbolKind.LocalSub:
+        case PerlSymbolKind.LocalMethod:
+            symbolName = elem.name.replace(/^[\w:]+::(\w+)$/, "$1"); // Remove package
+            break;
+        default:
+            return;
+    }
+
+    // File may not exist - return nothing if it doesn't.
+    const absolutePath = await resolvePathForDoc(elem, perlDoc, modMap);
+
+    if (!absolutePath) {
+        return;
+    }
+
+    let fileContents: string;
+
+    try {
+        fileContents = await fs.promises.readFile(absolutePath, "utf8");
+    } catch {
+        return;
+    }
+
+    if (symbolName) {
+        let quickSearchMarkdown = quickSearchByComment(symbolName, fileContents);
+        if (quickSearchMarkdown) {
+            return quickSearchMarkdown;
+        }
+    }
+
+    let parser = new RawPodParser();
+    let rawPodDocResult = parser.parse(fileContents);
+
+    if (rawPodDocResult.kind === "parseerror") {
+        // TODO: log error? --> needs access to settings for nLog
+        return;
+    }
+
+    let processor = new PodProcessor();
+    let podDocResult = processor.process(rawPodDocResult);
+
+    if (podDocResult.kind === "processingerror") {
+        // TODO: log error? --> needs access to settings for nLog
+        return;
+    }
+
+    let podDoc: PodDocument | undefined = podDocResult;
+
+    if (symbolName) {
+        podDoc = lookupSymbolInPod(symbolName, podDocResult);
+    }
+
+    if (!podDoc) {
+        return;
+    }
+
+    let converter = new PodToMarkdownConverter();
+    let markdown = converter.convert(podDoc);
+
+    if (!markdown) {
+        return;
+    }
+
+    return markdown;
+}
 
 async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
     let absolutePath = Uri.parse(elem.uri).fsPath;
@@ -169,225 +1893,6 @@ async function badFile(fsPath: string): Promise<boolean> {
 
     return false;
 }
-
-type ConversionState = {
-    inList: boolean;
-    inVerbatim: boolean;
-    inCustomBlock: boolean;
-    markdown: string;
-    encoding: string | null; // Currently processed, but not used
-    waitingForListTitle: boolean;
-};
-
-const convertPODToMarkdown = (pod: string): string => {
-    let finalMarkdown: string = "";
-    let state: ConversionState = {
-        inList: false,
-        inVerbatim: false,
-        inCustomBlock: false,
-        markdown: "",
-        encoding: null,
-        waitingForListTitle: false,
-    };
-
-    const lines = pod.split("\n");
-
-    for (let i = 0; i < lines.length; i++) {
-        let line = lines[i];
-
-        // Check for verbatim blocks first, perhaps ending a prior one
-        if (shouldConsiderVerbatim(line) || state.inVerbatim) {
-            state = processVerbatim(line, state);
-            finalMarkdown += state.markdown;
-            if (state.inVerbatim) {
-                // Don't need to keep going if we're still in verbatim mode
-                continue;
-            }
-        }
-
-        // Inline transformations for code, bold, etc.
-        line = processInlineElements(line);
-
-        // Handling =pod to start documentation
-        if (line.startsWith("=pod")) {
-            continue; // Generally, we just skip this.
-        }
-        // Headings
-        else if (line.startsWith("=head")) {
-            const output = processHeadings(line);
-
-            if(/\w/.test(finalMarkdown) || !/^\n##+ NAME\n$/.test(output)){
-                // I find it a waste of space to include the headline "NAME". We're short on space in the hover 
-                finalMarkdown += output;
-            }
-        }
-        // List markers and items
-        else if (line.startsWith("=over") || line.startsWith("=item") || line.startsWith("=back") || state.waitingForListTitle) {
-            state = processList(line, state);
-            finalMarkdown += state.markdown;
-        }
-        // Custom blocks like =begin and =end
-        else if (line.startsWith("=begin") || line.startsWith("=end")) {
-            state = processCustomBlock(line, state);
-            finalMarkdown += state.markdown;
-        }
-        // Format-specific blocks like =for
-        else if (line.startsWith("=for")) {
-            finalMarkdown += processFormatSpecificBlock(line);
-        }
-        // Encoding
-        else if (line.startsWith("=encoding")) {
-            state = processEncoding(line, state);
-        }
-
-        else if(state.inList){
-            if(line){
-                finalMarkdown += ` ${line} `;
-            }
-        }
-        // Generic text
-        else {
-            finalMarkdown += `${line}\n`;
-        }
-    }
-
-    return finalMarkdown;
-};
-
-const processHeadings = (line: string): string => {
-    // Extract the heading level from the line. This will be a number from 1-6.
-    let level = parseInt(line.slice(5, 6));
-    level = Math.min(level, 3); // Maximum 6 indentation levels in Markdown
-    // Ensure that the heading level is valid.
-    if (isNaN(level) || level < 1 || level > 6) {
-        return "";
-    }
-
-    // Extract the actual text of the heading, which follows the =head command.
-    const text = line.slice(7).trim();
-
-    // Convert the heading to its Markdown equivalent. I marked head1 -> ### because I prefer the compact form.
-    const markdownHeading = `\n##${"#".repeat(level)} ${text}\n`;
-
-    return markdownHeading;
-};
-
-const processList = (line: string, state: ConversionState): ConversionState => {
-    let markdown: string = "";
-
-    // The =over command starts a list.
-    if (line.startsWith("=over")) {
-        state.inList = true;
-        markdown = "\n";
-    }
-
-    // The =item command denotes a list item.
-    else if (/^=item \*\s*$/.test(line)) {
-        state.waitingForListTitle= true;
-        markdown = "";
-    } else if (state.waitingForListTitle && /[^\s]/.test(line)) {
-        state.waitingForListTitle = false;
-        markdown = `\n- ${line}  \n  `;
-    }
-
-    // The =item command denotes a list item.
-    else if (line.startsWith("=item")) {
-        state.inList = true;
-
-        // Remove the '=item' part to get the actual text for the list item.
-        let listItem = line.substring(6).trim();
-	if (listItem.startsWith("* ")) // Doubled up list identifiers
-		listItem = listItem.replace("*", "");
-        markdown = `\n- ${listItem}  \n  `; // Unordered list
-    }
-    // The =back command ends the list.
-    else if (line.startsWith("=back")) {
-        state.inList = false;
-        markdown = "\n";
-    }
-
-    return {
-        ...state,
-        markdown,
-    };
-};
-
-const processCustomBlock = (line: string, state: ConversionState): ConversionState => {
-    let markdown = "";
-
-    // =begin starts a custom block
-    if (line.startsWith("=begin")) {
-        // Extract the format following =begin
-        const format = line.slice(7).trim();
-        state.inCustomBlock = true;
-
-        // Choose Markdown representation based on the format
-        switch (format) {
-            case "code":
-                markdown = "```perl\n";
-                break;
-            // Add cases for other formats as needed
-            default:
-                markdown = `<!-- begin ${format} -->\n`;
-                break;
-        }
-    }
-    // =end ends the custom block
-    else if (line.startsWith("=end")) {
-        // Extract the format following =end
-        const format = line.slice(5).trim();
-        state.inCustomBlock = false;
-
-        // Close the Markdown representation
-        switch (format) {
-            case "code":
-                markdown = "```\n";
-                break;
-            // Add cases for other formats as needed
-            default:
-                markdown = `<!-- end ${format} -->\n`;
-                break;
-        }
-    }
-
-    return {
-        ...state,
-        markdown,
-    };
-};
-
-const processFormatSpecificBlock = (line: string): string => {
-    // The `=for` command itself is followed by the format and then the text.
-    const parts = line.split(" ").slice(1);
-
-    if (parts.length < 2) {
-        return "";
-    }
-
-    // Extract the format and the actual text.
-    const format = parts[0].trim();
-    const text = parts.slice(1).join(" ").trim();
-
-    // Choose the Markdown representation based on the format.
-    let markdown = "";
-    switch (format) {
-        case "text":
-            // Plain text, just add it.
-            markdown = `${text}\n`;
-            break;
-        case "html":
-            // If it's HTML, encapsulate it within comments for safety.
-            markdown = `<!-- HTML: ${text} -->\n`;
-            break;
-        // Add more cases as you find the need for other specific formats.
-        default:
-            // For unsupported or custom formats, wrap it in a comment.
-            markdown = `<!-- ${format} block: ${text} -->\n`;
-            break;
-    }
-
-    return markdown;
-};
 
 // Mapping backticks to the Unicode non-character U+FFFF which is not allowed to appear in text
 const tempPlaceholder = '\uFFFF';
@@ -478,55 +1983,4 @@ const convertE = (content: string): string => {
                 return `&${content};`;
             }
     }
-};
-
-// Determine if the line should start a verbatim text block
-const shouldConsiderVerbatim = (line: string): boolean => {
-    // A verbatim block starts with a whitespace but isn't part of a list
-    return /^\s+/.test(line);
-};
-
-// Process verbatim text blocks
-const processVerbatim = (line: string, state: ConversionState): ConversionState => {
-    let markdown = "";
-    if (/^\s+/.test(line)) {
-        // If this is the start of a new verbatim block, add Markdown code fence
-        if (!state.inVerbatim) {
-            markdown += "\n```\n";
-        }
-        state.inVerbatim = true;
-
-        // Trim some starting whitespace and add the line to the block
-        // Most pod code has 4 spaces or a tab, but I find 2 space indents most readable in the space constrained pop-up
-        markdown += line.replace(/^(?:\s{4}|\t)/, "  ") + "\n";
-    }
-    // } else if(/^\s+/.test(line)){
-    //     // Verbatim blocks in lists are tricky. Let's just do one line at a time for now so we don't need to keep track of indentation
-    //     markdown = "```\n" + line + "```\n";
-    //     state.isLineVerbatim = true;
-    // }
-    else if (state.inVerbatim) {
-        // This line ends the verbatim block
-        state.inVerbatim = false;
-        markdown += "```\n"; // End the Markdown code fence
-    }
-
-    return {
-        ...state,
-        markdown,
-    };
-};
-
-const processEncoding = (line: string, state: ConversionState): ConversionState => {
-    // Extract the encoding type from the line
-    const encodingType = line.split(" ")[1]?.trim();
-
-    if (encodingType) {
-        return {
-            ...state,
-            encoding: encodingType,
-        };
-    }
-
-    return state;
 };

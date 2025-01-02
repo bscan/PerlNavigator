@@ -1734,48 +1734,34 @@ function quickSearchByComment(symbolName: string, fileContent: string): string |
     return markdown;
 }
 
+/** Look up a symbol's name in a {@link PodDocument}.
+ *
+ * This searches the given POD doc for any `=item` or `=head\d` command paragraph
+ * that corresponds to the given `symbolName`.
+ *
+ * If the matched paragraph is a `=head\d`, returns all paragraphs starting from
+ * and including the matched header up until either a non-matching `=head\d`
+ * of the same level *or* a `=head\d` with a higher level is encountered.
+ *
+ * If the matched paragraph is an `=item`, returns all paragraphs starting from
+ * and including the matched item up until either a non-matching `=item`
+ * *or* the end of the `=item`'s `=over ... =back` block is reached (if any).
+ */
 function lookupSymbolInPod(symbolName: string, podDoc: PodDocument): PodDocument | undefined {
-    const podDocIter = function* (
-        doc: PodDocument
-    ): Generator<PodBlockContent, void, undefined> {
-        for (const block of doc.blocks) {
-            for (const content of block.paragraphs) {
-                yield content;
-            }
-        }
-    }
+    const symbolRegex = new RegExp(
+        `(^\\s*(\\$.*->)?${symbolName}(\\(.*\\))?)|(X<${symbolName}>)|(X<<+\\s+${symbolName}\\s+>+>)`
+    );
 
-    const iter = podDocIter(podDoc);
-    const getNextContent = () => {
-        const { value, done } = iter.next();
+    let extractedContents = matchHeaderRegionInPod(
+        symbolRegex,
+        makePodDocContentIterGetter(podDoc),
+    );
 
-        if (done || value === undefined) {
-            return;
-        }
-
-        return value;
-    };
-
-    let currentContent: PodBlockContent | undefined; 
-    let foundHeader: HeaderParagraph | undefined;
-    let extractedContents: Array<PodBlockContent> = [];
-
-    while (currentContent = getNextContent()) {
-        if (foundHeader) {
-            if (currentContent.kind === "head" && currentContent.level <= foundHeader.level) {
-                break;
-            }
-
-            extractedContents.push(currentContent);
-        }
-
-        if (
-            currentContent.kind === "head" 
-            && currentContent.contents.match(new RegExp(`^\\s*(\\$.*->)?${symbolName}(\\(.*\\))?\\b`))
-        ) {
-            foundHeader = currentContent;
-            extractedContents.push(currentContent);
-        }
+    if (extractedContents.length === 0) {
+        extractedContents = matchItemRegionInPod(
+            symbolRegex,
+            makePodDocContentIterGetter(podDoc),
+        );
     }
 
     if (extractedContents.length === 0) {
@@ -1791,6 +1777,97 @@ function lookupSymbolInPod(symbolName: string, podDoc: PodDocument): PodDocument
             },
         ],
     };
+}
+
+function matchHeaderRegionInPod(regex: RegExp, getNext: () => PodBlockContent | undefined): Array<PodBlockContent> {
+    let currentContent: PodBlockContent | undefined;
+    let extractedContents: Array<PodBlockContent> = [];
+
+    const headerMatchesSymbol = (headerPara: HeaderParagraph) => headerPara.contents.match(regex);
+
+    let foundHeader: HeaderParagraph | undefined;
+
+    while (currentContent = getNext()) {
+        if (foundHeader) {
+            if (currentContent.kind === "head") {
+                // Next =headN command also matches regex, assume it's an alternative
+                // signature for the same symbol
+                if (currentContent.level === foundHeader.level && headerMatchesSymbol(currentContent)) {
+                    extractedContents.push(currentContent);
+                    continue;
+                }
+
+                if (currentContent.level <= foundHeader.level) {
+                    break;
+                }
+            }
+
+            extractedContents.push(currentContent);
+            continue;
+        }
+
+        if (currentContent.kind === "head" && headerMatchesSymbol(currentContent)) {
+            foundHeader = currentContent;
+            extractedContents.push(currentContent);
+        }
+    }
+
+    return extractedContents;
+}
+
+function matchItemRegionInPod(regex: RegExp, getNext: () => PodBlockContent | undefined): Array<PodBlockContent> {
+    let currentContent: PodBlockContent | undefined;
+    let extractedContents: Array<PodBlockContent> = [];
+
+    const itemMatchesSymbol = (itemPara: UnordererdItemParagraph | OrderedItemParagraph) => {
+        if (itemPara.lines === undefined) {
+            return false;
+        }
+
+        for (const line of itemPara.lines) {
+            if (line.match(regex)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    let foundItem: UnordererdItemParagraph | OrderedItemParagraph | undefined;
+
+    while (currentContent = getNext()) {
+        if (foundItem) {
+            if (isItem(currentContent)) {
+                // Next =item command also matches regex, assume it's an alternative
+                // signature for the same symbol
+                if (itemMatchesSymbol(currentContent)) {
+                    extractedContents.push(currentContent);
+                    continue;
+                }
+
+                break;
+            }
+
+            extractedContents.push(currentContent);
+            continue;
+        }
+
+        switch (currentContent.kind) {
+            case "unordereditem":
+            case "ordereditem":
+                if (itemMatchesSymbol(currentContent)) {
+                    foundItem = currentContent;
+                    extractedContents.push(currentContent);
+                }
+                break;
+            case "overblock":
+                return matchItemRegionInPod(regex, makeOverBlockIterGetter(currentContent));
+            case "normaldatablock":
+                return matchItemRegionInPod(regex, makeNormalDataBlockIterGetter(currentContent));
+        }
+    }
+
+    return extractedContents;
 }
 
 export async function getPod(

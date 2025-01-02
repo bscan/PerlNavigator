@@ -582,23 +582,14 @@ comment.
             },
             {
                 kind: "unordereditem",
-            },
-            {
-                kind: "ordinary",
                 lines: ["Lorem Ipsum."],
             },
             {
                 kind: "unordereditem",
-            },
-            {
-                kind: "ordinary",
                 lines: ["Dolor sit amet."],
             },
             {
                 kind: "unordereditem",
-            },
-            {
-                kind: "ordinary",
                 lines: ["Consectetur adipiscing elit."],
             },
             {
@@ -758,23 +749,14 @@ comment.
                 paragraphs: [
                     {
                         kind: "unordereditem",
-                    },
-                    {
-                        kind: "ordinary",
                         lines: ["Lorem Ipsum."],
                     },
                     {
                         kind: "unordereditem",
-                    },
-                    {
-                        kind: "ordinary",
                         lines: ["Dolor sit amet."],
                     },
                     {
                         kind: "unordereditem",
-                    },
-                    {
-                        kind: "ordinary",
                         lines: ["Consectetur adipiscing elit."],
                     },
                 ],
@@ -1332,16 +1314,10 @@ Mauris ut arcu ipsum.
                         paragraphs: [
                             {
                                 kind: "unordereditem",
-                            },
-                            {
-                                kind: "ordinary",
                                 lines: ["Sed consequat, neque eu aliquam porttitor, tellus augue faucibus quam, a ornare neque dolor vitae dolor."],
                             },
                             {
                                 kind: "unordereditem",
-                            },
-                            {
-                                kind: "ordinary",
                                 lines: ["Pellentesque elementum luctus urna, et dapibus est faucibus eu."],
                             },
                         ],

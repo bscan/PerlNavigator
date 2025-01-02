@@ -140,13 +140,13 @@ async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefin
         return;
     }
 
-    if(/\.pm$/.test(fsPath)){
+    if (/\.pm$/.test(fsPath)) {
         let podPath = fsPath.replace(/\.pm$/, ".pod");
-        if(!await badFile(podPath)){
+        if (!await badFile(podPath)) {
             return podPath;
         }
     }
-    if(!await badFile(fsPath)){
+    if (!await badFile(fsPath)) {
         return fsPath;
     }
     return;
@@ -410,6 +410,18 @@ const processInlineElements = (line: string): string => {
 
     // Mapping the Unicode non-character U+FFFF back to escaped backticks
     line = line.replace(new RegExp(tempPlaceholder, 'g'), '\\`');
+
+    // Handle bold italic (B<I<bold italic>>)
+    line = line.replace(/B<I<([^<>]+)>>/g, "***$1***");
+    line = line.replace(/B<I<<+\s+(.+?)\s+>>+>/g, "***$1***");
+    line = line.replace(/B<<+\s+I<([^<>]+)>\s+>+>/g, "***$1***");
+    line = line.replace(/B<<+\s+I<<+\s+(.+?)\s+>+>\s+>+>/g, "***$1***");
+
+    // Handle italic bold (B<I<italic bold>>)
+    line = line.replace(/I<B<([^<>]+)>>/g, "***$1***");
+    line = line.replace(/I<B<<+\s+(.+?)\s+>>+>/g, "***$1***");
+    line = line.replace(/I<<+\s+B<([^<>]+)>\s+>+>/g, "***$1***");
+    line = line.replace(/I<<+\s+B<<+\s+(.+?)\s+>+>\s+>+>/g, "***$1***");
 
     // Handle bold (B<bold>)
     line = line.replace(/B<([^<>]+)>/g, "**$1**");

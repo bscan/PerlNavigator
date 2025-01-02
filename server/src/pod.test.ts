@@ -1873,6 +1873,36 @@ I know this looks weird, but this is still valid POD.
 
         expect(processor.process(result as RawPodDocument)).toMatchObject(expected);
     });
+
+    test("=for command without content", () => {
+        const fileContents = `\
+=pod
+
+=for comment
+
+=cut
+`;
+        const expected: PodDocument = {
+            kind: "poddocument",
+            blocks: [
+                {
+                    kind: "podblock",
+                    paragraphs: [
+                        {
+                            kind: "datablock",
+                            formatname: "comment",
+                            parameter: "",
+                            paragraphs: [],
+                        },
+                    ],
+                },
+            ],
+        }; 
+
+        const result = parser.parse(fileContents);
+
+        expect(processor.process(result as RawPodDocument)).toMatchObject(expected);
+    });
 });
 
 describe("pod to markdown conversion tests", () => {

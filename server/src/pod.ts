@@ -666,7 +666,9 @@ export class RawPodParser {
             ...line.matchAll(/^=for(\s+(?<formatname>:?[-a-zA-Z0-9_]+)(\s+(?<contents>.*))?)?/g)
         ][0];
         if (matchResult !== undefined) {
-            if (matchResult.groups?.formatname === undefined) {
+            const formatname = matchResult.groups?.formatname;
+
+            if (formatname === undefined) {
                 return {
                     kind: "parseerror",
                     lineNo: lineNo,
@@ -674,7 +676,7 @@ export class RawPodParser {
                 };
             }
 
-            let contents = matchResult.groups?.contents.trim() || "";
+            let contents = (matchResult.groups?.contents || "").trim();
 
             // similar to parsing an ordinary or verbatim paragraph
             let currentLine: string | undefined = contents;
@@ -689,7 +691,7 @@ export class RawPodParser {
             let para: ForParagraph = {
                 kind: "for",
                 lineNo: lineNo,
-                formatname: matchResult.groups?.formatname?.trim() as string,
+                formatname: formatname,
                 lines: lines,
             };
 
@@ -1244,29 +1246,44 @@ class PodBlockProcessor {
 
     #buildDataBlockFromForPara(paragraph: ForParagraph): DataBlock | NormalDataBlock {
         if (paragraph.formatname.startsWith(":")) {
-            let innerPara: OrdinaryParagraph = {
-                kind: "ordinary",
-                lines: paragraph.lines,
-            };
+            let paragraphs: Array<PodBlockContent>;
+
+            if (paragraph.lines.length === 0) {
+                paragraphs = [];
+            } else {
+                paragraphs = [
+                    {
+                        kind: "ordinary",
+                        lines: paragraph.lines,
+                    }
+                ];
+            }
 
             return {
                 kind: "normaldatablock",
                 formatname: paragraph.formatname,
                 parameter: "",
-                paragraphs: [innerPara],
+                paragraphs: paragraphs,
             };
         }
 
-        let innerPara: DataParagraph = {
-            kind: "data",
-            lines: paragraph.lines,
-        };
+        let paragraphs: Array<DataBlockContent>;
+        if (paragraph.lines.length === 0) {
+            paragraphs = [];
+        } else {
+            paragraphs = [
+                {
+                    kind: "data",
+                    lines: paragraph.lines,
+                }
+            ];
+        }
 
         return {
             kind: "datablock",
             formatname: paragraph.formatname,
             parameter: "",
-            paragraphs: [innerPara],
+            paragraphs: paragraphs,
         };
     }
 }

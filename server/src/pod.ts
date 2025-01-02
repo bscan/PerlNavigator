@@ -1517,21 +1517,7 @@ export class PodToMarkdownConverter {
             return newArr;
         }
 
-        const overBlockIter = function* (): Generator<OverBlockContent, void, undefined> {
-            yield* block.paragraphs;
-        };
-
-        const iter = overBlockIter();
-
-        const getNext = () => {
-            let { value, done } = iter.next();
-
-            if (done || value === undefined) {
-                return;
-            }
-
-            return value;
-        };
+        const getNext = makeOverBlockIterGetter(block);
 
         let lines: Array<string> = this.#convertContentUntilDone(getNext);
 
@@ -1549,21 +1535,7 @@ export class PodToMarkdownConverter {
     }
 
     #convertDataBlock(block: DataBlock): Array<string> {
-        const dataBlockIter = function* (): Generator<DataBlockContent, void, undefined> {
-            yield* block.paragraphs;
-        };
-
-        const iter = dataBlockIter();
-
-        const getNext = () => {
-            let { value, done } = iter.next();
-
-            if (done || value === undefined) {
-                return;
-            }
-
-            return value;
-        };
+        const getNext = makeDataBlockIterGetter(block);
 
         let dataStart: string;
         let dataEnd: string;
@@ -1619,21 +1591,7 @@ export class PodToMarkdownConverter {
     }
 
     #convertNormalDataBlock(block: NormalDataBlock): Array<string> {
-        const normalDataBlockIter = function* (): Generator<PodBlockContent, void, undefined> {
-            yield* block.paragraphs;
-        };
-
-        const iter = normalDataBlockIter();
-
-        const getNext = () => {
-            let { value, done } = iter.next();
-
-            if (done || value === undefined) {
-                return;
-            }
-
-            return value;
-        };
+        const getNext = makeNormalDataBlockIterGetter(block);
 
         return this.#convertContentUntilDone(getNext);
     }
@@ -1646,16 +1604,14 @@ function ensureLastLineEmpty(list: Array<string>) {
     }
 }
 
-function isItem(content: PodBlockContent): boolean {
+function isItem(content: PodBlockContent): content is UnordererdItemParagraph | OrderedItemParagraph {
     return ["unordereditem", "ordereditem"].includes(content.kind);
 }
 
-function isOverBlockWithItem(content: PodBlockContent): boolean {
+function isOverBlockWithItem(content: PodBlockContent): content is OverBlock {
     if (content.kind === "overblock") {
         const firstBlockContent = content.paragraphs.at(0);
-        if (firstBlockContent && isItem(firstBlockContent)) {
-            return true;
-        }
+        return firstBlockContent !== undefined && isItem(firstBlockContent);
     }
 
     return false;
@@ -1663,6 +1619,88 @@ function isOverBlockWithItem(content: PodBlockContent): boolean {
 
 function tabsToSpaces(line: string, spacesPerTab: number = 4): string {
     return line.replaceAll("\t", " ".repeat(spacesPerTab));
+}
+
+function makePodDocContentIterGetter(podDoc: PodDocument): () => PodBlockContent | undefined {
+    const podDocContentIter = function*(): Generator<PodBlockContent, void, undefined> {
+        for (const block of podDoc.blocks) {
+            yield* block.paragraphs;
+        }
+    }
+
+    const iter = podDocContentIter();
+
+    const getNext = () => {
+        let { value, done } = iter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    };
+
+    return getNext;
+}
+
+function makeOverBlockIterGetter(block: OverBlock): () => OverBlockContent | undefined {
+    const overBlockIter = function*(): Generator<OverBlockContent, void, undefined> {
+        yield* block.paragraphs;
+    }
+
+    const iter = overBlockIter();
+
+    const getNext = () => {
+        let { value, done } = iter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    };
+
+    return getNext;
+}
+
+function makeDataBlockIterGetter(block: DataBlock): () => DataBlockContent | undefined {
+    const dataBlockIter = function*(): Generator<DataBlockContent, void, undefined> {
+        yield* block.paragraphs;
+    }
+
+    const iter = dataBlockIter();
+
+    const getNext = () => {
+        let { value, done } = iter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    };
+
+    return getNext;
+}
+
+function makeNormalDataBlockIterGetter(block: NormalDataBlock): () => PodBlockContent | undefined {
+    const normalDataBlockIter = function*(): Generator<PodBlockContent, void, undefined> {
+        yield* block.paragraphs;
+    }
+
+    const iter = normalDataBlockIter();
+
+    const getNext = () => {
+        let { value, done } = iter.next();
+
+        if (done || value === undefined) {
+            return;
+        }
+
+        return value;
+    };
+
+    return getNext;
 }
 
 /** Quick search for leading comments of a very specific form with comment

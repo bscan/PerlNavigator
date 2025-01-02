@@ -2456,6 +2456,65 @@ Qux.
         expect(result).toEqual(expected);
     });
 
+    test("nested lists with varying indentation levels", () => {
+        const fileContents = `\
+=pod
+
+=over
+
+=item * foo
+
+=over 2
+
+=item * bar
+
+=over 3
+
+=item * baz
+
+=back
+
+=back
+
+=back
+
+
+=over
+
+=item 1. foo
+
+=over 2
+
+=item 2. bar
+
+=over 3
+
+=item 3. baz
+
+=back
+
+=back
+
+=back
+
+=cut
+`;
+
+        const expected = `\
+- foo
+  - bar
+     - baz
+
+1. foo
+  2. bar
+     3. baz
+`;
+
+        const result = podToMd(fileContents);
+
+        expect(result).toEqual(expected);
+    });
+
     test("ordered pod lists to ordered markdown lists", () => {
         const fileContents = `\
 =pod
@@ -2613,9 +2672,9 @@ The POD spec only allows certain command paragraphs to appear in an over-back bl
 - The item above is empty. Shouldn't be possible, but we also allow it.
 - Note: We don't allow headers though. That's on spec.
     - But it doesn't matter how deep you nest...
-    -         - You can always do weird things that conformant POD doesn't allow.
-              - Encodings are ignored, for now.
-              - So are unknown command paragraphs.
+    -     - You can always do weird things that conformant POD doesn't allow.
+          - Encodings are ignored, for now.
+          - So are unknown command paragraphs.
 `;
 
         const result = podToMd(fileContents);

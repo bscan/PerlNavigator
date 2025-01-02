@@ -1492,14 +1492,19 @@ export class PodToMarkdownConverter {
     }
 
     #convertOverBlock(block: OverBlock): Array<string> {
-        const currentIndentLevel: number = Math.round(block.level);
-        this.#overBlockIndentLevels.push(currentIndentLevel);
+        const initialIndentLevel: number = this.#overBlockIndentLevels.reduce((a, b) => a + b, 0);
+        this.#overBlockIndentLevels.push(Math.round(block.level));
 
         const indentList = (arr: Array<string>): Array<string> => {
             let newArr: Array<string> = [];
 
-            const adjustedIndentLevel = this.#overBlockIndentLevels
-                .reduce((a, b) => a + b, 0) - currentIndentLevel;
+            let adjustedIndentLevel: number;
+            if (initialIndentLevel === 0) {
+                adjustedIndentLevel = 0;
+            } else {
+                adjustedIndentLevel = this.#overBlockIndentLevels
+                    .reduce((a, b) => a + b, -initialIndentLevel);
+            }
 
             if (adjustedIndentLevel === 0) {
                 return arr;

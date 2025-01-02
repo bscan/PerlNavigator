@@ -1870,6 +1870,60 @@ function matchItemRegionInPod(regex: RegExp, getNext: () => PodBlockContent | un
     return extractedContents;
 }
 
+function formatPodDocForSymbol(podDoc: PodDocument) {
+    // use this as default and let converter handle the adjustment
+    const symbolHeaderLevel: number = 1;
+
+    // technically there should only be one block, but playing it safe here
+    for (const block of podDoc.blocks) {
+        block.paragraphs.forEach((para, index) => {
+            if (isItem(para)) {
+                const replacementHeaderPara: HeaderParagraph = {
+                    kind: "head",
+                    level: symbolHeaderLevel,
+                    contents: (para.lines ?? []).join(" "),
+                    lineNo: para.lineNo,
+                };
+
+                block.paragraphs[index] = replacementHeaderPara;
+            }
+        });
+    }
+
+    let highestHeaderLevel: number = 6;
+
+    for (const block of podDoc.blocks) {
+        for (const para of block.paragraphs) {
+            if (para.kind === "head" && para.level < highestHeaderLevel) {
+                highestHeaderLevel = para.level;
+            }
+        }
+    }
+
+    // normalize header levels to `symbolHeaderLevel`
+    for (const block of podDoc.blocks) {
+        for (const para of block.paragraphs) {
+            if (para.kind !== "head") {
+                continue;
+            }
+
+            para.level = para.level - (highestHeaderLevel - symbolHeaderLevel);
+        };
+    }
+}
+
+function formatPodDoc(podDoc: PodDocument) {
+    for (const block of podDoc.blocks) {
+        block.paragraphs = block.paragraphs.filter((para) => {
+            return !(
+                para.kind === "head"
+                && para.level === 1
+                && para.contents.trim() === "NAME"
+            );
+        });
+    }
+}
+
 export async function getPod(
     elem: PerlElem,
     perlDoc: PerlDocument,
@@ -1934,11 +1988,17 @@ export async function getPod(
 
     if (symbolName) {
         podDoc = lookupSymbolInPod(symbolName, podDocResult);
+
+        if (podDoc) {
+            formatPodDocForSymbol(podDoc);
+        }
     }
 
     if (!podDoc) {
         return;
     }
+
+    formatPodDoc(podDoc);
 
     let converter = new PodToMarkdownConverter();
     let markdown = converter.convert(podDoc);

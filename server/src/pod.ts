@@ -277,12 +277,50 @@ export interface PodDocument {
     blocks: Array<PodBlock>;
 }
 
+/** Represents the iteration over lines of text.
+ * Doesn't actually conform to the iterator protocol.
+ *
+ * Is used as a helper structure for {@link RawPodParser}, allowing the parser
+ * to backtrack when trying to parse `=item` paragraphs without text followed
+ * by an ordinary paragraph.
+ */
+class LinesIterator {
+    #lines: Array<string>;
+    #currentLineNo: number;
+    #savedLineNumbers: Array<number>;
+
+    constructor(contents: string) {
+        this.#lines = contents.split(/\r?\n/);
+        this.#currentLineNo = 0;
+        this.#savedLineNumbers = [];
+    }
+
+    next(): string | undefined {
+        if (this.#currentLineNo < this.#lines.length) {
+            return this.#lines[this.#currentLineNo++];
+        }
+
+        return undefined;
+    }
+
+    currentLineNo(): number {
+        return this.#currentLineNo;
+    }
+
+    save() {
+        this.#savedLineNumbers.push(this.#currentLineNo);
+    }
+
+    rewind() {
+        this.#currentLineNo = this.#savedLineNumbers.pop() ?? 0;
+    }
+}
+
 /** Tracks the state for parsing POD content from a file.
  * See {@link parse} for more information.
  */
 export class RawPodParser {
-    #lineIter: Generator<string, void, undefined> = this.#makeLineIter([]);
-    #currentLineNo: number = 0;
+    #lineIter: LinesIterator = new LinesIterator("");
     #currentBlock?: RawPodBlock = undefined;
     #parsedBlocks: Array<RawPodBlock> = [];
 
@@ -292,17 +330,14 @@ export class RawPodParser {
      * This is done via the {@link PodProcessor}.
      */
     parse(fileContents: string): RawPodDocument | RawPodParseError {
-        const lines = fileContents.split(/\r?\n/);
-
         // Reset state
-        this.#lineIter = this.#makeLineIter(lines);
-        this.#currentLineNo = 0;
+        this.#lineIter = new LinesIterator(fileContents);
         this.#currentBlock = undefined;
         this.#parsedBlocks = [];
 
         let line: string | undefined;
         while (true) {
-            line = this.#getNextLine();
+            line = this.#lineIter.next();
 
             // EOF
             if (line === undefined) {
@@ -314,7 +349,7 @@ export class RawPodParser {
                 continue;
             }
 
-            if (/^=[a-zA-Z]/.test(line)) {
+            if (RawPodParser.#isCommandParagraph(line)) {
                 if (line.startsWith("=cut")) {
                     if (this.#currentBlock !== undefined) {
                         this.#parsedBlocks.push(this.#currentBlock);
@@ -328,7 +363,11 @@ export class RawPodParser {
                 }
 
                 if (this.#currentBlock === undefined) {
-                    this.#currentBlock = { kind: "rawpodblock", lineNo: this.#currentLineNo, paragraphs: [] };
+                    this.#currentBlock = {
+                        kind: "rawpodblock",
+                        lineNo: this.#lineIter.currentLineNo(),
+                        paragraphs: []
+                    };
                 }
 
                 if (line.startsWith("=pod")) {
@@ -354,7 +393,7 @@ export class RawPodParser {
                 continue;
             }
 
-            if (/^[ \t]/.test(line)) {
+            if (RawPodParser.#isVerbatimParagraph(line)) {
                 let para = this.#parseVerbatim(line);
 
                 this.#currentBlock.paragraphs.push(para);
@@ -377,27 +416,23 @@ export class RawPodParser {
         };
     }
 
-    *#makeLineIter(lines: string[]) {
-        yield* lines;
+    static #isCommandParagraph(line: string): boolean {
+        return /^=[a-zA-Z]/.test(line);
     }
 
-    #getNextLine(): string | undefined {
-        let { value, done } = this.#lineIter.next();
+    static #isVerbatimParagraph(line: string): boolean {
+        return /^[ \t]/.test(line);
+    }
 
-        if (done || value === undefined) {
-            return;
-        }
-
-        this.#currentLineNo++;
-
-        return value;
+    static #isOrdinaryParagraph(line: string): boolean {
+        return !(RawPodParser.#isCommandParagraph(line) || RawPodParser.#isVerbatimParagraph(line));
     }
 
     #skipUntilEmptyLine(): void {
         let line: string | undefined;
 
         while (true) {
-            line = this.#getNextLine();
+            line = this.#lineIter.next();
 
             if (!line) {
                 return;
@@ -411,7 +446,7 @@ export class RawPodParser {
     ): string {
         let line: string | undefined;
 
-        while (line = this.#getNextLine()) {
+        while (line = this.#lineIter.next()) {
             if (trimOpts.trimStart && trimOpts.trimEnd) {
                 line = line.trim();
             } else if (trimOpts.trimStart) {
@@ -452,7 +487,7 @@ export class RawPodParser {
      */
     #tryParseCommand(line: string): PodParagraph | RawPodParseError {
         line = line.trimEnd();
-        const lineNo = this.#currentLineNo;
+        const lineNo = this.#lineIter.currentLineNo();
 
         let matchResult;
 
@@ -497,8 +532,14 @@ export class RawPodParser {
                 if (text) {
                     this.#appendNextLineUntilEmptyLine(text, { trimStart: true, trimEnd: true });
                     para.lines = [text];
-                } else {
-                    this.#skipUntilEmptyLine();
+
+                    return para;
+                }
+
+                this.#skipUntilEmptyLine();
+                let ordinaryPara = this.#parseNextOrdinaryOrRewind();
+                if (ordinaryPara) {
+                    para.lines = ordinaryPara.lines;
                 }
 
                 return para;
@@ -518,8 +559,14 @@ export class RawPodParser {
                 if (text) {
                     this.#appendNextLineUntilEmptyLine(text, { trimStart: true, trimEnd: true });
                     para.lines = [text];
-                } else {
-                    this.#skipUntilEmptyLine();
+
+                    return para;
+                }
+
+                this.#skipUntilEmptyLine();
+                let ordinaryPara = this.#parseNextOrdinaryOrRewind();
+                if (ordinaryPara) {
+                    para.lines = ordinaryPara.lines;
                 }
 
                 return para;
@@ -534,7 +581,7 @@ export class RawPodParser {
                 while (currentLine) {
                     lines.push(currentLine.trim());
 
-                    currentLine = this.#getNextLine();
+                    currentLine = this.#lineIter.next();
                 }
 
                 let para: UnordererdItemParagraph = {
@@ -553,6 +600,10 @@ export class RawPodParser {
             };
 
             this.#skipUntilEmptyLine();
+            let ordinaryPara = this.#parseNextOrdinaryOrRewind();
+            if (ordinaryPara) {
+                para.lines = ordinaryPara.lines;
+            }
 
             return para;
         }
@@ -685,7 +736,7 @@ export class RawPodParser {
             while (currentLine) {
                 lines.push(currentLine.trimEnd());
 
-                currentLine = this.#getNextLine();
+                currentLine = this.#lineIter.next();
             }
 
             let para: ForParagraph = {
@@ -726,7 +777,7 @@ export class RawPodParser {
      */
     #parseVerbatim(line: string): VerbatimParagraph {
         let currentLine: string | undefined = line;
-        const lineNo = this.#currentLineNo;
+        const lineNo = this.#lineIter.currentLineNo();
 
         let lines: Array<string> = [];
 
@@ -734,7 +785,7 @@ export class RawPodParser {
         while (currentLine) {
             lines.push(currentLine.trimEnd());
 
-            currentLine = this.#getNextLine();
+            currentLine = this.#lineIter.next();
         }
 
         return {
@@ -750,7 +801,7 @@ export class RawPodParser {
      */
     #parseOrdinary(line: string): OrdinaryParagraph {
         let currentLine: string | undefined = line;
-        const lineNo = this.#currentLineNo;
+        const lineNo = this.#lineIter.currentLineNo();
 
         let lines: Array<string> = [];
 
@@ -758,7 +809,7 @@ export class RawPodParser {
         while (currentLine) {
             lines.push(currentLine);
 
-            currentLine = this.#getNextLine();
+            currentLine = this.#lineIter.next();
         }
 
         return {
@@ -766,6 +817,39 @@ export class RawPodParser {
             lineNo: lineNo,
             lines: lines,
         };
+    }
+
+    /** Tries to parse the next paragraph as ordinary paragraph.
+     * If the next paragraph is of some other type, rewinds the internal line
+     * iterator back to before it started parsing and returns `undefined`.
+     */
+    #parseNextOrdinaryOrRewind(): OrdinaryParagraph | undefined {
+        this.#lineIter.save();
+
+        let line: string | undefined;
+
+        // Advance until ordinary paragraph and return that, or rewind
+        while (true) {
+            line = this.#lineIter.next();
+
+            // EOF
+            if (line === undefined) {
+                return;
+            }
+
+            // line is empty
+            if (line === "") {
+                continue;
+            }
+
+            if (RawPodParser.#isOrdinaryParagraph(line)) {
+                return this.#parseOrdinary(line);
+            }
+
+            // Encountered something else, so rewind and return
+            this.#lineIter.rewind();
+            return;
+        }
     }
 }
 

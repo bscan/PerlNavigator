@@ -134,7 +134,7 @@ async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: 
 
 }
 
-async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined>{
+async function fsPathOrAlt(fsPath: string | undefined): Promise<string | undefined> {
 
     if(!fsPath){
         return;
@@ -159,7 +159,7 @@ async function badFile(fsPath: string): Promise<boolean> {
         return true;
     }
 
-    if( /\w+\.c$/.test(fsPath) ){
+    if (/\w+\.c$/.test(fsPath)) {
         return true;
     }
 
@@ -403,8 +403,7 @@ const processInlineElements = (line: string): string => {
     line = line.replace(/C<((?:[^<>]|[EL]<[^<>]+>)+?)>/g, (match, code) => escapeBackticks(code));
 
     // Unfortunately doesn't require the <<< to be matched in quantity. E<> is allowed automatically
-    line = line.replace(/C<< (.+?) >>/g, (match, code) => escapeBackticks(code));
-    line = line.replace(/C<<<+ (.+?) >+>>/g, (match, code) => escapeBackticks(code));
+    line = line.replace(/C<<+\s+(.+?)\s+>+>/g, (match, code) => escapeBackticks(code));
 
     // Handle special characters (E<entity>)
     line = line.replace(/E<([^>]+)>/g, (match, entity) => convertE(entity));
@@ -414,17 +413,17 @@ const processInlineElements = (line: string): string => {
 
     // Handle bold (B<bold>)
     line = line.replace(/B<([^<>]+)>/g, "**$1**");
-    line = line.replace(/B<< (.+?) >>/g, "**$1**");
+    line = line.replace(/B<<+\s+(.+?)\s+>+>/g, "**$1**");
 
     // Handle italics (I<italic>)
     line = line.replace(/I<([^<>]+)>/g, "*$1*");
-    line = line.replace(/I<< (.+?) >>/g, "*$1*");
+    line = line.replace(/I<<+\s+(.+?)\s+>+>/g, "*$1*");
 
     // Handle links (L<name>), URLS auto-link in vscode's markdown
     line = line.replace(/L<(http[^>]+)>/g, " $1 ");
 
     line = line.replace(/L<([^<>]+)>/g, "`$1`");
-    line = line.replace(/L<< (.*?) >>/g, "`$1`");
+    line = line.replace(/L<<+\s+(.*?)\s+>+>/g, "`$1`");
 
     // Handle non-breaking spaces (S<text>)
     line = line.replace(/S<([^<>]+)>/g, "$1");

@@ -219,10 +219,15 @@ as well.
         const fileContents = `\
 =pod`;
 
-        const expected: RawPodParseError = {
-            kind: "parseerror",
-            lineNo: 1,
-        } as RawPodParseError;  // cast in order to omit matching on message
+        const expected: RawPodDocument = {
+            kind: "rawpoddocument",
+            blocks: [
+                {
+                    kind: "rawpodblock",
+                    paragraphs: [],
+                },
+            ],
+        };
 
         expect(parser.parse(fileContents)).toMatchObject(expected);
     });

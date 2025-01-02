@@ -365,13 +365,10 @@ export class RawPodParser {
             this.#currentBlock.paragraphs.push(para);
         }
 
+        // allow file to end without needing a matching =cut
         if (this.#currentBlock !== undefined) {
-            const lineNo = this.#currentBlock.lineNo as number;
-            return {
-                kind: "parseerror",
-                lineNo: lineNo,
-                message: `"=pod ... =cut" region beginning at line ${lineNo} was never closed (missing "=cut")`
-            };
+            this.#parsedBlocks.push(this.#currentBlock);
+            this.#currentBlock = undefined;
         }
 
         return {

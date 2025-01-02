@@ -943,17 +943,15 @@ class PodBlockProcessor {
             paragraphs: [],
         };
 
-        let isProcessingBlock = true;
+        let isProcessingBlock = true; // used to exit the loop from within switch
         let para: PodParagraph | undefined;
 
         while (isProcessingBlock) {
             para = this.#getNextParagraph();
 
             if (para === undefined) {
-                return {
-                    kind: "processingerror",
-                    message: 'unexpected end of paragraphs while processing "=over ... =back" block',
-                };
+                isProcessingBlock = false;
+                break;
             }
 
             switch (para.kind) {
@@ -1049,17 +1047,15 @@ class PodBlockProcessor {
             paragraphs: [],
         };
 
-        let isProcessingBlock = true;
+        let isProcessingBlock = true; // used to exit the loop from within switch
         let para: PodParagraph | undefined;
 
         while (isProcessingBlock) {
             para = this.#getNextParagraph();
 
             if (para === undefined) {
-                return {
-                    kind: "processingerror",
-                    message: `unexpected end of paragraphs while processing "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
-                };
+                isProcessingBlock = false;
+                break;
             }
 
             switch (para.kind) {
@@ -1148,17 +1144,15 @@ class PodBlockProcessor {
             paragraphs: [],
         };
 
-        let isProcessingBlock = true;
+        let isProcessingBlock = true; // used to exit the loop from within switch
         let para: PodParagraph | undefined;
 
         while (isProcessingBlock) {
             para = this.#getNextParagraph();
 
             if (para === undefined) {
-                return {
-                    kind: "processingerror",
-                    message: `unexpected end of paragraphs while processing "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
-                };
+                isProcessingBlock = false;
+                break;
             }
 
             switch (para.kind) {

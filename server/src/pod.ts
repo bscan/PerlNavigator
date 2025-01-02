@@ -435,52 +435,7 @@ const processInlineElements = (line: string): string => {
     // Handle index entries (X<entry>), ignoring as Markdown doesn't have an index
     line = line.replace(/X<([^<>]+)>/g, "");
 
-    // Escape HTML entities last since we use them above
-    line = escapeHTML(line);
-
     return line;
-};
-
-
-function escapeRegExp(str: string): string {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
-  }
-  
-
-
-const escapeHTML = (str: string): string => {
-    const map: { [key: string]: string } = {
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#039;",
-        "\\\\": "\\", // Two backslashes become one
-
-        // These are required for the regex to consume & to ensure they don't get mapped to amp style.
-        "\\&": "\\&", 
-        "\\<": "\\<", 
-        '\\"': '\\"', 
-        "\\'": "\\'", 
-    };
-
-    // If the number of backticks is odd, it means backticks are unbalanced
-    const backtickCount = (str.match(/`/g) || []).length;
-    const segments = str.split("`");
-
-    if (backtickCount % 2 !== 0 || segments.length % 2 === 0) {
-        // Handle the unbalanced backticks here
-        str = str.replaceAll("`", "");
-    }
-
-    // Escape special characters and create a regex pattern
-    const pattern = new RegExp( Object.keys(map).map(escapeRegExp).join('|'), 'g' );
-
-    for (let i = 0; i < segments.length; i += 2) {
-        segments[i] = segments[i].replace(pattern, (m) => map[m]);
-    }
-
-    return segments.join("`");
 };
 
 const escapeBackticks = (str: string): string => {

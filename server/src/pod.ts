@@ -1363,14 +1363,14 @@ export class PodToMarkdownConverter {
     #convertVerbatimPara(verbatimPara: VerbatimParagraph): Array<string> {
         return [
             "```",
-            ...verbatimPara.lines.map((line) => tabsToSpaces(line, 8)),
+            ...verbatimPara.lines.map((line) => tabsToSpaces(line, 2)),
             "```",
         ];
     }
 
     #convertOrdinaryPara(ordinaryPara: OrdinaryParagraph): Array<string> {
         return ordinaryPara.lines
-            .map((line) => tabsToSpaces(line, 8))
+            .map((line) => tabsToSpaces(line, 2))
             .map(processInlineElements);
     }
 

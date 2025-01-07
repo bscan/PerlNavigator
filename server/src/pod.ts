@@ -3,15 +3,6 @@ import { PerlDocument, PerlElem, PerlSymbolKind } from "./types";
 import Uri from "vscode-uri";
 import { isFile } from "./utils";
 
-// Error types
-
-export type PodParseError = PodProcessingError;
-
-export interface PodProcessingError {
-    kind: "processingerror";
-    message: string;
-}
-
 /** A paragraph whose first line matches `^[ \t]`.
  *
  * May also be *inside* `=begin [formatname]` and `=end [formatname]` commands,
@@ -206,6 +197,7 @@ export interface PodBlock {
 
 export type OverBlockContent = VerbatimParagraph
     | OrdinaryParagraph
+    | HeaderParagraph
     | UnordererdItemParagraph
     | OrderedItemParagraph
     | EncodingParagraph
@@ -833,7 +825,7 @@ export class PodProcessor {
      * the POD specification as possible) and also merges certain paragraphs for
      * ease of use.
      */
-    process(document: RawPodDocument): PodDocument | PodProcessingError {
+    process(document: RawPodDocument): PodDocument {
         // Reset state
         this.#blockIter = this.#makeBlockIter(document.blocks);
         this.#processedBlocks = [];
@@ -843,10 +835,6 @@ export class PodProcessor {
         let currentBlock = this.#getNextBlock();
         while (currentBlock) {
             const processedBlockResult = blockProcessor.process(currentBlock);
-
-            if (processedBlockResult.kind === "processingerror") {
-                return processedBlockResult;
-            }
 
             this.#processedBlocks.push(processedBlockResult);
             currentBlock = this.#getNextBlock();
@@ -892,7 +880,7 @@ class PodBlockProcessor {
         return value;
     }
 
-    process(block: RawPodBlock): PodBlock | PodProcessingError {
+    process(block: RawPodBlock): PodBlock {
         // Reset state
         this.#paragraphIter = this.#makeParagraphIter(block.paragraphs);
         this.#podBlock = { kind: "podblock", paragraphs: [] };
@@ -934,45 +922,18 @@ class PodBlockProcessor {
                 case "head":
                     this.#podBlock.paragraphs.push(para);
                     break;
-                case "data":
-                    return {
-                        kind: "processingerror",
-                        message: 'encountered unexpected data paragraph',
-                    };
                 case "over":
-                    let overBlockResult = this.#enterOverBlock(para);
-
-                    if (overBlockResult.kind === "processingerror") {
-                        return overBlockResult;
-                    }
-
-                    this.#podBlock.paragraphs.push(overBlockResult);
+                    this.#podBlock.paragraphs.push(this.#enterOverBlock(para));
                     break;
-                case "back":
-                    return {
-                        kind: "processingerror",
-                        message: "'=back' does not have matching '=over'",
-                    };
                 case "begin":
-                    let dataBlockResult = this.#enterDataBlock(para);
-
-                    if (dataBlockResult.kind === "processingerror") {
-                        return dataBlockResult;
-                    }
-
-                    this.#podBlock.paragraphs.push(dataBlockResult);
+                    this.#podBlock.paragraphs.push(this.#enterDataBlock(para));
                     break;
-                case "end":
-                    return {
-                        kind: "processingerror",
-                        message: `'=end ${para.formatname}' does not have matching '=begin ${para.formatname}'`,
-                    };
                 case "for":
-                    let forDataBlock = this.#buildDataBlockFromForPara(para);
-
-                    this.#podBlock.paragraphs.push(forDataBlock);
-
+                    this.#podBlock.paragraphs.push(this.#buildDataBlockFromForPara(para));
                     break;
+                case "data":     // should not be possible to appear here, so ignore it
+                case "back":     // doesn't have a matching =over, so ignore it
+                case "end":      // doesn't have matching =begin, so ignore it
                 case "encoding": // ignored
                 case "unknown":  // ignored
                     break;
@@ -986,7 +947,7 @@ class PodBlockProcessor {
     }
 
     // `level` must be non-zero.
-    #enterOverBlock(paragraph: OverParagraph): OverBlock | PodProcessingError {
+    #enterOverBlock(paragraph: OverParagraph): OverBlock {
         let overBlock: OverBlock = {
             kind: "overblock",
             lineNo: paragraph.lineNo,
@@ -1025,51 +986,26 @@ class PodBlockProcessor {
 
                     overBlock.paragraphs.push(para);
                     break;
+                case "head": // technically not allowed by spec, but we tolerate it anyways
                 case "ordinary":
                 case "unordereditem":
                 case "ordereditem":
                     overBlock.paragraphs.push(para);
                     break;
-                case "head":
-                    return {
-                        kind: "processingerror",
-                        message: `encountered invalid paragraph in "=over ... =back" block: "=head${para.level} ${para.contents}"`
-                    };
-                case "data":
-                    return {
-                        kind: "processingerror",
-                        message: 'encountered unexpected data paragraph in "=over ... =back" block',
-                    };
                 case "over":
-                    let nestedOverBlockResult = this.#enterOverBlock(para);
-
-                    if (nestedOverBlockResult.kind === "processingerror") {
-                        return nestedOverBlockResult;
-                    }
-
-                    overBlock.paragraphs.push(nestedOverBlockResult);
+                    overBlock.paragraphs.push(this.#enterOverBlock(para));
                     break;
                 case "back":
                     isProcessingBlock = false;
                     break;
                 case "begin":
-                    let nestedDataBlockResult = this.#enterDataBlock(para);
-
-                    if (nestedDataBlockResult.kind === "processingerror") {
-                        return nestedDataBlockResult;
-                    }
-
-                    overBlock.paragraphs.push(nestedDataBlockResult);
+                    overBlock.paragraphs.push(this.#enterDataBlock(para));
                     break;
-                case "end":
-                    return {
-                        kind: "processingerror",
-                        message: `'=end ${para.formatname}' does not have matching '=begin ${para.formatname}'`,
-                    };
                 case "for":
-                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
-
-                    overBlock.paragraphs.push(nestedForDataBlock);
+                    overBlock.paragraphs.push(this.#buildDataBlockFromForPara(para));
+                    break;
+                case "data":     // should not be possible to appear here, so ignore it
+                case "end":      // doesn't have matching =begin, so ignore it
                 case "encoding": // ignored
                 case "unknown":  // ignored
                     break;
@@ -1082,7 +1018,7 @@ class PodBlockProcessor {
         return overBlock;
     }
 
-    #enterDataBlock(paragraph: BeginParagraph): DataBlock | NormalDataBlock | PodProcessingError {
+    #enterDataBlock(paragraph: BeginParagraph): DataBlock | NormalDataBlock {
         if (paragraph.formatname.startsWith(":")) {
             return this.#buildNormalDataBlock(paragraph);
         } else {
@@ -1090,7 +1026,7 @@ class PodBlockProcessor {
         }
     }
 
-    #buildDataBlock(paragraph: BeginParagraph): DataBlock | PodProcessingError {
+    #buildDataBlock(paragraph: BeginParagraph): DataBlock {
         let dataBlock: DataBlock = {
             kind: "datablock",
             formatname: paragraph.formatname,
@@ -1137,10 +1073,9 @@ class PodBlockProcessor {
 
                     break;
                 case "data":
-                    return {
-                        kind: "processingerror",
-                        message: `pre-existing data paragraph in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
-                    };
+                    // Should not be appearing here, but since it's a data
+                    // paragraph, just add it
+                    dataBlock.paragraphs.push(para);
                 case "encoding":
                 case "unordereditem":
                 case "ordereditem":
@@ -1148,35 +1083,19 @@ class PodBlockProcessor {
                 case "over":
                 case "back":
                 case "unknown":
-                    return {
-                        kind: "processingerror",
-                        message: `unexpected command paragraph "${para.kind}" in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
-                    };
+                    // None of these paragraphs are allowed per the perlpodspec,
+                    // so just ignore them
+                    break;
                 case "begin":
-                    let nestedDataBlockResult = this.#enterDataBlock(para);
-
-                    if (nestedDataBlockResult.kind === "processingerror") {
-                        return nestedDataBlockResult;
-                    }
-
-                    dataBlock.paragraphs.push(nestedDataBlockResult);
+                    dataBlock.paragraphs.push(this.#enterDataBlock(para));
                     break;
                 case "end":
-                    const [beginFmtName, endFmtName] = [dataBlock.formatname.trim(), para.formatname.trim()];
-
-                    if (beginFmtName !== endFmtName) {
-                        return {
-                            kind: "processingerror",
-                            message: `"=end ${endFmtName}" does not match "=begin ${beginFmtName}"`,
-                        };
-                    }
-
+                    // Normally the formatname parameter of =begin and =end
+                    // blocks must match, but we're staying fault-tolerant here
                     isProcessingBlock = false;
                     break;
                 case "for":
-                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
-
-                    dataBlock.paragraphs.push(nestedForDataBlock);
+                    dataBlock.paragraphs.push(this.#buildDataBlockFromForPara(para));
                     break;
                 default:
                     const _exhaustiveCheck: never = para;
@@ -1187,7 +1106,7 @@ class PodBlockProcessor {
         return dataBlock;
     }
 
-    #buildNormalDataBlock(paragraph: BeginParagraph): NormalDataBlock | PodProcessingError {
+    #buildNormalDataBlock(paragraph: BeginParagraph): NormalDataBlock {
         let dataBlock: NormalDataBlock = {
             kind: "normaldatablock",
             formatname: paragraph.formatname,
@@ -1232,51 +1151,22 @@ class PodBlockProcessor {
                 case "head":
                     dataBlock.paragraphs.push(para);
                     break;
-                case "data":
-                    return {
-                        kind: "processingerror",
-                        message: `unexpected data paragraph in "=begin ${dataBlock.formatname} ... =end ${dataBlock.formatname}" block`,
-                    };
                 case "over":
-                    let overBlockResult = this.#enterOverBlock(para);
-
-                    if (overBlockResult.kind === "processingerror") {
-                        return overBlockResult;
-                    }
-
-                    dataBlock.paragraphs.push(overBlockResult);
+                    dataBlock.paragraphs.push(this.#enterOverBlock(para));
                     break;
-                case "back":
-                    return {
-                        kind: "processingerror",
-                        message: "'=back' does not have matching '=over'",
-                    };
                 case "begin":
-                    let dataBlockResult = this.#enterDataBlock(para);
-
-                    if (dataBlockResult.kind === "processingerror") {
-                        return dataBlockResult;
-                    }
-
-                    dataBlock.paragraphs.push(dataBlockResult);
+                    dataBlock.paragraphs.push(this.#enterDataBlock(para));
                     break;
                 case "end":
-                    const [beginFmtName, endFmtName] = [dataBlock.formatname.trim(), para.formatname.trim()];
-
-                    if (beginFmtName !== endFmtName) {
-                        return {
-                            kind: "processingerror",
-                            message: `"=end ${endFmtName}" does not match "=begin ${beginFmtName}"`,
-                        };
-                    }
-
+                    // Normally the formatname parameter of =begin and =end
+                    // blocks must match, but we're staying fault-tolerant here
                     isProcessingBlock = false;
                     break;
                 case "for":
-                    let nestedForDataBlock = this.#buildDataBlockFromForPara(para);
-
-                    dataBlock.paragraphs.push(nestedForDataBlock);
+                    dataBlock.paragraphs.push(this.#buildDataBlockFromForPara(para));
                     break;
+                case "data":     // should not be possible to appear here, so ignore it
+                case "back":     // doesn't have a matching =over, so ignore it
                 case "encoding": // ignored
                 case "unknown":  // ignored
                     break;
@@ -2023,31 +1913,26 @@ export async function getPod(
     let rawPodDocResult = parser.parse(fileContents);
 
     let processor = new PodProcessor();
-    let podDocResult = processor.process(rawPodDocResult);
+    let podDoc = processor.process(rawPodDocResult);
 
-    if (podDocResult.kind === "processingerror") {
-        // TODO: log error? --> needs access to settings for nLog
-        return;
-    }
-
-    let podDoc: PodDocument | undefined = podDocResult;
+    let podDocRes: PodDocument | undefined;
 
     if (symbolName) {
-        podDoc = lookupSymbolInPod(symbolName, podDocResult);
+        podDocRes = lookupSymbolInPod(symbolName, podDoc);
 
-        if (podDoc) {
-            formatPodDocForSymbol(podDoc);
+        if (podDocRes) {
+            formatPodDocForSymbol(podDocRes);
         }
     }
 
-    if (!podDoc) {
+    if (!podDocRes) {
         return;
     }
 
-    formatPodDoc(podDoc);
+    formatPodDoc(podDocRes);
 
     let converter = new PodToMarkdownConverter();
-    let markdown = converter.convert(podDoc);
+    let markdown = converter.convert(podDocRes);
 
     if (!markdown) {
         return;

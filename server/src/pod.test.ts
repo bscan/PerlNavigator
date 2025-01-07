@@ -5,26 +5,19 @@ import {
     PodDocument,
     PodParagraph,
     RawPodParser,
-    PodProcessingError,
     PodProcessor,
     RawPodDocument,
     VerbatimParagraph,
     PodToMarkdownConverter,
 } from "./pod";
 
-// Used to return errors that are otherwise logged.
-const podToMd = (fileContents: string): string | PodProcessingError => {
+const podToMd = (fileContents: string): string => {
     const parser = new RawPodParser();
     const processor = new PodProcessor();
     const converter = new PodToMarkdownConverter();
 
     let parseRes = parser.parse(fileContents);
-
     let processRes = processor.process(parseRes);
-
-    if (processRes.kind === "processingerror") {
-        return processRes;
-    }
 
     return converter.convert(processRes);
 };
@@ -894,9 +887,6 @@ describe("complex POD processing cases", () => {
     const parser = new RawPodParser();
     const processor = new PodProcessor();
 
-    // We forcibly omit the `message` property here so the object matcher ignores it.
-    const processingError = { kind: "processingerror" } as PodProcessingError;
-
     // Spec requires matching =end, but we choose to tolerate this
     test("unclosed data block", () => {
         const fileContents = `\
@@ -1182,16 +1172,43 @@ Ordinary.
 
  Verbatim.
 
-=head1 SOME COOL TITLE THAT SHOULDN'T BE HERE
+=head1 SOME COOL TITLE THAT GETS IGNORED
 
 =end foo
 
 =cut
 `;
+        const paragraphs: Array<PodBlockContent> = [
+            {
+                kind: "datablock",
+                formatname: "foo",
+                parameter: "",
+                paragraphs: [
+                    {
+                        kind: "data",
+                        lines: [
+                            "Ordinary.",
+                            "",
+                            " Verbatim."
+                        ],
+                    },
+                ],
+            },
+        ];
+
+        const expected: PodDocument = {
+            kind: "poddocument",
+            blocks: [
+                {
+                    kind: "podblock",
+                    paragraphs: paragraphs,
+                }
+            ],
+        };
 
         const result = parser.parse(fileContents);
 
-        expect(processor.process(result as RawPodDocument)).toMatchObject(processingError);
+        expect(processor.process(result as RawPodDocument)).toMatchObject(expected);
     });
 
     test("normal data block with command paragraph", () => {
@@ -1255,16 +1272,39 @@ Ordinary.
 
 =over 42
 
-=head1
+=head1 I GET TOLERATED
 
 =back
 
 =cut
 `;
+        const paragraphs: Array<PodBlockContent> = [
+            {
+                kind: "overblock",
+                level: 42,
+                paragraphs: [
+                    {
+                        kind: "head",
+                        level: HeaderLevel.One,
+                        contents: "I GET TOLERATED",
+                    },
+                ],
+            },
+        ];
+
+        const expected: PodDocument = {
+            kind: "poddocument",
+            blocks: [
+                {
+                    kind: "podblock",
+                    paragraphs: paragraphs,
+                }
+            ],
+        };
 
         const result = parser.parse(fileContents);
 
-        expect(processor.process(result as RawPodDocument)).toMatchObject(processingError);
+        expect(processor.process(result as RawPodDocument)).toMatchObject(expected);
     });
 
     test("double-nested over block", () => {
@@ -2245,14 +2285,9 @@ describe("pod lists to markdown lists", () => {
     const processor = new PodProcessor();
     const converter = new PodToMarkdownConverter();
 
-    const podToMd = (fileContents: string): string | PodProcessingError => {
+    const podToMd = (fileContents: string): string => {
         let parseRes = parser.parse(fileContents);
-
         let processRes = processor.process(parseRes);
-
-        if (processRes.kind === "processingerror") {
-            return processRes;
-        }
 
         return converter.convert(processRes);
     };

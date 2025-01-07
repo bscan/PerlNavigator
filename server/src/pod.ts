@@ -5,13 +5,7 @@ import { isFile } from "./utils";
 
 // Error types
 
-export type PodParseError = RawPodParseError | PodProcessingError;
-
-export interface RawPodParseError {
-    kind: "parseerror";
-    message: string;
-    lineNo: number;
-}
+export type PodParseError = PodProcessingError;
 
 export interface PodProcessingError {
     kind: "processingerror";
@@ -329,7 +323,7 @@ export class RawPodParser {
      * POD content that hasn't been processed and checked for validity yet.
      * This is done via the {@link PodProcessor}.
      */
-    parse(fileContents: string): RawPodDocument | RawPodParseError {
+    parse(fileContents: string): RawPodDocument {
         // Reset state
         this.#lineIter = new LinesIterator(fileContents);
         this.#currentBlock = undefined;
@@ -378,14 +372,13 @@ export class RawPodParser {
                 // other command paragraphs
                 let paraResult = this.#tryParseCommand(line);
 
-                if (paraResult.kind === "parseerror") {
-                    return paraResult;
-                }
-
                 // no need to skip to an empty line here, as that is handled for
                 // each paragraph in tryParseCommand
 
-                this.#currentBlock.paragraphs.push(paraResult);
+                if (paraResult) {
+                    this.#currentBlock.paragraphs.push(paraResult);
+                }
+
                 continue;
             }
 
@@ -485,7 +478,7 @@ export class RawPodParser {
     /** Tries to parse a command paragraph.
      * The passed `line` is expected to have matched `/^=[a-zA-Z]/` beforehand.
      */
-    #tryParseCommand(line: string): PodParagraph | RawPodParseError {
+    #tryParseCommand(line: string): PodParagraph | undefined {
         line = line.trimEnd();
         const lineNo = this.#lineIter.currentLineNo();
 
@@ -669,13 +662,7 @@ export class RawPodParser {
             )
         ][0];
         if (matchResult !== undefined) {
-            if (matchResult.groups?.formatname === undefined) {
-                return {
-                    kind: "parseerror",
-                    lineNo: lineNo,
-                    message: `"=begin" command at line ${lineNo} does not contain any format name`,
-                };
-            }
+            let formatname = matchResult.groups?.formatname ?? "";
 
             let parameter = matchResult.groups?.parameter || "";
             parameter = this.#appendNextLineUntilEmptyLine(parameter).trim();
@@ -683,7 +670,7 @@ export class RawPodParser {
             let para: BeginParagraph = {
                 kind: "begin",
                 lineNo: lineNo,
-                formatname: matchResult.groups?.formatname?.trim() as string,
+                formatname: formatname.trim(),
                 parameter: parameter,
             };
 
@@ -693,20 +680,14 @@ export class RawPodParser {
         // =end
         matchResult = [...line.matchAll(/^=end(\s+(?<formatname>:?[-a-zA-Z0-9_]+))?/g)][0];
         if (matchResult !== undefined) {
-            if (matchResult.groups?.formatname === undefined) {
-                return {
-                    kind: "parseerror",
-                    lineNo: lineNo,
-                    message: `"=end" command at line ${lineNo} does not contain any format name`,
-                };
-            }
+            let formatname = matchResult.groups?.formatname ?? "";
 
             this.#skipUntilEmptyLine();
 
             let para: EndParagraph = {
                 kind: "end",
                 lineNo: lineNo,
-                formatname: matchResult.groups?.formatname?.trim() as string,
+                formatname: formatname.trim(),
             };
 
             return para;
@@ -717,15 +698,7 @@ export class RawPodParser {
             ...line.matchAll(/^=for(\s+(?<formatname>:?[-a-zA-Z0-9_]+)(\s+(?<contents>.*))?)?/g)
         ][0];
         if (matchResult !== undefined) {
-            const formatname = matchResult.groups?.formatname;
-
-            if (formatname === undefined) {
-                return {
-                    kind: "parseerror",
-                    lineNo: lineNo,
-                    message: `"=for" command at line ${lineNo} does not contain any format name`,
-                };
-            }
+            const formatname = matchResult.groups?.formatname ?? "";
 
             let contents = (matchResult.groups?.contents || "").trim();
 
@@ -742,7 +715,7 @@ export class RawPodParser {
             let para: ForParagraph = {
                 kind: "for",
                 lineNo: lineNo,
-                formatname: formatname,
+                formatname: formatname.trim(),
                 lines: lines,
             };
 
@@ -764,12 +737,6 @@ export class RawPodParser {
 
             return para;
         }
-
-        return {
-            kind: "parseerror",
-            lineNo: lineNo,
-            message: `failed to parse command from line ${lineNo}: "${line}" is not recognized as command paragraph`,
-        };
     }
 
     /** Parses a verbatim paragraph.
@@ -2054,11 +2021,6 @@ export async function getPod(
 
     let parser = new RawPodParser();
     let rawPodDocResult = parser.parse(fileContents);
-
-    if (rawPodDocResult.kind === "parseerror") {
-        // TODO: log error? --> needs access to settings for nLog
-        return;
-    }
 
     let processor = new PodProcessor();
     let podDocResult = processor.process(rawPodDocResult);

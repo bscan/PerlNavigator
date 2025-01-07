@@ -10,20 +10,15 @@ import {
     RawPodDocument,
     VerbatimParagraph,
     PodToMarkdownConverter,
-    RawPodParseError,
 } from "./pod";
 
 // Used to return errors that are otherwise logged.
-const podToMd = (fileContents: string): string | RawPodParseError | PodProcessingError => {
+const podToMd = (fileContents: string): string | PodProcessingError => {
     const parser = new RawPodParser();
     const processor = new PodProcessor();
     const converter = new PodToMarkdownConverter();
 
     let parseRes = parser.parse(fileContents);
-
-    if (parseRes.kind === "parseerror") {
-        return parseRes;
-    }
 
     let processRes = processor.process(parseRes);
 
@@ -2250,12 +2245,8 @@ describe("pod lists to markdown lists", () => {
     const processor = new PodProcessor();
     const converter = new PodToMarkdownConverter();
 
-    const podToMd = (fileContents: string): string | RawPodParseError | PodProcessingError => {
+    const podToMd = (fileContents: string): string | PodProcessingError => {
         let parseRes = parser.parse(fileContents);
-
-        if (parseRes.kind === "parseerror") {
-            return parseRes;
-        }
 
         let processRes = processor.process(parseRes);
 

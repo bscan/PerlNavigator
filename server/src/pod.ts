@@ -1915,7 +1915,7 @@ export async function getPod(
     let processor = new PodProcessor();
     let podDoc = processor.process(rawPodDocResult);
 
-    let podDocRes: PodDocument | undefined;
+    let podDocRes: PodDocument | undefined = podDoc;
 
     if (symbolName) {
         podDocRes = lookupSymbolInPod(symbolName, podDoc);

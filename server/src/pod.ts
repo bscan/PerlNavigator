@@ -1362,7 +1362,7 @@ export class PodToMarkdownConverter {
 
     #convertVerbatimPara(verbatimPara: VerbatimParagraph): Array<string> {
         return [
-            "```",
+            "```perl",
             ...verbatimPara.lines.map((line) => tabsToSpaces(line, 2)),
             "```",
         ];

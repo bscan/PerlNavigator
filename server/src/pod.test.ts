@@ -2052,7 +2052,7 @@ mattis lectus dictum ultricies.
 `;
 
         const expected = `\
-\`\`\`
+\`\`\`perl
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 
     Integer purus nisi, egestas et imperdiet sit amet, interdum ut nisl.
@@ -2087,7 +2087,7 @@ mattis lectus dictum ultricies.
 =cut`;
 
         const expected = `\
-\`\`\`
+\`\`\`perl
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
 
     Integer purus nisi, egestas et imperdiet sit amet, interdum ut nisl.
@@ -2134,7 +2134,7 @@ mattis lectus dictum ultricies.
 =cut`;
 
         const expected = `\
-\`\`\`
+\`\`\`perl
     async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
         try {
             const workspaceFolders = await connection.workspace.getWorkspaceFolders();
@@ -2196,13 +2196,13 @@ Aliquam erat:
         const expected = `\
 Lorem ipsum dolor sit amet:
 
-\`\`\`
+\`\`\`perl
     Consectetur adipiscing elit.
 \`\`\`
 
 Integer purus nisi:
 
-\`\`\`
+\`\`\`perl
     Egestas et imperdiet sit amet, interdum ut nisl.
 
         Sed fringilla placerat nulla, et viverra purus ultricies sit amet.
@@ -2213,7 +2213,7 @@ Feugiat ipsum nec.
 
 Aliquam erat:
 
-\`\`\`
+\`\`\`perl
     Maecenas dapibus arcu odio, ac dictum mauris cursus quis.
 
         Donec facilisis ex at nisi dictum, ac faucibus est elementum.
@@ -2660,7 +2660,7 @@ baz
 The POD spec only allows certain command paragraphs to appear in an over-back block.
 
 -     But we can nest things, because it all handles the same anyways.
-- \`\`\`
+- \`\`\`perl
       Verbatim paragraphs
       are put into a neat
       code block in markdown
@@ -3038,7 +3038,7 @@ This stuff in here gets treated as regular POD.
 42. Because this isn't handled in any special manner.
 - It really isn't.
 
-\`\`\`
+\`\`\`perl
     So yeah. The block above doesn't exist in Markdown at all.
 
     You won't even know it's there.
@@ -3186,7 +3186,7 @@ And B<<<<<     this >>>>> one too.
 
 **This paragraph is in bold.**
 
-\`\`\`
+\`\`\`perl
     B<This verbatim one gets ignored.>
 \`\`\`
 
@@ -3228,7 +3228,7 @@ And I<<<<<     this >>>>> one too.
 
 *This paragraph is in italics.*
 
-\`\`\`
+\`\`\`perl
     I<This verbatim one gets ignored.>
 \`\`\`
 
@@ -3270,7 +3270,7 @@ And I<B<< this >>> one too.
 
 ***This paragraph is in bold italics.***
 
-\`\`\`
+\`\`\`perl
     B<I<This verbatim one gets ignored.>>
 \`\`\`
 
@@ -3312,7 +3312,7 @@ C<Same goes for this one.> C<Twice.> C<Thrice.>
 
 \`This paragraph is inline code.\`
 
-\`\`\`
+\`\`\`perl
     C<This verbatim paragraph gets ignored.>
 \`\`\`
 

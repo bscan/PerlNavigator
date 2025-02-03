@@ -252,10 +252,22 @@ export function nLog(message: string, settings: NavigatorSettings) {
     }
 }
 
-export function getPerlimportsProfile(settings: NavigatorSettings): string[] {
+export function getPerlimportsProfile(workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): string[] {
     const profileCmd: string[] = [];
     if (settings.perlimportsProfile) {
-        profileCmd.push("--config-file", settings.perlimportsProfile);
+        let profile = settings.perlimportsProfile;
+        if (profile.indexOf("$workspaceFolder") != -1) {
+            if (workspaceFolders) {
+                const workspaceUri = Uri.parse(workspaceFolders[0].uri).fsPath;
+                profileCmd.push("--config-file");
+                profileCmd.push(profile.replaceAll("$workspaceFolder", workspaceUri));
+            } else {
+                nLog("You specified $workspaceFolder in your perlimports path, but didn't include any workspace folders. Ignoring profile.", settings);
+            }
+        } else {
+            profileCmd.push("--config-file");
+            profileCmd.push(profile);
+        }
     }
     return profileCmd;
 }

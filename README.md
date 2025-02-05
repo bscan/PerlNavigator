@@ -189,8 +189,8 @@ A simple configuration to enable PerlNavigator, after installing coc-perl (`:Coc
 
 ```json
 {
-  "perl.navigator.enable": true,
-  "perl.navigator.serverPath": "/path/to/PerlNavigator/server/out/server.js"
+  "perlnavigator.enable": true,
+  "perlnavigator.serverPath": "/path/to/PerlNavigator/server/out/server.js"
 }
 ```
 

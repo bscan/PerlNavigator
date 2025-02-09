@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.8.16 2025-02-09
+- Find onig.wasm dynamically by @rabbiveesh
+- Fix for perl installations without Filter::Simple
+
 ## 0.8.15 2024-08-19
 - Fixes for Perl 5.40 from @oalders
 

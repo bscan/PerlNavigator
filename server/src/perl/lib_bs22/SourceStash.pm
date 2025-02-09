@@ -1,11 +1,20 @@
 package lib_bs22::SourceStash;
 use strict;
-use Filter::Simple;
 
+our $filter_enabled;  # Default to disabled
 our $source = '';
 our $filename;
 
-FILTER { $source .= $_; } 0;
+BEGIN {
+    if (eval { require Filter::Simple; 1 }) {
+        Filter::Simple->import();
+        $filter_enabled = 1;  # Enable filtering if module loads successfully
+    }
+}
+
+if ($filter_enabled) {
+    FILTER { $source .= $_; } 0;
+}
 
 1;
 

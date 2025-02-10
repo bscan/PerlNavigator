@@ -216,7 +216,7 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
 export async function perlimports(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<Diagnostic[]> {
     if (!settings.perlimportsLintEnabled) return [];
     const importsPath = join(await getPerlAssetsPath(), "perlimportsWrapper.pl");
-    const cliParams = [...settings.perlParams, importsPath, ...getPerlimportsProfile(settings), "--lint", "--json", "--filename", Uri.parse(textDocument.uri).fsPath];
+    const cliParams = [...settings.perlParams, importsPath, ...getPerlimportsProfile(workspaceFolders, settings), "--lint", "--json", "--filename", Uri.parse(textDocument.uri).fsPath];
 
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
     const code = textDocument.getText();

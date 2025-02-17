@@ -911,7 +911,7 @@
 					"name": "variable.parameter.function.perl"
 				}
 			},
-			"match": "^\\s*(BEGIN|UNITCHECK|CHECK|INIT|END|DESTROY)\\b",
+			"match": "^\\s*(BEGIN|UNITCHECK|CHECK|INIT|END|DESTROY|ADJUST)\\b",
 			"name": "meta.function.perl"
 		},
 		{

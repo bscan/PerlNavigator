@@ -102,3 +102,12 @@ my $test = 1234;
 my $shifted_test = $test << SHIFT_LEFT;
 # This is a comment; 
 
+# https://github.com/textmate/perl.tmbundle/pull/55 
+my $multi_xx  = $foo =~ s/[
+        \N{NO-BREAK SPACE}
+        \r \n
+        {}
+        "
+        ]/ /grxx;
+# rest of file is now broken because of the second x
+

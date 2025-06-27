@@ -20,12 +20,20 @@
 		"vscode-textmate": "^9.0.0",
 		"vscode-oniguruma": "^2.0.1"
 	},
-	"scripts": {},
+	"scripts": {
+		"test": "jest"
+	},
 	"main": "./src/dist/serverMain.js",
 	"bin": {
 		"perlnavigator": "./bin/perlnavigator"
 	},
-	"devDependencies": {},
+	"devDependencies": {
+		"@types/jest": "^29.5.12",
+		"jest": "^29.7.0",
+		"ts-jest": "^29.2.4",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.5.4"
+	},
 	"keywords": [
 		"perl",
 		"lsp",

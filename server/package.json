@@ -26,7 +26,7 @@
 		"perlnavigator": "./bin/perlnavigator"
 	},
 	"devDependencies": {
-		"@types/node": "^18.11.18",
+		"@types/node": "^18.19.41",
 		"typescript": "^4.8.4"
 	},
 	"keywords": [

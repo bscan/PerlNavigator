@@ -1,0 +1,1 @@
+{"root":["./src/browserClientMain.ts","./src/extension.ts","./src/test/completion.test.ts","./src/test/diagnostics.test.ts","./src/test/helper.ts","./src/test/index.ts","./src/test/runTest.ts"],"errors":true,"version":"5.8.3"}

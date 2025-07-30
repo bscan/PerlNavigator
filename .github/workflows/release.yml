@@ -80,8 +80,7 @@ jobs:
       with:
         node-version: '18.x'
         registry-url: 'https://registry.npmjs.org'
-    - run: npm ci
-    - run: tsc -b
+    - run: cd server && npm ci && npx tsc
     - run: npm publish server/
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

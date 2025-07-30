@@ -1,0 +1,1 @@
+{"root":["./src/assets.ts","./src/completion.ts","./src/diagnostics.ts","./src/formatting.ts","./src/hover.ts","./src/navigation.ts","./src/parseTags.ts","./src/parser.ts","./src/pod.ts","./src/progress.ts","./src/refinement.ts","./src/server.ts","./src/signatures.ts","./src/symbols.ts","./src/types.ts","./src/utils.ts"],"version":"5.8.3"}

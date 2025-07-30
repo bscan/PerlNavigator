@@ -1,0 +1,1 @@
+{"root":["./src/browserServerMain.ts","./src/web-completion.ts","./src/web-hover.ts","./src/web-navigation.ts","./src/web-parse.ts","./src/web-symbols.ts","./src/web-types.ts","./src/web-utils.ts"],"errors":true,"version":"5.8.3"}

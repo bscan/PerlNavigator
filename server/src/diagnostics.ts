@@ -190,14 +190,18 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
     const diagnostics: Diagnostic[] = [];
     let output: string;
     try {
-        const process = async_execFile(settings.perlPath, criticParams, { timeout: 25000 });
-        process?.child?.stdin?.on("error", (error: any) => {
+        const env = { ...process.env } as { [key: string]: string | undefined };
+        if (settings.perlcriticMessageFormat) {
+            env.PERL_NAVIGATOR_CRITIC_MESSAGE_FORMAT = settings.perlcriticMessageFormat;
+        }
+        const criticProcess = async_execFile(settings.perlPath, criticParams, { timeout: 25000, env });
+        criticProcess?.child?.stdin?.on("error", (error: any) => {
             nLog("Perl Critic Error Caught: ", settings);
             nLog(error, settings);
         });
-        process?.child?.stdin?.write(code);
-        process?.child?.stdin?.end();
-        const out = await process;
+        criticProcess?.child?.stdin?.write(code);
+        criticProcess?.child?.stdin?.end();
+        const out = await criticProcess;
         output = out.stdout;
     } catch (error: any) {
         nLog("Perlcritic failed with unknown error", settings);

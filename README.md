@@ -90,6 +90,7 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
         "settings": {
             // "perlnavigator.perltidyProfile": "~/.perltidyrc",
             // "perlnavigator.perlcriticProfile": "~/.perlcriticrc",
+            // "perlnavigator.perlcriticMessageFormat": "%m - %e",
             // "perlnavigator.perlEnvAdd": false, // default: true
             // "perlnavigator.perlEnv": {
             //     "KOHA_CONF": "/home/user/git/KohaCommunity/t/data/koha-conf.xml",

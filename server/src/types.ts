@@ -14,6 +14,7 @@ export interface NavigatorSettings {
     perlcriticTheme: undefined | string;
     perlcriticExclude: undefined | string;
     perlcriticInclude: undefined | string;
+    perlcriticMessageFormat: string;
     perlimportsLintEnabled: boolean;
     perlimportsTidyEnabled: boolean;
     perlimportsProfile: string;

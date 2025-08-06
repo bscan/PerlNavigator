@@ -114,6 +114,7 @@ const defaultSettings: NavigatorSettings = {
     perlcriticTheme: undefined,
     perlcriticExclude: undefined,
     perlcriticInclude: undefined,
+    perlcriticMessageFormat: "%m",
     perlimportsLintEnabled: false,
     perlimportsTidyEnabled: false,
     perltidyEnabled: true,

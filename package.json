@@ -115,16 +115,22 @@
 					"type": "string",
 					"description": "Regex pattern with policies to exclude for perl critic (normally in profile)"
 				},
-				"perlnavigator.perlcriticInclude": {
-					"scope": "resource",
-					"type": "string",
-					"description": "Regex pattern with policies to include for perl critic (normally in profile)"
-				},
-				"perlnavigator.perlCompileEnabled": {
-					"scope": "resource",
-					"type": "boolean",
-					"default": true,
-					"description": "Enable running perl -c on your code"
+                                "perlnavigator.perlcriticInclude": {
+                                        "scope": "resource",
+                                        "type": "string",
+                                        "description": "Regex pattern with policies to include for perl critic (normally in profile)"
+                                },
+                                "perlnavigator.perlcriticMessageFormat": {
+                                        "scope": "resource",
+                                        "type": "string",
+                                        "default": "%m",
+                                        "description": "Format for Perl::Critic messages. Use %e to include policy explanations"
+                                },
+                                "perlnavigator.perlCompileEnabled": {
+                                        "scope": "resource",
+                                        "type": "boolean",
+                                        "default": true,
+                                        "description": "Enable running perl -c on your code"
 				},
 				"perlnavigator.severity5": {
 					"scope": "resource",

@@ -51,7 +51,8 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
-let rootUri = '';
+let rootUri: string | null = null;
+
 
 connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
@@ -89,8 +90,7 @@ connection.onInitialize(async (params: InitializeParams) => {
             },
         };
     } else {
-        process.stderr.write("No hasWorkspaceFolderCapability in onInitialize().\n");
-        if (params.rootUri!=null) {
+        if (params.rootUri) {
             rootUri = params.rootUri;
         }
     }
@@ -190,9 +190,7 @@ async function dispatchForMods(textDocument: TextDocument) {
 }
 
 async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
-    process.stderr.write("Now in getWorkspaceFoldersSafe().\n");
     if (hasWorkspaceFolderCapability) {
-        process.stderr.write("getWorkspaceFoldersSafe() has hasWorkspaceFolderCapability.\n");
         try {
             const workspaceFolders = await connection.workspace.getWorkspaceFolders();
             if (!workspaceFolders) {
@@ -204,12 +202,11 @@ async function getWorkspaceFoldersSafe(): Promise<WorkspaceFolder[]> {
             return [];
         }
     } else {
-        process.stderr.write("No hasWorkspaceFolderCapability in getWorkspaceFoldersSafe() .\n");
-        if (rootUri!=null) {
+        if (rootUri) {
             const dummyFolder: WorkspaceFolder = {
-                    uri: rootUri,
-                    name: rootUri,
-            }
+                uri: rootUri,
+                name: rootUri,
+            };
             return [dummyFolder];
         } else {
             return [];

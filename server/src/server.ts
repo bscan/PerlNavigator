@@ -53,6 +53,7 @@ let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let rootUri: string | null = null;
 
+
 connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
 

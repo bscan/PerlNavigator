@@ -51,7 +51,7 @@ async function maybeReturnEdits(
 
     const progressToken = await startProgress(connection, "Formatting doc", settings);
     let newSource: string = "";
-    const fixedImports = await perlimports(txtDoc, text, settings);
+    const fixedImports = await perlimports(txtDoc, text, settings, workspaceFolders);
     if (fixedImports) {
         newSource = fixedImports;
     }
@@ -73,10 +73,10 @@ async function maybeReturnEdits(
     return [edits];
 }
 
-async function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings): Promise<string | undefined> {
+async function perlimports(doc: TextDocument, code: string, settings: NavigatorSettings, workspaceFolders: WorkspaceFolder[] | null): Promise<string | undefined> {
     if (!settings.perlimportsTidyEnabled) return;
     const importsPath = join(await getPerlAssetsPath(), "perlimportsWrapper.pl");
-    let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(settings));
+    let cliParams: string[] = [importsPath].concat(getPerlimportsProfile(workspaceFolders, settings));
     cliParams = cliParams.concat(["--filename", Uri.parse(doc.uri).fsPath]);
     nLog("Now starting perlimports with: " + cliParams.join(" "), settings);
 

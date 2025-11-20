@@ -37,6 +37,13 @@ import { getPerlAssetsPath } from "./assets";
 
 var LRU = require("lru-cache");
 
+import { VERSION, NAME } from "./perlnavigator";
+
+if (process.argv.includes ("--version")) {
+  console.log(NAME + " " + VERSION);
+  process.exit(0);
+}
+
 // It the editor doesn't request node-ipc, use stdio instead. Make sure this runs before createConnection
 if (process.argv.length <= 2) {
     process.argv.push("--stdio");
@@ -82,6 +89,10 @@ connection.onInitialize(async (params: InitializeParams) => {
                 triggerCharacters: ["(", ",", ")"],
             },
         },
+        serverInfo: {
+            name: NAME,
+            version: VERSION,
+        }
     };
     if (hasWorkspaceFolderCapability) {
         result.capabilities.workspace = {

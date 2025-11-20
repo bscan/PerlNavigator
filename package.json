@@ -384,7 +384,7 @@
 		"install-browser": "cd browser-ext && npm install",
 		"postinstall": "npm run-script install-client && npm run-script install-server && npm run-script install-browser",
 		"ci-client": "cd client && npm ci",
-		"ci-server": "cd server && npm ci",
+		"ci-server": "node update-version.js && cd server && npm ci",
 		"ci-all": "npm ci && npm run ci-client && npm run ci-server",
 		"clean": "rm -rf ./node-modules ./server/node-modules ./client/node-modules",
 		"foo": "(cd client && npm ci && cd ../); (cd server && npm c )",

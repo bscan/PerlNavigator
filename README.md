@@ -139,6 +139,21 @@ If you need to configure can use something similar to the following configuratio
   :custom (lsp-perlnavigator-executable (expand-file-name "~/path/to/perlnavigator))
   ...)
 ```
+### Vim
+
+Using [lsp](https://github.com/yegappan/lsp/), add to your `vimrc` the lines
+
+```vim
+let perlnavigator =
+			\ #{name: 'perlnavigator',
+			\   filetype: 'perl',
+			\   path: 'perlnavigator',
+			\   args: ['--stdio'],
+}
+let lspServers = []
+call add(lspServers, perlnavigator)
+autocmd VimEnter * call LspAddServer(lspServers)
+```
 
 ### Neovim
 Neovim requires [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig). An optional, but highly recommended,

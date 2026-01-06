@@ -26,7 +26,8 @@ import { perlcompile, perlcritic, perlimports } from "./diagnostics";
 import { cleanupTemporaryAssetPath } from "./assets";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
-import { NavigatorSettings, PerlDocument, PerlElem, completionElem} from "./types";
+import { NavigatorSettings, PerlDocument, PerlElem, completionElem, ParseType } from "./types";
+import { parseDocument } from "./parser";
 import { getHover } from "./hover";
 import { getCompletions, getCompletionDoc } from "./completion";
 import { formatDoc, formatRange } from "./formatting";
@@ -434,7 +435,10 @@ connection.onDefinition(async (params) => {
     let mods = availableMods.get("default");
     if (!mods) mods = new Map();
     if (!document) return;
-    if (!perlDoc) return; // navSymbols is an LRU cache, so the navigation elements will be missing if you open lots of files
+    // Parse on-demand if navSymbols hasn't been populated yet (race condition with validatePerlDocument)
+    if (!perlDoc) {
+        perlDoc = await parseDocument(document, ParseType.selfNavigation);
+    }
     let locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
     return locOut;
 });

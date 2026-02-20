@@ -114,10 +114,10 @@ function localVars(state: ParserState): boolean {
     // line, or if this line starts with my or local
     let match;
     if (state.var_continues || (match = state.stmt.match(/^(?:my|our|local|state)\b/))) {
-        // The declaration continues unless there's a semicolon, signature end, or sub start. 
+        // The declaration continues unless there's a semicolon, signature end, or sub start.
         // This can get tripped up with comments, but it's not a huge deal. subroutines are more important
         state.var_continues = !state.stmt.match(/[\)\=\}\{;]/);
-        
+
         let mod_stmt = state.stmt;
         // Remove my or local from statement, if present
         mod_stmt = mod_stmt.replace(/^(my|our|local|state)\s+/, "");
@@ -327,8 +327,8 @@ function fields(state: ParserState): boolean {
         const attr = match[1];
         MakeElem(attr, PerlSymbolKind.Field, "", state);
         MakeElem(state.package_name + "::" + attr, PerlSymbolKind.PathedField, "", state);
-    } else if ((match = state.stmt.match(/^around\s+["']?(\w+)\b/))) {
-        // Moo/Moose overriding subs.
+    } else if ((match = state.stmt.match(/^(?:around|before|after|override)\s+["']?(\w+)\b/))) {
+        // Moo/Moose method modifiers (around/before/after/override).
         MakeElem(match[1], PerlSymbolKind.LocalSub, "", state);
     } else {
         return false;

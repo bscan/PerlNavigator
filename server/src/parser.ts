@@ -591,7 +591,7 @@ function PackageEndLine(state: ParserState) {
     }
 
     // If we didn't find an end, run until end of file
-    return state.codeArray.length;
+    return state.codeArray.length - 1;
 }
 
 // we first try to find by absolute path, which is needed in webpack

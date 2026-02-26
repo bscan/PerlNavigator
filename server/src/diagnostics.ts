@@ -11,7 +11,7 @@ import { parseDocument } from "./parser";
 import { TextDocument } from "vscode-languageserver-textdocument";
 
 export async function perlcompile(textDocument: TextDocument, workspaceFolders: WorkspaceFolder[] | null, settings: NavigatorSettings): Promise<CompilationResults | void> {
-    
+
     const parsingPromise = parseDocument(textDocument, ParseType.selfNavigation);
 
     if (!settings.perlCompileEnabled){
@@ -144,6 +144,7 @@ function maybeAddCompDiag(violation: string, severity: DiagnosticSeverity, diagn
 
 function localizeErrors(violation: string, filePath: string, perlDoc: PerlDocument): { violation: string; lineNum: number } | void {
     if (violation.indexOf("Too late to run CHECK block") != -1) return;
+    if (/^\t/.test(violation)) return; // Skip stack trace continuation lines
 
     let match = /^(.+)at\s+(.+?)\s+line\s+(\d+)/i.exec(violation);
 

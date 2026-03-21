@@ -214,7 +214,7 @@ function labels(state: ParserState) : boolean {
 
     let match;
     // Phaser block
-    if ((match = state.stmt.match(/^(BEGIN|INIT|CHECK|UNITCHECK|END)\s*\{/))) {
+    if ((match = state.stmt.match(/^(BEGIN|INIT|CHECK|UNITCHECK|END|ADJUST)\s*\{/))) {
         const phaser = match[1];
         const endLine = SubEndLine(state);
 

@@ -27,6 +27,14 @@ $INC{'namespace/autoclean.pm'} = '';
     *{'namespace::clean::VERSION'} = sub { '0.27' };
     *{'namespace::autoclean::import'} = sub { };
     *{'namespace::clean::import'} = sub { };
+    *{'namespace::clean::get_functions'} = sub {
+        my ($pragma, $class) = @_;
+        no strict 'refs';
+        return { map { $_ => \&{"${class}::${_}"} }
+                 grep { defined &{"${class}::${_}"} }
+                 keys %{"${class}::"} };
+    };
+    *{'namespace::clean::clean_subroutines'} = sub { };
 }
 
 CHECK {

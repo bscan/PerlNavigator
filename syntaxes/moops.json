@@ -5,7 +5,7 @@
     ],
     "name": "moops",
     "scopeName": "source.perl.package.moops",
-    "injectionSelector": "L:meta.moops.perl -comment -string -text",
+    "injectionSelector": "R:meta.moops.perl -comment -string -text",
     "patterns": [
         {
             "include": "#moops"

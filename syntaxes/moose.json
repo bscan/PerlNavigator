@@ -6,7 +6,7 @@
   ],
   "name": "Moose",
   "scopeName": "source.perl.package.moose",
-  "injectionSelector": "L:meta.moose.perl -comment -string -text",
+  "injectionSelector": "R:meta.moose.perl -comment -string -text",
   "patterns": [
     {
       "include": "#moose"

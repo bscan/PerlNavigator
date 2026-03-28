@@ -5,7 +5,7 @@
     ],
     "name": "dios",
     "scopeName": "source.perl.package.dios",
-    "injectionSelector": "L:meta.dios.perl -comment -string -text",
+    "injectionSelector": "R:meta.dios.perl -comment -string -text",
     "patterns": [
         {
             "include": "#dios"

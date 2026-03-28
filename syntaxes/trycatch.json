@@ -5,7 +5,7 @@
     ],
     "name": "trycatch",
     "scopeName": "source.perl.package.trycatch",
-    "injectionSelector": "L:meta.trycatch.perl -comment -string -text",
+    "injectionSelector": "R:meta.trycatch.perl -comment -string -text",
     "patterns": [
         {
             "include": "#trycatch"

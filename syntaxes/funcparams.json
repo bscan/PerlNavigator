@@ -5,7 +5,7 @@
     ],
     "name": "funcparams",
     "scopeName": "source.perl.package.funcparams",
-    "injectionSelector": "L:meta.funcparams.perl -comment -string -text",
+    "injectionSelector": "R:meta.funcparams.perl -comment -string -text",
     "patterns": [
         {
             "include": "#funcparams"

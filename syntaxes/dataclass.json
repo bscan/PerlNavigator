@@ -2,7 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "dataclass",
     "scopeName": "source.perl.package.dataclass",
-    "injectionSelector": "L:meta.dataclass.perl -comment -string -text",
+    "injectionSelector": "R:meta.dataclass.perl -comment -string -text",
     "patterns": [
         {
             "include": "#dataclass"

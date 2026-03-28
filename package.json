@@ -304,20 +304,6 @@
 				"injectTo": [
 					"source.perl"
 				],
-				"scopeName": "source.perl.package.v536",
-				"path": "./syntaxes/v536.json"
-			},
-			{
-				"injectTo": [
-					"source.perl"
-				],
-				"scopeName": "source.perl.package.v510",
-				"path": "./syntaxes/v510.json"
-			},
-			{
-				"injectTo": [
-					"source.perl"
-				],
 				"scopeName": "source.perl.package.isa",
 				"path": "./syntaxes/isa.json"
 			},

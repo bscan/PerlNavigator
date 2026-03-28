@@ -2,12 +2,7 @@
     "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
     "name": "isa",
     "scopeName": "source.perl.package.isa",
-    "injectionSelector": "L:meta.isa.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#isa"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "isa": {
             "patterns": [

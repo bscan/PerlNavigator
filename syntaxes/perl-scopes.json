@@ -29,6 +29,9 @@
           "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
+              "include": "source.perl.package.moose#moose"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -38,6 +41,9 @@
           "name": "meta.v510.perl",
           "begin": "(?<=use)\\s+(?=(?:v?5\\.0?(?:[1-2][0-9]|3[0-5])(?:\\.\\d+)?|feature\\s+[\"']:5\\.(?:[1-2][0-9]|3[0-5])[\"'])[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.state#state"
+            },
             {
               "include": "#source"
             }
@@ -49,6 +55,12 @@
           "begin": "(?<=use)\\s+(?=(?:v?5\\.0?(?:3[6-9]|4[0-9])(?:\\.\\d+)?|feature\\s+[\"']:5\\.(?:3[6-9]|4[0-9])[\"'])[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.state#state"
+            },
+            {
+              "include": "source.perl.package.isa#isa"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -59,6 +71,9 @@
           "begin": "(?<=use)\\s+(?=(?:Object::Pad|feature\\s.*class.*|experimental\\s.*class.*|Feature::Compat::Class)[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.objectpad#objectpad"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -67,6 +82,15 @@
             "name": "meta.dataclass.perl",
             "begin": "(?<=use)\\s+(?:Data::Class)(?=[\\s;])",
             "patterns": [
+              {
+                "include": "source.perl.package.dataclass#dataclass"
+              },
+              {
+                "include": "source.perl.package.dataclass#letblocks"
+              },
+              {
+                "include": "source.perl.package.dataclass#defblocks"
+              },
               {
                 "include": "#source"
               }
@@ -78,6 +102,9 @@
           "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
+              "include": "source.perl.package.moops#moops"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -86,6 +113,9 @@
           "name": "meta.zydeco.perl",
           "begin": "(?<=use)\\s+(?:Zydeco)(?=[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.zydeco#zydeco"
+            },
             {
               "include": "#source"
             }
@@ -97,6 +127,9 @@
           "end": "(\\b)(?=^\\s*package\\s*[\\w:]+\\s*;)",
           "patterns": [
             {
+              "include": "source.perl.package.mars#mars"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -105,6 +138,9 @@
           "name": "meta.async.perl",
           "begin": "(?<=use)\\s+(?=(?:\\w+::AsyncAwait|Mojo::Base.*-async_await.*)[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.async#async"
+            },
             {
               "include": "#source"
             }
@@ -115,6 +151,9 @@
           "begin": "(?<=use)\\s+(?=(?:Syntax::Keyword::Try|Feature::Compat::Try|Syntax::Feature::Try|Try::Tiny|TryCatch|Try|feature\\s.*try.*|experimental\\s.*try.*)[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.trycatch#trycatch"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -123,6 +162,9 @@
           "name": "meta.defer.perl",
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bdefer\\b.*|Syntax::Keyword::Defer)[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.defer#defer"
+            },
             {
               "include": "#source"
             }
@@ -133,6 +175,9 @@
           "begin": "(?<=use)\\s+(?=Syntax::Keyword::Dynamically[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.dynamically#dynamically"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -141,6 +186,9 @@
           "name": "meta.isa.perl",
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bisa\\b.*)[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.isa#isa"
+            },
             {
               "include": "#source"
             }
@@ -151,6 +199,9 @@
           "begin": "(?<=use)\\s+(?=(?:feature\\s.*\\bstate\\b.*)[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.state#state"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -159,6 +210,9 @@
           "name": "meta.match.perl",
           "begin": "(?<=use)\\s+(?=(?:Syntax::Keyword::Match)[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.match#match"
+            },
             {
               "include": "#source"
             }
@@ -169,6 +223,9 @@
           "begin": "(?<=use)\\s+(?:Function::Parameters)(?=[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.funcparams#funcparams"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -178,6 +235,9 @@
           "begin": "(?<=use)\\s+(?:Dios)(?=[\\s;])",
           "patterns": [
             {
+              "include": "source.perl.package.dios#dios"
+            },
+            {
               "include": "#source"
             }
           ]
@@ -186,6 +246,9 @@
           "name": "meta.dancer.perl",
           "begin": "(?<=use)\\s+(?:Dancer2?)(?=[\\s;])",
           "patterns": [
+            {
+              "include": "source.perl.package.dancer#dancer"
+            },
             {
               "include": "#source"
             }

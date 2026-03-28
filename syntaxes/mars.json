@@ -5,12 +5,7 @@
     ],
     "name": "mars",
     "scopeName": "source.perl.package.mars",
-    "injectionSelector": "L:meta.mars.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#mars"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "mars": {
             "patterns": [

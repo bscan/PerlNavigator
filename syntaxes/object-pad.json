@@ -5,12 +5,7 @@
     ],
     "name": "objectpad",
     "scopeName": "source.perl.package.objectpad",
-    "injectionSelector": "L:meta.objectpad.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#objectpad"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "objectpad": {
             "patterns": [

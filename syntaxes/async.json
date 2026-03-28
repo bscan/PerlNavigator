@@ -5,12 +5,7 @@
     ],
     "name": "async",
     "scopeName": "source.perl.package.async",
-    "injectionSelector": "L:meta.async.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#async"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "async": {
             "patterns": [

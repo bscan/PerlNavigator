@@ -5,12 +5,7 @@
     ],
     "name": "dancer",
     "scopeName": "source.perl.package.dancer",
-    "injectionSelector": "R:meta.dancer.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#dancer"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "dancer": {
             "patterns": [

@@ -5,12 +5,7 @@
     ],
     "name": "funcparams",
     "scopeName": "source.perl.package.funcparams",
-    "injectionSelector": "R:meta.funcparams.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#funcparams"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "funcparams": {
             "patterns": [

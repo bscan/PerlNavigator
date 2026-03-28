@@ -5,12 +5,7 @@
     ],
     "name": "zydeco",
     "scopeName": "source.perl.package.zydeco",
-    "injectionSelector": "R:meta.zydeco.perl -comment -string -text",
-    "patterns": [
-        {
-            "include": "#zydeco"
-        }
-    ],
+    "patterns": [],
     "repository": {
         "zydeco": {
             "patterns": [

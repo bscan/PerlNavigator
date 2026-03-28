@@ -42,7 +42,7 @@ my $include_ref = $include ? [$include] : [] ;
 
 my $critic = Perl::Critic->new( -profile => $profile, -severity => $severity, -theme => $theme, -exclude => $exclude_ref, -include => $include_ref);
 my $message_format = $ENV{'PERL_NAVIGATOR_CRITIC_MESSAGE_FORMAT'} // '%m';
-Perl::Critic::Violation::set_format("%s~|~%l~|~%c~|~${message_format}~|~%p~||~");
+Perl::Critic::Violation::set_format("~|~%s~|~%l~|~%c~|~${message_format}~|~%p~||~");
 
 my @violations = $critic->critique($doc);
 

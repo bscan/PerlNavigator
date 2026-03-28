@@ -7,6 +7,7 @@ import { getIncPaths, getPerlimportsProfile, async_execFile, nLog } from "./util
 import { buildNav } from "./parseTags";
 import { getPerlAssetsPath } from "./assets";
 import { parseDocument } from "./parser";
+import { defined_on_metacpan } from "./perlcritic";
 
 import { TextDocument } from "vscode-languageserver-textdocument";
 
@@ -211,7 +212,7 @@ export async function perlcritic(textDocument: TextDocument, workspaceFolders: W
     }
 
     nLog("Critic output: " + output, settings);
-    output.split("\n").forEach((violation) => {
+    output.split("~||~").forEach((violation) => {
         maybeAddCriticDiag(violation, diagnostics, settings);
     });
 
@@ -275,19 +276,21 @@ function getCriticProfile(workspaceFolders: WorkspaceFolder[] | null, settings: 
 }
 
 function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settings: NavigatorSettings): void {
-    // Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy ~||~ Newline
-    const tokens = violation.replace("~||~", "").replaceAll("\r", "").split("~|~");
-    if (tokens.length != 5) {
+    // Format: ~|~ Severity ~|~ Line ~|~ Column ~|~ Description ~|~ Policy
+    // Leading ~|~ means tokens[0] is always preamble junk (empty string, whitespace, or log lines).
+    const tokens = violation.replaceAll("\r", "").split("~|~");
+    if (tokens.length != 6) {
         return;
     }
-    const line_num = +tokens[1] - 1;
-    const col_num = +tokens[2] - 1;
-    const message = tokens[3] + " (" + tokens[4] + ", Severity: " + tokens[0] + ")";
+    const line_num = +tokens[2] - 1;
+    const col_num = +tokens[3] - 1;
+    const policy = tokens[5].trim();
+    const message = tokens[4] + " (Severity: " + tokens[1] + ")";
     const severity = getCriticDiagnosticSeverity(tokens[0], settings);
     if (!severity) {
         return;
     }
-    diagnostics.push({
+    const diag: Diagnostic = {
         severity: severity,
         range: {
             start: { line: line_num, character: col_num },
@@ -295,7 +298,14 @@ function maybeAddCriticDiag(violation: string, diagnostics: Diagnostic[], settin
         },
         message: "Critic: " + message,
         source: "perlnavigator",
-    });
+        code: policy,
+    };
+    if (defined_on_metacpan.has(policy)) {
+        diag.codeDescription = {
+            href: `https://metacpan.org/pod/Perl::Critic::Policy::${policy}`,
+        };
+    }
+    diagnostics.push(diag);
 }
 
 function maybeAddPerlImportsDiag(violation: string, diagnostics: Diagnostic[], settings: NavigatorSettings): void {

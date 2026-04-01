@@ -16,16 +16,10 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
         return;
     }
 
-    // Initialize state variables
-    let inPodBlock = false;
-    let inRelevantBlock = true;
-    let podContent = "";
-    let podBuffer = ""; // We "buffer" pod when searching to avoid empty sections
-    let meaningFullContent = false;
-    let searchItem;
+    let searchItem: string | undefined;
     if([PerlSymbolKind.Package, PerlSymbolKind.Module].includes(elem.type)){
         // Search all. Note I'm not really treating packages different from Modules
-    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField, 
+    } else if([PerlSymbolKind.ImportedSub, PerlSymbolKind.Method, PerlSymbolKind.Inherited, PerlSymbolKind.PathedField,
                 PerlSymbolKind.LocalMethod, PerlSymbolKind.LocalSub].includes(elem.type)){
         searchItem = elem.name;
         searchItem = searchItem.replace(/^[\w:]+::(\w+)$/, "$1"); // Remove package
@@ -49,51 +43,94 @@ export async function getPod(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<
         }
     }
 
-    // Split the file into lines and iterate through them
-    const lines = fileContent.split(/\r?\n/);
-    for (const line of lines) {
-        if (line.startsWith("=cut")) {
-            // =cut lines are not added.
-            inPodBlock = false;
-        }
-
-         if (line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)/)) {
-            inPodBlock = true;
-            meaningFullContent = false;
-            if(searchItem && line.match(new RegExp(`^=(head\\d|item).*\\b${searchItem}\\b`))){
-                // This is structured so if we hit two relevant block in a row, we keep them both
-                inRelevantBlock = true;
-            } else {
-                inRelevantBlock = false;
-                podBuffer = "";
-            }
-        } else if(line.match(/\w/)){
-            // For this section, we found something that's not a header and has content
-            meaningFullContent = true;
-        }
-
-        if(inPodBlock){
-            if(searchItem){
-                if(inRelevantBlock) {
-                    podBuffer += line + "\n";   
-                }
-            }
-            else {
-                podContent += line + "\n";
-            }
-        }
-
-        if(meaningFullContent && podBuffer != ""){
-            podContent += podBuffer;
-            podBuffer = "";
-        }
-    }
-    
-    markdown += convertPODToMarkdown(podContent);
+    let pod = getPodFromCode(fileContent, searchItem);
+    markdown += convertPODToMarkdown(pod);
 
     return markdown;
 }
 
+function getPodFromCode(perlCode: String, searchItem?: String | undefined) {
+    // State variables
+    let inPodBlock = false;
+    let inRelevantBlock = false;
+    let rootHeadLevel: number | null = null;  // "head" level of the items' section
+    let pod = "";
+    let podBuffer = ""; // We "buffer" pod when searching to avoid empty sections
+    let nonCommandContent = false;
+
+    // Split the file into lines and iterate through them
+    const lines = perlCode.split(/\r?\n/);
+    for (const line of lines) {
+        if (line.startsWith("=cut")) {
+            // End of all pod and relevant blocks.
+            // "=cut" itself is not added.
+            inPodBlock = false;
+            inRelevantBlock = false;
+            rootHeadLevel = null;
+            continue;
+        }
+
+        // Command paragraph
+        const isCommand = line.match(/^=(pod|head\d|over|item|back|begin|end|for|encoding)\b/);
+        if (isCommand) {
+            inPodBlock = true;
+            nonCommandContent = false;
+
+            if (searchItem) {
+                const headMatch = line.match(/^=head(\d)\b/);
+                let thisLevel = null;
+                // Check if we found a sub heading
+                if (headMatch) {
+                    thisLevel = parseInt(headMatch[1], 10);
+                    if (inRelevantBlock) {
+                        // If section started with =head: stop if we hit sibling or higher-level =head
+                        if (rootHeadLevel !== null) {
+                            if (thisLevel <= rootHeadLevel) {
+                                inRelevantBlock = false;
+                                rootHeadLevel = null;
+                                podBuffer = "";
+                            }
+                        // If section started with =item: stop at any =head
+                        } else {
+                            inRelevantBlock = false;
+                            podBuffer = "";
+                        }
+                    }
+                }
+
+                if (!inRelevantBlock) { // don't update inRelevantBlock in sub-headings
+                    // This is structured so if we hit two relevant block in a row, we keep them both
+                    inRelevantBlock = line.match(new RegExp(`^=(head\\d|item)\\b.*\\b${searchItem}\\b`)) ? true : false;
+                    // Set root level for current POD section
+                    if (inRelevantBlock && !rootHeadLevel && thisLevel ) {
+                        rootHeadLevel = thisLevel;
+                    }
+                }
+
+                if (!inRelevantBlock) podBuffer = ""
+            }
+        } else if (line.match(/\w/)){
+            // We found something that's not a command and has content
+            nonCommandContent = true;
+        }
+
+        // If "searchitem": collect non-blank POD content if in relevant block
+        if (searchItem) {
+            if (inRelevantBlock) podBuffer += line + "\n";
+            // Add POD commands ("=head" etc.) only if there is also text content
+            if (nonCommandContent && podBuffer != ""){
+                pod += podBuffer;
+                podBuffer = "";
+            }
+        }
+        // No "searchitem" filter: collect POD lines
+        else {
+            if (inPodBlock) pod += line + "\n";
+        }
+    }
+
+    return pod;
+}
 
 async function resolvePathForDoc(elem: PerlElem, perlDoc: PerlDocument, modMap: Map<string, string>): Promise<string | undefined> {
     let absolutePath = Uri.parse(elem.uri).fsPath;

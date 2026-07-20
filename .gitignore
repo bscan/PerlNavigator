@@ -1,5 +1,6 @@
 client/out
 server/out
+server/src/perlnavigator.ts
 browser-ext/out
 node_modules
 client/server

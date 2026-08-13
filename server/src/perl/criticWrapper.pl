@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use Getopt::Long qw( GetOptions );
+use Cwd();
 use File::Spec ();
 use File::Basename ();
 use utf8;
@@ -104,24 +105,32 @@ sub AsciiReplacementChar {
     return $ord < 26 ? chr($ord + 65) : chr($ord + 71);
 }
 
+# Search for critic policy.
+# Follow the same convention as the upstream tool: https://metacpan.org/pod/Perl::Critic#CONFIGURATION
+# Opts > Env > cwd > home > default
+# You may be asking yourself, why do any of this at all versus the simplicity of the tidy wrapper?
+# Perltidy follows the same logic to resolve RC files, after all.
+# Because we want to provide a default configuration file, which means we have to substantially reimplement logic in Perl::Critic::UserProfile.
+# This is because the default behavior of Perl::Critic is to load all available policies installed, which leads to inconsistent behavior.
 sub resolve_profile {
     my $profile = shift;
-    if ($profile){
-        return $profile if -f $profile;
-        die("User specified Critic profile $profile not readable");
+
+    my @possible_rc = (
+        $profile,
+        $ENV{'PERLCRITIC'},
+        File::Spec->catfile( Cwd::getcwd(), '.perlcriticrc' ),
+        File::Spec->catfile( find_home_dir(), '.perlcriticrc' ),
+        File::Spec->catfile( File::Basename::dirname(__FILE__), 'defaultCriticProfile' ),
+    );
+
+    foreach my $rc (@possible_rc) {
+        # It is not necessary and indeed would be a TOCTOU to die because of a file test here.
+        # Perl::Critic::UserProfile will die if it cant't parse via Config::Tiny.
+        return $rc if $rc && -f $rc;
     }
 
-    return $ENV{'PERLCRITIC'} if $ENV{'PERLCRITIC'} && -r $ENV{'PERLCRITIC'};
-
-    if ( my $home_dir = find_home_dir() ) {
-        $profile = File::Spec->catfile( $home_dir, '.perlcriticrc' );
-        return $profile if -f $profile;
-    }
-
-    $profile = File::Spec->catfile( File::Basename::dirname(__FILE__), 'defaultCriticProfile' );
-    die("Can't find Navigator's default profile $profile ?!") unless( -f $profile );
-
-    return $profile;
+    # If nothing above exists, go with the default behavior.
+    return;
 }
 
 sub find_home_dir {

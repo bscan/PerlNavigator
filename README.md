@@ -42,12 +42,18 @@ You can use $workspaceFolder in includePaths which will be replaced by the full 
 
 
 ### Perl Critic Customization 
-You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`. You can use `$workspaceFolder` as a place holder here. If perlcriticProfile is not set, it will check for `~./perlcriticrc`.
-If that also does not exist, a default profile will be used. This default profile is not very strict.
-The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change `perlnavigator.severity1` through severity5. Allowable options are error, warning, info, and hint.
+You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`.
+You can use `$workspaceFolder` as a place holder here.
+If perlcriticProfile is not set, it will use the same logic to find profiles as [Perl::Critic](https://metacpan.org/pod/Perl::Critic#CONFIGURATION).
+If none exist, a default profile will be used.
+This default profile is not very strict, but is at least consistent unlike the default behavior of Perl::Critic (load *all* installed policy modules).
+The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change `perlnavigator.severity1` through severity5.
+Allowable options are error, warning, info, and hint.
 
 ### Perl Tidy Customization
-It is recommended to set `perlnavigator.perltidyProfile` if you would like customized formatting. Otherwise, the default settings will be used. I might create a default profile at some point. 
+It is recommended to set `perlnavigator.perltidyProfile` if you would like customized formatting.
+Otherwise, the default profile discovery logic in [Perl::Tidy](https://metacpan.org/dist/Perl-Tidy/view/bin/perltidy#The-perltidyrc-file) will be used.
+I might create a default profile at some point.
 
 ### Perlimports Customization
 Perlimports offers additional diagnostics when imports can be cleaned up. When perlimports is enabled, "Format Document" and "Format Selection" will run perlimports in addition to perltidy.

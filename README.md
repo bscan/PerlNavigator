@@ -45,7 +45,7 @@ You can use $workspaceFolder in includePaths which will be replaced by the full 
 You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`.
 You can use `$workspaceFolder` as a place holder here.
 If perlcriticProfile is not set, it will use the same logic to find profiles as [Perl::Critic](https://metacpan.org/pod/Perl::Critic#CONFIGURATION).
-If none exist, a default profile will be used.
+If none exist, a [default profile](server/src/perl/defaultCriticProfile) will be used.
 This default profile is not very strict, but is at least consistent unlike the default behavior of Perl::Critic (load *all* installed policy modules).
 The default severities are reasonable, (primarily used for coloring the squiggly underlines) but you can change `perlnavigator.severity1` through severity5.
 Allowable options are error, warning, info, and hint.
@@ -102,6 +102,7 @@ Sublime Text requires the following minimum settings under LSP settings (modify 
         "settings": {
             // "perlnavigator.perltidyProfile": "~/.perltidyrc",
             // "perlnavigator.perlcriticProfile": "~/.perlcriticrc",
+    # In which case you probably deserve the default behavior of Perl::Critic.
             // "perlnavigator.perlcriticMessageFormat": "%m - %e",
             // "perlnavigator.perlEnvAdd": false, // default: true
             // "perlnavigator.perlEnv": {

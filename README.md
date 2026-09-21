@@ -40,6 +40,26 @@ The subfolder ./lib will be added to your path automatically.
 You can also add additional include paths that will be added to the perl search path (@INC) via `perlnavigator.includePaths`.
 You can use $workspaceFolder in includePaths which will be replaced by the full folder path. If you have a multi-root workspace, each folder will be added to the path. 
 
+### Associating non-Perl config files with a Perl source
+Some tools use Perl-based config files whose defaults live in a separate Perl source file. In editors that let you send custom `initializationOptions`, Perl Navigator can merge symbols from those source files into matching config files.
+
+This is configured on the LSP `initialize` request with `initializationOptions.perlnavigator.fileAssociations`, keyed by basename:
+
+```json
+{
+  "initializationOptions": {
+    "perlnavigator": {
+      "fileAssociations": {
+        "latexmkrc": ["/the/path/of/latexmk/latexmk.pl"],
+        ".latexmkrc": ["/the/path/of/latexmk/latexmk.pl"]
+      }
+    }
+  }
+}
+```
+
+When a document named `latexmkrc` or `.latexmkrc` is opened through Perl Navigator, the server will parse the configured Perl files and use their symbols as fallbacks for completion, hover, signature help, and go-to-definition. Symbols defined in the current document still take precedence. This only affects the language server; your editor still needs to route these files to Perl Navigator as Perl documents.
+
 
 ### Perl Critic Customization 
 You should specify a Perl::Critic profile via `perlnavigator.perlcriticProfile`. You can use `$workspaceFolder` as a place holder here. If perlcriticProfile is not set, it will check for `~./perlcriticrc`.

@@ -24,9 +24,10 @@ import { PublishDiagnosticsParams } from "vscode-languageserver-protocol";
 import Uri from "vscode-uri";
 import { perlcompile, perlcritic, perlimports } from "./diagnostics";
 import { cleanupTemporaryAssetPath } from "./assets";
+import { applyAssociatedFileSymbols, parseFileAssociations } from "./fileAssociations";
 import { getDefinition, getAvailableMods } from "./navigation";
 import { getSymbols, getWorkspaceSymbols } from "./symbols";
-import { NavigatorSettings, PerlDocument, PerlElem, completionElem, ParseType } from "./types";
+import { FileAssociations, NavigatorSettings, PerlDocument, PerlElem, completionElem, ParseType } from "./types";
 import { parseDocument } from "./parser";
 import { getHover } from "./hover";
 import { getCompletions, getCompletionDoc } from "./completion";
@@ -53,10 +54,12 @@ const documents: TextDocuments<TextDocument> = new TextDocuments(TextDocument);
 let hasConfigurationCapability = false;
 let hasWorkspaceFolderCapability = false;
 let rootUri: string | null = null;
+let fileAssociations: FileAssociations = new Map();
 
 
 connection.onInitialize(async (params: InitializeParams) => {
     const capabilities = params.capabilities;
+    fileAssociations = parseFileAssociations(params.initializationOptions);
 
     // Does the client support the `workspace/configuration` request?
     // If not, we fall back using global settings.
@@ -327,7 +330,8 @@ async function validatePerlDocument(textDocument: TextDocument): Promise<void> {
     }
     sendDiags({ uri: textDocument.uri, diagnostics: mixOldAndNew });
 
-    navSymbols.set(textDocument.uri, perlOut.perlDoc);
+    const enrichedDoc = await applyAssociatedFileSymbols(perlOut.perlDoc, textDocument, fileAssociations, workspaceFolders, settings);
+    navSymbols.set(textDocument.uri, enrichedDoc);
 
     // Perl critic things
     const diagCritic = await pCritic;
@@ -437,7 +441,10 @@ connection.onDefinition(async (params) => {
     if (!document) return;
     // Parse on-demand if navSymbols hasn't been populated yet (race condition with validatePerlDocument)
     if (!perlDoc) {
+        const settings = await getDocumentSettings(params.textDocument.uri);
+        const workspaceFolders = await getWorkspaceFoldersSafe();
         perlDoc = await parseDocument(document, ParseType.selfNavigation);
+        perlDoc = await applyAssociatedFileSymbols(perlDoc, document, fileAssociations, workspaceFolders, settings);
     }
     let locOut: Location | Location[] | undefined = await getDefinition(params, perlDoc, document, mods);
     return locOut;

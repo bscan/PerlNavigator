@@ -34,6 +34,16 @@ export interface NavigatorSettings {
     enableProgress: boolean;
 }
 
+export type FileAssociationValue = string | string[];
+
+export interface PerlNavigatorInitializationOptions {
+    perlnavigator?: {
+        fileAssociations?: Record<string, FileAssociationValue>;
+    };
+}
+
+export type FileAssociations = Map<string, string[]>;
+
 export interface PerlElem {
     name: string;
     type: PerlSymbolKind;

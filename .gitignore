@@ -1,3 +1,4 @@
+.tsbuildinfo
 client/out
 server/out
 browser-ext/out

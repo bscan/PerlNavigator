@@ -71,8 +71,37 @@ jobs:
         asset_name: perlnavigator-win-x86_64.zip
         asset_content_type: application/octet-stream      
   
+  build-release-macos-arm64:
+    runs-on: macos-15
+    needs: [create-release]
+
+    steps:
+    - uses: actions/checkout@v6
+    - uses: actions/setup-node@v6
+      with:
+        node-version: '18.x'
+    - name: Install NPM dependencies
+      run: npm install
+    - name: Build MacOS ARM64 binary
+      run: npm run web-compile && npx pkg . --targets node18-macos-arm64 --output dist/perlnavigator-macos-arm64
+    - name: Verify MacOS ARM64 binary
+      run: |
+        test "$(lipo -archs dist/perlnavigator-macos-arm64)" = arm64
+        codesign --verify --strict --verbose=2 dist/perlnavigator-macos-arm64
+    - name: Compress MacOS ARM64 binary
+      run: mkdir perlnavigator-macos-arm64 && cp -a dist/perlnavigator-macos-arm64 perlnavigator-macos-arm64/perlnavigator && zip -r perlnavigator-macos-arm64.zip perlnavigator-macos-arm64
+    - name: Upload MacOS ARM64 binary
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: perlnavigator-macos-arm64.zip
+        asset_name: perlnavigator-macos-arm64.zip
+        asset_content_type: application/octet-stream
+
   publish-release:
-    needs: [build-release]
+    needs: [build-release, build-release-macos-arm64]
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3

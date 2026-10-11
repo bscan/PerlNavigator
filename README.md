@@ -72,6 +72,7 @@ Which will install as /usr/bin/perlnavigator. This can be used as the command fo
 
 ### Using the binaries
 Alternatively you can download binary releases for Windows, Linux, and MacOS here: https://github.com/bscan/PerlNavigator/releases 
+For Apple Silicon Macs, use `perlnavigator-macos-arm64.zip`; for Intel Macs, use `perlnavigator-macos-x86_64.zip`.
 
 ### Building from source
 You can also build from source if you prefer.
